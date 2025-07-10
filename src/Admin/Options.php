@@ -55,13 +55,13 @@ class Options
         $notices = [];
         $cf7_installed = class_exists('WPCF7_ContactForm');
         $gf_installed = class_exists('GFAPI');
-        if (!$cf7_installed) {
+        if (!$cf7_installed && !get_option('ctm_cf7_notice_dismissed', false)) {
             $cf7_url = admin_url('plugin-install.php?s=contact+form+7&tab=search&type=term');
             ob_start();
             $this->renderView('notice-cf7', compact('cf7_url'));
             $notices[] = ob_get_clean();
         }
-        if (!$gf_installed) {
+        if (!$gf_installed && !get_option('ctm_gf_notice_dismissed', false)) {
             $gf_url = 'https://www.gravityforms.com/';
             ob_start();
             $this->renderView('notice-gf', compact('gf_url'));
@@ -272,6 +272,8 @@ class Options
         add_action('wp_ajax_ctm_get_forms', [$this, 'ajaxGetForms']);
         add_action('wp_ajax_ctm_get_fields', [$this, 'ajaxGetFields']);
         add_action('wp_ajax_ctm_save_mapping', [$this, 'ajaxSaveMapping']);
+        add_action('wp_ajax_ctm_dismiss_notice', [$this, 'ajaxDismissNotice']);
+        add_action('wp_ajax_ctm_test_api_connection', [$this, 'ajaxTestApiConnection']);
     }
 
     /**
@@ -337,6 +339,228 @@ class Options
             wp_send_json_success(['message' => 'Mapping saved.']);
         }
         wp_send_json_error(['message' => 'Invalid mapping data.']);
+    }
+
+    /**
+     * AJAX: Dismiss plugin installation notice.
+     */
+    public function ajaxDismissNotice(): void
+    {
+        check_ajax_referer('ctm_dismiss_notice', 'nonce');
+        $type = sanitize_text_field($_POST['notice_type'] ?? '');
+        
+        if ($type === 'cf7') {
+            update_option('ctm_cf7_notice_dismissed', true);
+            wp_send_json_success(['message' => 'CF7 notice dismissed.']);
+        } elseif ($type === 'gf') {
+            update_option('ctm_gf_notice_dismissed', true);
+            wp_send_json_success(['message' => 'GF notice dismissed.']);
+        }
+        
+        wp_send_json_error(['message' => 'Invalid notice type.']);
+    }
+
+    /**
+     * AJAX: Test API Connection with comprehensive logging
+     */
+    public function ajaxTestApiConnection(): void
+    {
+        $start_time = microtime(true);
+        check_ajax_referer('ctm_test_api_connection', 'nonce');
+        
+        $api_key = sanitize_text_field($_POST['api_key'] ?? '');
+        $api_secret = sanitize_text_field($_POST['api_secret'] ?? '');
+        
+        // Prepare response metadata
+        $response_data = [
+            'timestamp' => current_time('mysql'),
+            'request_id' => wp_generate_uuid4(),
+            'wordpress_version' => get_bloginfo('version'),
+            'php_version' => PHP_VERSION,
+            'plugin_version' => '2.0',
+            'api_endpoint' => 'https://api.calltrackingmetrics.com',
+            'request_method' => 'GET',
+            'auth_method' => 'Basic Authentication'
+        ];
+        
+        if (empty($api_key) || empty($api_secret)) {
+            wp_send_json_error([
+                'message' => 'API Key and Secret are required',
+                'details' => [
+                    'Please provide both API Key and API Secret',
+                    'API credentials cannot be empty',
+                    'Check your CTM account for valid API keys'
+                ],
+                'metadata' => $response_data,
+                'execution_time' => round((microtime(true) - $start_time) * 1000, 2)
+            ]);
+            return;
+        }
+        
+        // Validate API key format (basic validation)
+        if (strlen($api_key) < 20 || strlen($api_secret) < 20) {
+            wp_send_json_error([
+                'message' => 'Invalid API credential format',
+                'details' => [
+                    'API keys should be at least 20 characters long',
+                    'Ensure you copied the complete API key and secret',
+                    'Check for extra spaces or missing characters'
+                ],
+                'metadata' => $response_data,
+                'execution_time' => round((microtime(true) - $start_time) * 1000, 2)
+            ]);
+            return;
+        }
+        
+        try {
+            // Create API service instance
+            $apiService = new \CTM\Service\ApiService('https://api.calltrackingmetrics.com', new HttpClient());
+            
+            $api_start_time = microtime(true);
+            
+            // Test basic account info
+            $accountInfo = $apiService->getAccountInfo($api_key, $api_secret);
+            $api_response_time = round((microtime(true) - $api_start_time) * 1000, 2);
+            
+            $response_data['api_response_time'] = $api_response_time;
+            $response_data['account_endpoint'] = '/api/v1/accounts/current.json';
+            
+            if (!$accountInfo || !isset($accountInfo['account'])) {
+                $error_details = [
+                    'Authentication failed - check your API credentials',
+                    'Ensure your CTM account has API access enabled',
+                    'Verify you\'re using the correct API environment',
+                    'Check if your account subscription includes API access'
+                ];
+                
+                // Add specific error based on response
+                if (!$accountInfo) {
+                    $error_details[] = 'No response received from CTM API';
+                    $error_details[] = 'This may indicate network connectivity issues';
+                } else {
+                    $error_details[] = 'API responded but account data was missing';
+                    $error_details[] = 'This typically indicates authentication failure';
+                }
+                
+                wp_send_json_error([
+                    'message' => 'Failed to connect to CTM API',
+                    'details' => $error_details,
+                    'metadata' => $response_data,
+                    'api_response' => $accountInfo,
+                    'execution_time' => round((microtime(true) - $start_time) * 1000, 2)
+                ]);
+                return;
+            }
+            
+            $account = $accountInfo['account'];
+            $account_details = null;
+            $details_response_time = null;
+            
+            // Try to get additional account details
+            if (isset($account['id'])) {
+                $details_start_time = microtime(true);
+                $account_details = $apiService->getAccountById($account['id'], $api_key, $api_secret);
+                $details_response_time = round((microtime(true) - $details_start_time) * 1000, 2);
+                
+                $response_data['details_response_time'] = $details_response_time;
+                $response_data['details_endpoint'] = '/api/v1/accounts/' . $account['id'];
+            }
+            
+            // Update WordPress options with successful connection
+            update_option('ctm_api_key', $api_key);
+            update_option('ctm_api_secret', $api_secret);
+            update_option('ctm_api_auth_account', $account['id'] ?? '');
+            
+            // Prepare comprehensive success response
+            $total_execution_time = round((microtime(true) - $start_time) * 1000, 2);
+            
+            wp_send_json_success([
+                'message' => 'API Connection successful',
+                'account_info' => $accountInfo,
+                'account_details' => $account_details,
+                'account_id' => $account['id'] ?? 'N/A',
+                'connection_quality' => $this->assessConnectionQuality($api_response_time, $details_response_time),
+                'metadata' => $response_data,
+                'performance' => [
+                    'total_execution_time' => $total_execution_time,
+                    'api_response_time' => $api_response_time,
+                    'details_response_time' => $details_response_time,
+                    'network_overhead' => $total_execution_time - $api_response_time - ($details_response_time ?? 0)
+                ],
+                'capabilities' => [
+                    'account_access' => true,
+                    'details_access' => $account_details !== null,
+                    'api_version' => 'v1'
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            $total_execution_time = round((microtime(true) - $start_time) * 1000, 2);
+            
+            // Enhanced error details based on exception type
+            $error_details = [
+                'Exception: ' . get_class($e),
+                'Error: ' . $e->getMessage()
+            ];
+            
+            // Add context-specific troubleshooting
+            if (strpos($e->getMessage(), 'timeout') !== false) {
+                $error_details[] = 'Request timed out - check network connectivity';
+                $error_details[] = 'CTM API may be experiencing high load';
+            } elseif (strpos($e->getMessage(), 'SSL') !== false || strpos($e->getMessage(), 'certificate') !== false) {
+                $error_details[] = 'SSL/TLS certificate issue detected';
+                $error_details[] = 'Check server SSL configuration';
+            } elseif (strpos($e->getMessage(), 'DNS') !== false) {
+                $error_details[] = 'DNS resolution failure';
+                $error_details[] = 'Check domain name resolution';
+            } else {
+                $error_details[] = 'Check your API credentials';
+                $error_details[] = 'Verify CTM service status';
+                $error_details[] = 'Contact support if problem persists';
+            }
+            
+            wp_send_json_error([
+                'message' => 'API Connection failed: ' . $e->getMessage(),
+                'details' => $error_details,
+                'metadata' => $response_data,
+                'exception' => [
+                    'type' => get_class($e),
+                    'message' => $e->getMessage(),
+                    'file' => basename($e->getFile()),
+                    'line' => $e->getLine()
+                ],
+                'execution_time' => $total_execution_time
+            ]);
+        }
+    }
+    
+    /**
+     * Assess connection quality based on response times
+     */
+    private function assessConnectionQuality($api_time, $details_time): array
+    {
+        $total_time = $api_time + ($details_time ?? 0);
+        
+        if ($total_time < 500) {
+            $quality = 'excellent';
+            $color = 'green';
+        } elseif ($total_time < 1000) {
+            $quality = 'good';
+            $color = 'blue';
+        } elseif ($total_time < 2000) {
+            $quality = 'fair';
+            $color = 'yellow';
+        } else {
+            $quality = 'poor';
+            $color = 'red';
+        }
+        
+        return [
+            'rating' => $quality,
+            'color' => $color,
+            'total_time' => $total_time,
+            'description' => "Connection quality: {$quality} ({$total_time}ms total)"
+        ];
     }
 
     public static function logDebug($message): void
