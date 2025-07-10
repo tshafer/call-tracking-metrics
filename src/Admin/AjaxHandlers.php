@@ -608,12 +608,66 @@ class AjaxHandlers
     {
         check_ajax_referer('ctm_get_performance_metrics', 'nonce');
         
-        wp_send_json_success([
-            'memory_usage' => size_format(memory_get_usage(true)),
+        global $wpdb;
+        
+        // Memory & Processing
+        $memory_limit = ini_get('memory_limit');
+        $memory_limit_bytes = wp_convert_hr_to_bytes($memory_limit);
+        $current_usage = memory_get_usage(true);
+        $memory_percentage = $memory_limit_bytes > 0 ? round(($current_usage / $memory_limit_bytes) * 100, 1) . '%' : 'N/A';
+        
+        // Database Performance
+        $total_queries = isset($wpdb->num_queries) ? $wpdb->num_queries : get_num_queries();
+        
+        // Query time calculation
+        $query_time = 'N/A';
+        if (defined('SAVEQUERIES') && SAVEQUERIES && isset($wpdb->queries)) {
+            $total_time = 0;
+            foreach ($wpdb->queries as $query) {
+                $total_time += $query[1];
+            }
+            $query_time = round($total_time * 1000, 2) . 'ms';
+        } else {
+            $query_time = 'N/A (Enable SAVEQUERIES)';
+        }
+        
+        // Server load
+        $server_load = 'N/A';
+        if (function_exists('sys_getloadavg')) {
+            $load = sys_getloadavg();
+            $server_load = round($load[0], 2) . ' (1min)';
+        }
+        
+        // Disk space
+        $disk_space = 'N/A';
+        $upload_dir = wp_upload_dir();
+        if (function_exists('disk_free_space') && isset($upload_dir['basedir'])) {
+            $free_bytes = disk_free_space($upload_dir['basedir']);
+            $disk_space = $free_bytes ? size_format($free_bytes) . ' free' : 'N/A';
+        }
+        
+        $metrics = [
+            // Memory & Processing
+            'current_memory' => size_format(memory_get_usage(true)),
             'peak_memory' => size_format(memory_get_peak_usage(true)),
-            'db_queries' => get_num_queries(),
-            'timestamp' => current_time('mysql')
-        ]);
+            'memory_percentage' => $memory_percentage,
+            
+            // Database Performance
+            'current_queries' => get_num_queries(),
+            'total_queries' => $total_queries,
+            'query_time' => $query_time,
+            
+            // Page Load Performance
+            'page_load_time' => round((microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']) * 1000, 2) . 'ms',
+            'server_response' => isset($_SERVER['REQUEST_TIME_FLOAT']) ? round((microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']) * 1000, 2) . 'ms' : 'N/A',
+            'server_load' => $server_load,
+            
+            // Real-time Metrics
+            'current_timestamp' => current_time('Y-m-d H:i:s'),
+            'disk_space' => $disk_space
+        ];
+        
+        wp_send_json_success($metrics);
     }
 
     /**

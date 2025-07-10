@@ -482,27 +482,217 @@ if ($debugEnabled) {
                 </svg>
                 Performance Monitor
             </h3>
-            <div class="space-y-3">
-                <div class="flex justify-between text-sm">
-                    <span class="text-gray-600">Current Memory Usage:</span>
-                    <span id="memory-usage" class="font-medium"><?= size_format(memory_get_usage(true)) ?></span>
-                </div>
-                <div class="flex justify-between text-sm">
-                    <span class="text-gray-600">Peak Memory Usage:</span>
-                    <span id="peak-memory" class="font-medium"><?= size_format(memory_get_peak_usage(true)) ?></span>
-                </div>
-                <div class="flex justify-between text-sm">
-                    <span class="text-gray-600">Page Load Time:</span>
-                    <span id="load-time" class="font-medium">-</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                    <span class="text-gray-600">Database Queries:</span>
-                    <span id="db-queries" class="font-medium"><?= get_num_queries() ?></span>
+            
+            <!-- Performance Metrics Container -->
+            <div id="performance-metrics" class="max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-4 mb-4 bg-gray-50">
+                <div class="space-y-4 text-sm">
+                    <!-- Memory & Processing -->
+                    <div class="border-b border-gray-300 pb-3">
+                        <h4 class="font-semibold text-gray-800 mb-2">Memory & Processing</h4>
+                        <div class="grid grid-cols-1 gap-2">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Current Memory Usage:</span>
+                                <span class="font-medium" id="current-memory"><?= size_format(memory_get_usage(true)) ?></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Peak Memory Usage:</span>
+                                <span class="font-medium" id="peak-memory"><?= size_format(memory_get_peak_usage(true)) ?></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Memory Limit:</span>
+                                <span class="font-medium"><?= ini_get('memory_limit') ?></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Memory Usage %:</span>
+                                <span class="font-medium" id="memory-percentage">
+                                    <?php
+                                    $memory_limit = ini_get('memory_limit');
+                                    $memory_limit_bytes = wp_convert_hr_to_bytes($memory_limit);
+                                    $current_usage = memory_get_usage(true);
+                                    $percentage = $memory_limit_bytes > 0 ? round(($current_usage / $memory_limit_bytes) * 100, 1) : 0;
+                                    echo $percentage . '%';
+                                    ?>
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">PHP Max Execution Time:</span>
+                                <span class="font-medium"><?= ini_get('max_execution_time') ?>s</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Database Performance -->
+                    <div class="border-b border-gray-300 pb-3">
+                        <h4 class="font-semibold text-gray-800 mb-2">Database Performance</h4>
+                        <div class="grid grid-cols-1 gap-2">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Current Page Queries:</span>
+                                <span class="font-medium" id="current-queries"><?= get_num_queries() ?></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Total DB Queries (Session):</span>
+                                <span class="font-medium" id="total-queries">
+                                    <?php
+                                    global $wpdb;
+                                    echo isset($wpdb->num_queries) ? $wpdb->num_queries : get_num_queries();
+                                    ?>
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Query Time (Estimated):</span>
+                                <span class="font-medium" id="query-time">
+                                    <?php
+                                    if (defined('SAVEQUERIES') && SAVEQUERIES && isset($wpdb->queries)) {
+                                        $total_time = 0;
+                                        foreach ($wpdb->queries as $query) {
+                                            $total_time += $query[1];
+                                        }
+                                        echo round($total_time * 1000, 2) . 'ms';
+                                    } else {
+                                        echo 'N/A (Enable SAVEQUERIES)';
+                                    }
+                                    ?>
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Database Version:</span>
+                                <span class="font-medium"><?= $GLOBALS['wpdb']->db_version() ?></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Slow Query Threshold:</span>
+                                <span class="font-medium"><?= defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ? '2s' : 'N/A' ?></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Page Load Performance -->
+                    <div class="border-b border-gray-300 pb-3">
+                        <h4 class="font-semibold text-gray-800 mb-2">Page Load Performance</h4>
+                        <div class="grid grid-cols-1 gap-2">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Page Generation Time:</span>
+                                <span class="font-medium" id="page-load-time"><?= round((microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']) * 1000, 2) ?>ms</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Server Response Time:</span>
+                                <span class="font-medium" id="server-response">
+                                    <?= isset($_SERVER['REQUEST_TIME_FLOAT']) ? round((microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']) * 1000, 2) : 'N/A' ?>ms
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">PHP Version:</span>
+                                <span class="font-medium"><?= PHP_VERSION ?></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Server Load:</span>
+                                <span class="font-medium" id="server-load">
+                                    <?php
+                                    if (function_exists('sys_getloadavg')) {
+                                        $load = sys_getloadavg();
+                                        echo round($load[0], 2) . ' (1min)';
+                                    } else {
+                                        echo 'N/A';
+                                    }
+                                    ?>
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Opcache Status:</span>
+                                <span class="font-medium">
+                                    <?php
+                                    if (function_exists('opcache_get_status')) {
+                                        $opcache = opcache_get_status();
+                                        echo $opcache && $opcache['opcache_enabled'] ? 'Enabled' : 'Disabled';
+                                    } else {
+                                        echo 'Not Available';
+                                    }
+                                    ?>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- WordPress Performance -->
+                    <div class="border-b border-gray-300 pb-3">
+                        <h4 class="font-semibold text-gray-800 mb-2">WordPress Performance</h4>
+                        <div class="grid grid-cols-1 gap-2">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Active Plugins:</span>
+                                <span class="font-medium"><?= count(get_option('active_plugins', [])) ?></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Active Theme:</span>
+                                <span class="font-medium text-xs"><?= wp_get_theme()->get('Name') ?></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Object Cache:</span>
+                                <span class="font-medium <?= wp_using_ext_object_cache() ? 'text-green-600' : 'text-red-600' ?>">
+                                    <?= wp_using_ext_object_cache() ? 'External' : 'Default' ?>
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">WP Debug Mode:</span>
+                                <span class="font-medium <?= WP_DEBUG ? 'text-yellow-600' : 'text-green-600' ?>">
+                                    <?= WP_DEBUG ? 'Enabled' : 'Disabled' ?>
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">WordPress Version:</span>
+                                <span class="font-medium"><?= get_bloginfo('version') ?></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Cron Jobs:</span>
+                                <span class="font-medium"><?= count(_get_cron_array()) ?> scheduled</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Real-time Metrics -->
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-2">Real-time Metrics</h4>
+                        <div class="grid grid-cols-1 gap-2">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Current Timestamp:</span>
+                                <span class="font-medium" id="current-timestamp"><?= current_time('Y-m-d H:i:s') ?></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Timezone:</span>
+                                <span class="font-medium"><?= get_option('timezone_string') ?: 'UTC' ?></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Disk Space (Uploads):</span>
+                                <span class="font-medium" id="disk-space">
+                                    <?php
+                                    $upload_dir = wp_upload_dir();
+                                    if (function_exists('disk_free_space') && isset($upload_dir['basedir'])) {
+                                        $free_bytes = disk_free_space($upload_dir['basedir']);
+                                        echo $free_bytes ? size_format($free_bytes) . ' free' : 'N/A';
+                                    } else {
+                                        echo 'N/A';
+                                    }
+                                    ?>
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Last Updated:</span>
+                                <span class="font-medium text-blue-600" id="last-updated"><?= current_time('H:i:s') ?></span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <button onclick="refreshPerformance()" class="mt-4 w-full bg-orange-600 hover:bg-orange-700 text-white font-medium px-4 py-2 rounded-lg transition duration-200">
-                Refresh Metrics
-            </button>
+            
+            <div class="flex gap-3">
+                <button onclick="refreshPerformance()" id="refresh-performance-btn" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-medium px-4 py-2 rounded-lg transition duration-200 flex items-center justify-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Refresh Metrics
+                </button>
+                <button onclick="toggleAutoRefresh()" id="auto-refresh-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-medium px-4 py-2 rounded-lg transition duration-200">
+                    Auto: OFF
+                </button>
+            </div>
         </div>
     </div>
 
@@ -1426,12 +1616,27 @@ function runHealthCheck() {
 
 // Feature 4: Performance Monitor
 let pageLoadStart = performance.now();
+let autoRefreshInterval = null;
+let autoRefreshEnabled = false;
 
 function refreshPerformance() {
+    const button = document.getElementById('refresh-performance-btn');
+    const originalText = button ? button.innerHTML : '';
+    
+    // Show loading state
+    if (button) {
+        button.innerHTML = '<svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Refreshing...';
+        button.disabled = true;
+    }
+    
     const currentTime = performance.now();
     const loadTime = Math.round(currentTime - pageLoadStart);
     
-    document.getElementById('load-time').textContent = loadTime + 'ms';
+    // Update page load time if element exists
+    const loadTimeElement = document.getElementById('page-load-time');
+    if (loadTimeElement) {
+        loadTimeElement.textContent = loadTime + 'ms';
+    }
     
     // Fetch fresh performance data via AJAX
     const formData = new FormData();
@@ -1445,20 +1650,84 @@ function refreshPerformance() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            document.getElementById('memory-usage').textContent = data.data.memory_usage;
-            document.getElementById('peak-memory').textContent = data.data.peak_memory;
-            document.getElementById('db-queries').textContent = data.data.db_queries;
+            const metrics = data.data;
+            
+            // Update all performance metrics if elements exist
+            const updates = {
+                'current-memory': metrics.current_memory,
+                'peak-memory': metrics.peak_memory,
+                'memory-percentage': metrics.memory_percentage,
+                'current-queries': metrics.current_queries,
+                'total-queries': metrics.total_queries,
+                'query-time': metrics.query_time,
+                'page-load-time': metrics.page_load_time,
+                'server-response': metrics.server_response,
+                'server-load': metrics.server_load,
+                'current-timestamp': metrics.current_timestamp,
+                'disk-space': metrics.disk_space
+            };
+            
+            Object.entries(updates).forEach(([id, value]) => {
+                const element = document.getElementById(id);
+                if (element && value !== undefined) {
+                    element.textContent = value;
+                }
+            });
+            
+            // Update last updated time
+            const lastUpdated = document.getElementById('last-updated');
+            if (lastUpdated) {
+                lastUpdated.textContent = new Date().toLocaleTimeString();
+            }
+            
+            if (!autoRefreshEnabled) {
+                showDebugMessage('Performance metrics refreshed successfully!', 'success');
+            }
+        } else {
+            if (!autoRefreshEnabled) {
+                showDebugMessage('Failed to refresh performance metrics', 'error');
+            }
         }
     })
     .catch(error => {
         console.error('Error fetching performance metrics:', error);
+        if (!autoRefreshEnabled) {
+            showDebugMessage('Network error while refreshing performance metrics', 'error');
+        }
+    })
+    .finally(() => {
+        // Reset button
+        if (button) {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
     });
-    
-    showDebugMessage('Performance metrics refreshed', 'info');
 }
 
-// Auto-refresh performance metrics every 30 seconds
-setInterval(refreshPerformance, 30000);
+function toggleAutoRefresh() {
+    const button = document.getElementById('auto-refresh-btn');
+    
+    if (!button) return;
+    
+    if (autoRefreshEnabled) {
+        // Disable auto-refresh
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+        autoRefreshEnabled = false;
+        button.textContent = 'Auto: OFF';
+        button.classList.remove('bg-green-600', 'hover:bg-green-700');
+        button.classList.add('bg-gray-600', 'hover:bg-gray-700');
+        showDebugMessage('Auto-refresh disabled', 'info');
+    } else {
+        // Enable auto-refresh
+        autoRefreshInterval = setInterval(refreshPerformance, 30000); // Refresh every 30 seconds
+        autoRefreshEnabled = true;
+        button.textContent = 'Auto: ON';
+        button.classList.remove('bg-gray-600', 'hover:bg-gray-700');
+        button.classList.add('bg-green-600', 'hover:bg-green-700');
+        showDebugMessage('Auto-refresh enabled (30s intervals)', 'success');
+    }
+}
 
 // Feature 5: Error Analyzer
 function checkIssue(issueType) {
