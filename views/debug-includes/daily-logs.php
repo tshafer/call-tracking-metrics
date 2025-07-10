@@ -111,3 +111,122 @@ $available_dates = $available_dates ?? [];
         </div>
     <?php endif; ?>
 </div> 
+
+<script>
+    function toggleLogView(date) {
+        const logDiv = document.getElementById('log-' + date);
+        if (logDiv.classList.contains('hidden')) {
+            logDiv.classList.remove('hidden');
+        } else {
+            logDiv.classList.add('hidden');
+        }
+    }
+
+    function showEmailForm(date) {
+        document.getElementById('email-log-date').value = date;
+        document.getElementById('email-modal').classList.remove('hidden');
+    }
+
+    function hideEmailForm() {
+        document.getElementById('email-modal').classList.add('hidden');
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('email-modal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            hideEmailForm();
+        }
+    });
+
+
+    function clearDebugLogs(logType, logDate = '') {
+        const buttonId = logType === 'debug_all' ? 'clear-debug-all-btn' : `clear-single-${logDate}-btn`;
+        const button = document.getElementById(buttonId);
+        const originalText = button.textContent;
+        
+        // Confirm action
+        const confirmMessage = logType === 'debug_all' 
+            ? 'Are you sure you want to clear all debug logs? This action cannot be undone.'
+            : `Are you sure you want to clear the debug log for ${logDate}? This action cannot be undone.`;
+        
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+        
+        // Disable button and show loading state
+        button.disabled = true;
+        button.textContent = 'Clearing...';
+        
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('action', 'ctm_clear_logs');
+        formData.append('log_type', logType);
+        if (logDate) {
+            formData.append('log_date', logDate);
+        }
+        formData.append('nonce', '<?= wp_create_nonce('ctm_clear_logs') ?>');
+        
+        // Send AJAX request
+        fetch('<?= admin_url('admin-ajax.php') ?>', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                showDebugMessage(data.data.message, 'success');
+                
+                if (logType === 'debug_all') {
+                    // Reload the page to show empty state
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    // Remove the specific log container
+                    const logContainer = button.closest('.border.border-gray-200.rounded-lg.overflow-hidden');
+                    if (logContainer) {
+                        logContainer.style.transition = 'opacity 0.5s ease';
+                        logContainer.style.opacity = '0';
+                        setTimeout(() => {
+                            logContainer.remove();
+                            
+                            // Check if there are any remaining logs
+                            const remainingLogs = document.querySelectorAll('.border.border-gray-200.rounded-lg.overflow-hidden');
+                            if (remainingLogs.length === 0) {
+                                // Show "no logs" message
+                                const logsContainer = document.querySelector('.space-y-4');
+                                if (logsContainer) {
+                                    logsContainer.innerHTML = `
+                                        <div class="text-center py-12">
+                                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                            </svg>
+                                            <h3 class="mt-4 text-lg font-medium text-gray-900">No debug logs found</h3>
+                                            <p class="mt-2 text-gray-500">Enable debug mode to start logging plugin activity.</p>
+                                        </div>
+                                    `;
+                                }
+                            }
+                        }, 500);
+                    }
+                }
+            } else {
+                showDebugMessage(data.data.message || 'Failed to clear logs', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error clearing logs:', error);
+            showDebugMessage('Network error occurred while clearing logs', 'error');
+        })
+        .finally(() => {
+            // Re-enable button if it still exists
+            if (button && button.parentNode) {
+                button.disabled = false;
+                button.textContent = originalText;
+            }
+        });
+    }
+
+
+</script>

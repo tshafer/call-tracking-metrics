@@ -58,19 +58,18 @@ if ($debugEnabled) {
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         
         <!-- Feature 1: System Information Panel -->
-        <?php include plugin_dir_path(__FILE__) . 'debug-includes/system-info-panel.php'; ?>
+        <?php //include plugin_dir_path(__FILE__) . 'debug-includes/system-info-panel.php'; ?>
 
         <!-- Feature 2: API Request Simulator -->
-        <?php include plugin_dir_path(__FILE__) . 'debug-includes/api-simulator.php'; ?>
+        <?php //include plugin_dir_path(__FILE__) . 'debug-includes/api-simulator.php'; ?>
 
         <!-- Feature 3: Plugin Health Check -->
-        <?php include plugin_dir_path(__FILE__) . 'debug-includes/health-check.php'; ?>
+        <?php //include plugin_dir_path(__FILE__) . 'debug-includes/health-check.php'; ?>
 
         <!-- Feature 4: Performance Monitor -->
-        <?php include plugin_dir_path(__FILE__) . 'debug-includes/performance-monitor.php'; ?>
+        <?php //include plugin_dir_path(__FILE__) . 'debug-includes/performance-monitor.php'; ?>
     </div>
 
-    <!-- Feature 5: Enhanced Error Analyzer -->
     <?php include plugin_dir_path(__FILE__) . 'debug-includes/error-analyzer.php'; ?>
 
     <!-- Log Settings -->
@@ -84,7 +83,7 @@ if ($debugEnabled) {
     <?php endif; ?>
 </div>
 
-<?php include plugin_dir_path(__FILE__) . 'debug-includes/debug-modals.php'; ?>
+<?php //include plugin_dir_path(__FILE__) . 'debug-includes/debug-modals.php'; ?>
 
 <?php 
 // Include consolidated debug JavaScript

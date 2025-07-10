@@ -56,3 +56,108 @@ $notification_email = $notification_email ?? get_option('ctm_log_notification_em
         </button>
     </form>
 </div> 
+
+<script>
+
+    function updateLogSettings() {
+        const button = document.getElementById('update-log-settings-btn');
+        const form = document.getElementById('log-settings-form');
+        const originalText = button.textContent;
+        
+        // Disable button and show loading state
+        button.disabled = true;
+        button.textContent = 'Updating...';
+        
+        // Get form data
+        const formData = new FormData();
+        formData.append('action', 'ctm_update_log_settings');
+        formData.append('log_retention_days', document.getElementById('log_retention_days').value);
+        formData.append('log_notification_email', document.getElementById('log_notification_email').value);
+        formData.append('log_auto_cleanup', document.getElementById('log_auto_cleanup').checked ? '1' : '0');
+        formData.append('log_email_notifications', document.getElementById('log_email_notifications').checked ? '1' : '0');
+        formData.append('nonce', '<?= wp_create_nonce('ctm_update_log_settings') ?>');
+        
+        // Send AJAX request
+        fetch('<?= admin_url('admin-ajax.php') ?>', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showDebugMessage(data.data.message, 'success');
+                
+                // Show what was updated
+                const settings = data.data.settings;
+                let updateDetails = [];
+                
+                if (settings.retention_days) {
+                    updateDetails.push(`Retention: ${settings.retention_days} days`);
+                }
+                
+                if (settings.auto_cleanup) {
+                    updateDetails.push('Auto-cleanup: enabled');
+                } else {
+                    updateDetails.push('Auto-cleanup: disabled');
+                }
+                
+                if (settings.email_notifications) {
+                    updateDetails.push('Email notifications: enabled');
+                } else {
+                    updateDetails.push('Email notifications: disabled');
+                }
+                
+                if (settings.notification_email) {
+                    updateDetails.push(`Email: ${settings.notification_email}`);
+                }
+                
+                // Show detailed update message after a short delay
+                setTimeout(() => {
+                    showDebugMessage(`Settings updated: ${updateDetails.join(', ')}`, 'info');
+                }, 1000);
+                
+            } else {
+                showDebugMessage(data.data.message || 'Failed to update log settings', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error updating log settings:', error);
+            showDebugMessage('Network error occurred while updating settings', 'error');
+        })
+        .finally(() => {
+            // Re-enable button
+            button.disabled = false;
+            button.textContent = originalText;
+        });
+    }
+
+    // Add form validation
+    document.getElementById('log_retention_days')?.addEventListener('input', function() {
+        const value = parseInt(this.value);
+        if (value < 1) {
+            this.value = 1;
+        } else if (value > 365) {
+            this.value = 365;
+        }
+    });
+
+    // Add email validation for notifications
+    document.getElementById('log_email_notifications')?.addEventListener('change', function() {
+        const emailField = document.getElementById('log_notification_email');
+        const emailLabel = emailField?.previousElementSibling;
+        
+        if (this.checked) {
+            emailField.required = true;
+            emailLabel?.classList.add('text-red-600');
+            if (emailLabel) {
+                emailLabel.innerHTML = emailLabel.innerHTML.replace('Notification Email', 'Notification Email *');
+            }
+        } else {
+            emailField.required = false;
+            emailLabel?.classList.remove('text-red-600');
+            if (emailLabel) {
+                emailLabel.innerHTML = emailLabel.innerHTML.replace('Notification Email *', 'Notification Email');
+            }
+        }
+    });
+</script>

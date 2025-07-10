@@ -29,3 +29,65 @@
         </button>
     </div>
 </div> 
+
+<script>    
+
+function toggleDebugMode() {
+    const button = document.getElementById('toggle-debug-btn');
+    const originalText = button.textContent;
+    
+    // Disable button and show loading state
+    button.disabled = true;
+    button.textContent = 'Processing...';
+    
+    // Prepare form data
+    const formData = new FormData();
+    formData.append('action', 'ctm_toggle_debug_mode');
+    formData.append('nonce', '<?= wp_create_nonce('ctm_toggle_debug_mode') ?>');
+    
+    // Send AJAX request
+    fetch('<?= admin_url('admin-ajax.php') ?>', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showDebugMessage(data.data.message, 'success');
+            
+            // Update the entire debug tab content
+            const debugTabContent = document.querySelector('.bg-gray-50.p-6.rounded-b-lg');
+            if (debugTabContent) {
+                debugTabContent.innerHTML = data.data.updated_content;
+            } else {
+                // Fallback: reload the page if we can't find the tab content
+                window.location.reload();
+            }
+            
+            // Show additional feedback
+            setTimeout(() => {
+                const action = data.data.action;
+                if (action === 'enabled') {
+                    showDebugMessage('Debug logging is now active. All plugin activity will be recorded.', 'info');
+                } else {
+                    showDebugMessage('Debug logging has been stopped. Existing logs are preserved.', 'info');
+                }
+            }, 1000);
+            
+        } else {
+            showDebugMessage(data.data.message || 'Failed to toggle debug mode', 'error');
+            // Re-enable button on error
+            button.disabled = false;
+            button.textContent = originalText;
+        }
+    })
+    .catch(error => {
+        console.error('Error toggling debug mode:', error);
+        showDebugMessage('Network error occurred while toggling debug mode', 'error');
+        // Re-enable button on error
+        button.disabled = false;
+        button.textContent = originalText;
+    });
+}
+
+</script>
