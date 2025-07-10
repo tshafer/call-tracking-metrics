@@ -37,6 +37,8 @@ class AjaxHandlers
         add_action('wp_ajax_ctm_email_system_info', [$this, 'ajaxEmailSystemInfo']);
         add_action('wp_ajax_ctm_refresh_system_info', [$this, 'ajaxRefreshSystemInfo']);
         add_action('wp_ajax_ctm_auto_fix_issues', [$this, 'ajaxAutoFixIssues']);
+        add_action('wp_ajax_ctm_full_diagnostic', [$this, 'ajaxFullDiagnostic']);
+        add_action('wp_ajax_ctm_security_scan', [$this, 'ajaxSecurityScan']);
     }
 
     /**
@@ -849,11 +851,13 @@ class AjaxHandlers
                 $solutions[] = 'Check if your server can make HTTPS requests';
             }
         }
-        
+        $status = empty($issues) ? 'healthy' : 'issues_found';
+        $score = $status === 'healthy' ? 100 : 0;
         return [
             'title' => 'API Credentials Analysis',
             'description' => 'Checking the validity and configuration of your CallTrackingMetrics API credentials.',
-            'status' => empty($issues) ? 'healthy' : 'issues_found',
+            'status' => $status,
+            'score' => $score,
             'issues' => $issues,
             'solutions' => $solutions
         ];
@@ -901,11 +905,13 @@ class AjaxHandlers
                 }
             }
         }
-        
+        $status = empty($issues) ? 'healthy' : (count($issues) === 1 ? 'warning' : 'issues_found');
+        $score = $status === 'healthy' ? 100 : ($status === 'warning' ? 70 : 0);
         return [
             'title' => 'Form Integration Analysis',
             'description' => 'Checking the configuration and setup of form plugin integrations.',
-            'status' => empty($issues) ? 'healthy' : 'issues_found',
+            'status' => $status,
+            'score' => $score,
             'issues' => $issues,
             'solutions' => $solutions
         ];
@@ -930,33 +936,47 @@ class AjaxHandlers
             $solutions[] = 'Contact your hosting provider to enable SSL support';
         }
         
-        // Test actual API connectivity
-        try {
-            $response = wp_remote_get('https://api.calltrackingmetrics.com/api/v1/ping', [
-                'timeout' => 10,
-                'sslverify' => true
-            ]);
-            
-            if (is_wp_error($response)) {
-                $issues[] = 'Cannot connect to CallTrackingMetrics API: ' . $response->get_error_message();
-                $solutions[] = 'Check your server\'s internet connection';
-                $solutions[] = 'Verify firewall settings allow HTTPS connections';
-                $solutions[] = 'Contact your hosting provider if connection issues persist';
-            } elseif (wp_remote_retrieve_response_code($response) >= 400) {
-                $issues[] = 'CallTrackingMetrics API returned error: ' . wp_remote_retrieve_response_code($response);
-                $solutions[] = 'Check CallTrackingMetrics service status';
-                $solutions[] = 'Try again later if this is a temporary issue';
+        // Test actual API connectivity using /api/v1/accounts (requires authentication)
+        $apiKey = get_option('ctm_api_key');
+        $apiSecret = get_option('ctm_api_secret');
+        if (!$apiKey || !$apiSecret) {
+            $issues[] = 'API credentials are not configured';
+            $solutions[] = 'Enter your API key and secret in the General tab';
+        } else {
+            try {
+                $response = wp_remote_get('https://api.calltrackingmetrics.com/api/v1/accounts', [
+                    'timeout' => 10,
+                    'sslverify' => true,
+                    'headers' => [
+                        'Authorization' => 'Basic ' . base64_encode($apiKey . ':' . $apiSecret),
+                        'Accept' => 'application/json',
+                    ],
+                ]);
+                
+                if (is_wp_error($response)) {
+                    $issues[] = 'Cannot connect to CallTrackingMetrics API: ' . $response->get_error_message();
+                    $solutions[] = 'Check your server\'s internet connection';
+                    $solutions[] = 'Verify firewall settings allow HTTPS connections';
+                    $solutions[] = 'Contact your hosting provider if connection issues persist';
+                } elseif (wp_remote_retrieve_response_code($response) >= 400) {
+                    $issues[] = 'CallTrackingMetrics API returned error: ' . wp_remote_retrieve_response_code($response);
+                    $solutions[] = 'Check CallTrackingMetrics service status';
+                    $solutions[] = 'Verify your API credentials are correct and have access';
+                    $solutions[] = 'Try again later if this is a temporary issue';
+                }
+            } catch (\Exception $e) {
+                $issues[] = 'Network connectivity test failed: ' . $e->getMessage();
+                $solutions[] = 'Check your server\'s network configuration';
+                $solutions[] = 'Contact your hosting provider for network troubleshooting';
             }
-        } catch (\Exception $e) {
-            $issues[] = 'Network connectivity test failed: ' . $e->getMessage();
-            $solutions[] = 'Check your server\'s network configuration';
-            $solutions[] = 'Contact your hosting provider for network troubleshooting';
         }
-        
+        $status = empty($issues) ? 'healthy' : (count($issues) === 1 ? 'warning' : 'issues_found');
+        $score = $status === 'healthy' ? 100 : ($status === 'warning' ? 70 : 0);
         return [
             'title' => 'Network Connectivity Analysis',
-            'description' => 'Testing network connectivity and ability to reach CallTrackingMetrics API.',
-            'status' => empty($issues) ? 'healthy' : 'issues_found',
+            'description' => 'Testing network connectivity and ability to reach CallTrackingMetrics API (accounts endpoint).',
+            'status' => $status,
+            'score' => $score,
             'issues' => $issues,
             'solutions' => $solutions
         ];
@@ -1004,11 +1024,13 @@ class AjaxHandlers
             $solutions[] = 'Disable display_errors in PHP configuration';
             $solutions[] = 'Use error logging instead of display_errors';
         }
-        
+        $status = empty($issues) ? 'healthy' : (count($issues) === 1 ? 'warning' : 'issues_found');
+        $score = $status === 'healthy' ? 100 : ($status === 'warning' ? 70 : 0);
         return [
             'title' => 'Plugin Conflicts Analysis',
             'description' => 'Checking for potential conflicts with other plugins and system settings.',
-            'status' => empty($issues) ? 'healthy' : 'issues_found',
+            'status' => $status,
+            'score' => $score,
             'issues' => $issues,
             'solutions' => $solutions
         ];
@@ -1380,6 +1402,250 @@ class AjaxHandlers
                 'fixes' => $fixes
             ]);
         }
+    }
+
+    /**
+     * AJAX: Run Full Diagnostic
+     */
+    public function ajaxFullDiagnostic(): void
+    {
+        check_ajax_referer('ctm_full_diagnostic', 'nonce');
+        
+        try {
+            $diagnostic_results = [
+                'passed_checks' => 0,
+                'warning_checks' => 0,
+                'failed_checks' => 0,
+                'critical_issues' => [],
+                'categories' => []
+            ];
+            
+            // Run API Credentials Analysis
+            $api_analysis = $this->analyzeApiCredentials();
+            $api_score = isset($api_analysis['score']) && is_numeric($api_analysis['score']) ? $api_analysis['score'] : 0;
+            $diagnostic_results['categories']['api_credentials'] = [
+                'title' => 'API Credentials',
+                'description' => 'Validation of CallTrackingMetrics API connectivity and authentication',
+                'status' => $api_analysis['status'],
+                'score' => $api_score,
+                'issues' => $api_analysis['issues'] ?? [],
+                'recommendations' => $api_analysis['recommendations'] ?? []
+            ];
+            
+            // Update counters based on API analysis
+            if ($api_analysis['status'] === 'healthy') {
+                $diagnostic_results['passed_checks']++;
+            } elseif ($api_analysis['status'] === 'warning') {
+                $diagnostic_results['warning_checks']++;
+            } else {
+                $diagnostic_results['failed_checks']++;
+                if ($api_score < 30) {
+                    $diagnostic_results['critical_issues'][] = [
+                        'title' => 'API Credentials Failed',
+                        'description' => 'Cannot connect to CallTrackingMetrics API. Plugin functionality will be severely limited.',
+                        'auto_fix_available' => false,
+                        'fix_id' => 'api_credentials'
+                    ];
+                }
+            }
+            
+            // Run Form Integration Analysis
+            $form_analysis = $this->analyzeFormIntegration();
+            $form_score = isset($form_analysis['score']) && is_numeric($form_analysis['score']) ? $form_analysis['score'] : 0;
+            $diagnostic_results['categories']['form_integration'] = [
+                'title' => 'Form Integration',
+                'description' => 'Analysis of Contact Form 7 and Gravity Forms integration status',
+                'status' => $form_analysis['status'],
+                'score' => $form_score,
+                'issues' => $form_analysis['issues'] ?? [],
+                'recommendations' => $form_analysis['recommendations'] ?? []
+            ];
+            
+            // Update counters based on form analysis
+            if ($form_analysis['status'] === 'healthy') {
+                $diagnostic_results['passed_checks']++;
+            } elseif ($form_analysis['status'] === 'warning') {
+                $diagnostic_results['warning_checks']++;
+            } else {
+                $diagnostic_results['failed_checks']++;
+            }
+            
+            // Run Network Connectivity Analysis
+            $network_analysis = $this->analyzeNetworkConnectivity();
+            $network_score = isset($network_analysis['score']) && is_numeric($network_analysis['score']) ? $network_analysis['score'] : 0;
+            $diagnostic_results['categories']['network_connectivity'] = [
+                'title' => 'Network Connectivity',
+                'description' => 'Testing network connectivity and DNS resolution for CTM services',
+                'status' => $network_analysis['status'],
+                'score' => $network_score,
+                'issues' => $network_analysis['issues'] ?? [],
+                'recommendations' => $network_analysis['recommendations'] ?? []
+            ];
+            
+            // Update counters based on network analysis
+            if ($network_analysis['status'] === 'healthy') {
+                $diagnostic_results['passed_checks']++;
+            } elseif ($network_analysis['status'] === 'warning') {
+                $diagnostic_results['warning_checks']++;
+            } else {
+                $diagnostic_results['failed_checks']++;
+                if ($network_score < 40) {
+                    $diagnostic_results['critical_issues'][] = [
+                        'title' => 'Network Connectivity Issues',
+                        'description' => 'Cannot reach CallTrackingMetrics servers. Check firewall and DNS settings.',
+                        'auto_fix_available' => false,
+                        'fix_id' => 'network_connectivity'
+                    ];
+                }
+            }
+            
+            // Run Plugin Conflicts Analysis
+            $conflicts_analysis = $this->analyzePluginConflicts();
+            $conflicts_score = isset($conflicts_analysis['score']) && is_numeric($conflicts_analysis['score']) ? $conflicts_analysis['score'] : 0;
+            $diagnostic_results['categories']['plugin_conflicts'] = [
+                'title' => 'Plugin Conflicts',
+                'description' => 'Scanning for potential conflicts with other WordPress plugins',
+                'status' => $conflicts_analysis['status'],
+                'score' => $conflicts_score,
+                'issues' => $conflicts_analysis['issues'] ?? [],
+                'recommendations' => $conflicts_analysis['recommendations'] ?? []
+            ];
+            
+            // Update counters based on conflicts analysis
+            if ($conflicts_analysis['status'] === 'healthy') {
+                $diagnostic_results['passed_checks']++;
+            } elseif ($conflicts_analysis['status'] === 'warning') {
+                $diagnostic_results['warning_checks']++;
+            } else {
+                $diagnostic_results['failed_checks']++;
+            }
+            
+            // Additional System Health Checks
+            $system_health = $this->runSystemHealthChecks();
+            $system_score = isset($system_health['score']) && is_numeric($system_health['score']) ? $system_health['score'] : 0;
+            $diagnostic_results['categories']['system_health'] = [
+                'title' => 'System Health',
+                'description' => 'WordPress environment and server configuration analysis',
+                'status' => $system_health['status'],
+                'score' => $system_score,
+                'issues' => $system_health['issues'] ?? [],
+                'recommendations' => $system_health['recommendations'] ?? []
+            ];
+            
+            // Update counters based on system health
+            if ($system_health['status'] === 'healthy') {
+                $diagnostic_results['passed_checks']++;
+            } elseif ($system_health['status'] === 'warning') {
+                $diagnostic_results['warning_checks']++;
+            } else {
+                $diagnostic_results['failed_checks']++;
+                if ($system_score < 50) {
+                    $diagnostic_results['critical_issues'][] = [
+                        'title' => 'System Health Issues',
+                        'description' => 'WordPress environment has configuration issues that may affect plugin performance.',
+                        'auto_fix_available' => true,
+                        'fix_id' => 'system_health'
+                    ];
+                }
+            }
+            
+            wp_send_json_success($diagnostic_results);
+            
+        } catch (\Exception $e) {
+            wp_send_json_error([
+                'message' => 'Full diagnostic encountered an error: ' . $e->getMessage(),
+                'error_details' => [
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => $e->getTraceAsString()
+                ]
+            ]);
+        }
+    }
+
+    /**
+     * Run system health checks
+     */
+    private function runSystemHealthChecks(): array
+    {
+        $issues = [];
+        $recommendations = [];
+        $score = 100;
+        
+        // Check PHP version
+        $php_version = PHP_VERSION;
+        if (version_compare($php_version, '7.4', '<')) {
+            $issues[] = 'PHP version is outdated (' . $php_version . '). Recommend PHP 7.4+';
+            $score -= 20;
+        } elseif (version_compare($php_version, '8.0', '<')) {
+            $recommendations[] = 'Consider upgrading to PHP 8.0+ for better performance';
+            $score -= 5;
+        }
+        
+        // Check WordPress version
+        $wp_version = get_bloginfo('version');
+        if (version_compare($wp_version, '5.8', '<')) {
+            $issues[] = 'WordPress version is outdated (' . $wp_version . '). Recommend WordPress 5.8+';
+            $score -= 15;
+        }
+        
+        // Check memory limit
+        $memory_limit = wp_convert_hr_to_bytes(ini_get('memory_limit'));
+        $recommended_memory = 256 * 1024 * 1024; // 256MB
+        if ($memory_limit < $recommended_memory) {
+            $issues[] = 'Memory limit is low (' . size_format($memory_limit) . '). Recommend 256MB+';
+            $score -= 15;
+        }
+        
+        // Check max execution time
+        $max_execution_time = ini_get('max_execution_time');
+        if ($max_execution_time > 0 && $max_execution_time < 30) {
+            $issues[] = 'Max execution time is low (' . $max_execution_time . 's). Recommend 30s+';
+            $score -= 10;
+        }
+        
+        // Check SSL/HTTPS
+        if (!is_ssl()) {
+            $issues[] = 'Site is not using HTTPS. SSL is required for secure API communication';
+            $score -= 25;
+        }
+        
+        // Check file permissions
+        $upload_dir = wp_upload_dir();
+        if (!is_writable($upload_dir['basedir'])) {
+            $issues[] = 'Upload directory is not writable. May affect log file storage';
+            $score -= 20;
+        }
+        
+        // Check required extensions
+        $required_extensions = ['curl', 'json', 'mbstring'];
+        foreach ($required_extensions as $ext) {
+            if (!extension_loaded($ext)) {
+                $issues[] = "Required PHP extension '{$ext}' is not loaded";
+                $score -= 15;
+            }
+        }
+        
+        // Check debug mode
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            $recommendations[] = 'WP_DEBUG is enabled. Consider disabling in production';
+            $score -= 5;
+        }
+        
+        // Determine status
+        $status = 'healthy';
+        if ($score < 70) {
+            $status = 'critical';
+        } elseif ($score < 85) {
+            $status = 'warning';
+        }
+        
+        return [
+            'status' => $status,
+            'score' => max(0, $score),
+            'issues' => $issues,
+            'recommendations' => $recommendations
+        ];
     }
 
     /**
@@ -2100,5 +2366,126 @@ class AjaxHandlers
         }
         
         return 'No cache miss tracking';
+    }
+
+    /**
+     * AJAX: Security Vulnerability Scan
+     */
+    public function ajaxSecurityScan(): void
+    {
+        check_ajax_referer('ctm_security_scan', 'nonce');
+        $score = 100;
+        $vulnerabilities = [];
+        $recommendations = [];
+        $details = [];
+
+        // 1. Security Headers
+        $headers = [
+            'Strict-Transport-Security',
+            'X-Frame-Options',
+            'X-Content-Type-Options',
+            'Referrer-Policy',
+            'Content-Security-Policy',
+            'Permissions-Policy',
+        ];
+        $missing_headers = [];
+        foreach ($headers as $header) {
+            if (!array_key_exists($header, headers_list())) {
+                $missing_headers[] = $header;
+            }
+        }
+        if (!empty($missing_headers)) {
+            $score -= 10;
+            $vulnerabilities[] = [
+                'title' => 'Missing security headers',
+                'description' => implode(', ', $missing_headers),
+                'severity' => 'high'
+            ];
+            $recommendations[] = 'Add recommended security headers to your web server configuration.';
+            $details['missing_headers'] = $missing_headers;
+        }
+
+        // 2. File Permissions (wp-config.php, .htaccess, uploads)
+        $wp_config = ABSPATH . 'wp-config.php';
+        $htaccess = ABSPATH . '.htaccess';
+        $uploads = wp_get_upload_dir()['basedir'];
+        if (file_exists($wp_config) && substr(sprintf('%o', fileperms($wp_config)), -3) > 644) {
+            $score -= 10;
+            $vulnerabilities[] = [
+                'title' => 'wp-config.php permissions are too loose',
+                'description' => 'wp-config.php permissions should be 640 or 600.',
+                'severity' => 'medium'
+            ];
+            $recommendations[] = 'Set wp-config.php permissions to 640 or 600.';
+        }
+        if (file_exists($htaccess) && substr(sprintf('%o', fileperms($htaccess)), -3) > 644) {
+            $score -= 5;
+            $vulnerabilities[] = [
+                'title' => '.htaccess permissions are too loose',
+                'description' => '.htaccess permissions should be 644.',
+                'severity' => 'medium'
+            ];
+            $recommendations[] = 'Set .htaccess permissions to 644.';
+        }
+        if (is_dir($uploads) && substr(sprintf('%o', fileperms($uploads)), -3) > 755) {
+            $score -= 5;
+            $vulnerabilities[] = [
+                'title' => 'Uploads directory permissions are too loose',
+                'description' => 'Uploads directory permissions should be 755.',
+                'severity' => 'medium'
+            ];
+            $recommendations[] = 'Set uploads directory permissions to 755.';
+        }
+
+        // 3. wp-config.php Security
+        $wp_config_content = file_exists($wp_config) ? file_get_contents($wp_config) : '';
+        if ($wp_config_content && strpos($wp_config_content, 'DISALLOW_FILE_EDIT') === false) {
+            $score -= 5;
+            $vulnerabilities[] = [
+                'title' => 'DISALLOW_FILE_EDIT is not set',
+                'description' => 'Add define(\'DISALLOW_FILE_EDIT\', true); to wp-config.php.',
+                'severity' => 'medium'
+            ];
+            $recommendations[] = 'Add define(\'DISALLOW_FILE_EDIT\', true); to wp-config.php.';
+        }
+        if ($wp_config_content && strpos($wp_config_content, 'FORCE_SSL_ADMIN') === false) {
+            $score -= 5;
+            $vulnerabilities[] = [
+                'title' => 'FORCE_SSL_ADMIN is not set',
+                'description' => 'Add define(\'FORCE_SSL_ADMIN\', true); to wp-config.php.',
+                'severity' => 'medium'
+            ];
+            $recommendations[] = 'Add define(\'FORCE_SSL_ADMIN\', true); to wp-config.php.';
+        }
+
+        // 4. Plugin Vulnerability Check (WordPress.org API, basic)
+        $plugins = get_plugins();
+        foreach ($plugins as $plugin_file => $plugin_data) {
+            // Check for known vulnerable plugins (example: hardcoded, real implementation would use an API)
+            $vuln_plugins = [
+                'hello.php' => 'Hello Dolly (example)',
+            ];
+            if (isset($vuln_plugins[$plugin_file])) {
+                $score -= 20;
+                $vulnerabilities[] = [
+                    'title' => 'Vulnerable plugin detected',
+                    'description' => $vuln_plugins[$plugin_file],
+                    'severity' => 'high'
+                ];
+                $recommendations[] = 'Deactivate or remove vulnerable plugins.';
+            }
+        }
+
+        // Clamp score
+        $score = max(0, min(100, $score));
+
+        wp_send_json_success([
+            'results' => [
+                'security_score' => $score,
+                'vulnerabilities' => $vulnerabilities,
+                'recommendations' => $recommendations,
+                'details' => $details
+            ]
+        ]);
     }
 } 
