@@ -34,6 +34,13 @@ namespace CTM\Admin;
  */
 class SettingsRenderer
 {
+    private $apiService;
+    private $loggingSystem;
+    public function __construct($apiService = null, $loggingSystem = null)
+    {
+        $this->apiService = $apiService ?: (class_exists('CTM\\Service\\ApiService') ? new \CTM\Service\ApiService('https://api.calltrackingmetrics.com') : null);
+        $this->loggingSystem = $loggingSystem ?: (class_exists('CTM\\Admin\\LoggingSystem') ? new \CTM\Admin\LoggingSystem() : null);
+    }
     /**
      * Render a view file with variables
      * 
@@ -89,10 +96,9 @@ class SettingsRenderer
 
         // --- FIX: Determine API connection status for the general tab ---
         $apiStatus = 'not_tested';
-        if ($apiKey && $apiSecret) {
+        if ($apiKey && $apiSecret && $this->apiService) {
             try {
-                $apiService = new \CTM\Service\ApiService('https://api.calltrackingmetrics.com');
-                $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
+                $accountInfo = $this->apiService->getAccountInfo($apiKey, $apiSecret);
                 $apiStatus = ($accountInfo && isset($accountInfo['account'])) ? 'connected' : 'not_connected';
             } catch (\Exception $e) {
                 $apiStatus = 'not_connected';
@@ -103,7 +109,7 @@ class SettingsRenderer
         // --- END FIX ---
         
         // Get debug mode status for the general tab
-        $debugEnabled = \CTM\Admin\LoggingSystem::isDebugEnabled();
+        $debugEnabled = $this->loggingSystem && method_exists($this->loggingSystem, 'isDebugEnabled') ? $this->loggingSystem::isDebugEnabled() : false;
         
         // Start output buffering
         ob_start();
@@ -206,11 +212,8 @@ class SettingsRenderer
         $apiSecret = get_option('ctm_api_secret');
         $accountInfo = null;
         $apiStatus = 'not_tested';
-        
-        // Test API connection if credentials are available
-        if ($apiKey && $apiSecret) {
-            $apiService = new \CTM\Service\ApiService('https://api.calltrackingmetrics.com');
-            $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
+        if ($apiKey && $apiSecret && $this->apiService) {
+            $accountInfo = $this->apiService->getAccountInfo($apiKey, $apiSecret);
             $apiStatus = ($accountInfo && isset($accountInfo['account'])) ? 'connected' : 'not_connected';
         }
         
@@ -253,7 +256,7 @@ class SettingsRenderer
     public function getDebugTabContent(): string
     {
         // Get debug settings
-        $debugEnabled = LoggingSystem::isDebugEnabled();
+        $debugEnabled = $this->loggingSystem && method_exists($this->loggingSystem, 'isDebugEnabled') ? $this->loggingSystem::isDebugEnabled() : false;
         $retentionDays = get_option('ctm_log_retention_days', 7);
         $autoCleanup = get_option('ctm_log_auto_cleanup', false);
         $emailNotifications = get_option('ctm_log_email_notifications', false);

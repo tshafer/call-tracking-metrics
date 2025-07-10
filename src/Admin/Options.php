@@ -82,12 +82,12 @@ class Options
      * 
      * @since 2.0.0
      */
-    public function __construct()
+    public function __construct($renderer = null, $ajaxHandlers = null, $fieldMapping = null, $loggingSystem = null)
     {
-        $this->renderer = new SettingsRenderer();
-        $this->ajaxHandlers = new AjaxHandlers();
-        $this->fieldMapping = new FieldMapping();
-        $this->loggingSystem = new LoggingSystem();
+        $this->renderer = $renderer ?: new SettingsRenderer();
+        $this->ajaxHandlers = $ajaxHandlers ?: new AjaxHandlers();
+        $this->fieldMapping = $fieldMapping ?: new FieldMapping();
+        $this->loggingSystem = $loggingSystem ?: new LoggingSystem();
     }
 
     /**

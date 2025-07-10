@@ -4,7 +4,6 @@ use CTM\Admin\Ajax\LogAjax;
 use Brain\Monkey;
 
 class LogAjaxTestLoggingSystemStub extends \CTM\Admin\LoggingSystem {}
-class LogAjaxTestSettingsRendererStub extends \CTM\Admin\SettingsRenderer {}
 
 class AdminAjaxLogAjaxTest extends TestCase
 {
@@ -39,7 +38,7 @@ class AdminAjaxLogAjaxTest extends TestCase
     public function testCanBeConstructed()
     {
         $loggingSystem = new LogAjaxTestLoggingSystemStub();
-        $renderer = new LogAjaxTestSettingsRendererStub();
+        $renderer = new \CTM\Admin\SettingsRenderer();
         $logAjax = new LogAjax($loggingSystem, $renderer);
         $this->assertInstanceOf(LogAjax::class, $logAjax);
     }

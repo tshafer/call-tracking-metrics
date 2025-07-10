@@ -1,0 +1,243 @@
+PHPUnit 10.5.46 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.3.17
+Configuration: /Users/tomshafer/Sites/wordpress/wp-content/plugins/call-tracking-metrics/phpunit.xml.dist
+
+.............................RRRRRRRRRRRRRRRRRSSSS.........add_options_page called with: ["CallTrackingMetrics","CallTrackingMetrics","manage_options","call-tracking-metrics",[{},"renderSettingsPage"]]
+....  63 / 119 ( 52%)
+.......................................................W        119 / 119 (100%)
+
+Time: 00:00.320, Memory: 22.00 MB
+
+Admin Ajax Api Ajax
+ ✔ Can be constructed
+ ✔ Assess connection quality returns array
+ ✔ Ajax test api connection missing credentials
+ ✔ Ajax test api connection short credentials
+ ✔ Ajax test api connection handles exception
+ ✔ Ajax simulate api request no credentials
+ ✔ Ajax simulate api request unsupported endpoint
+ ✔ Ajax simulate api request success
+ ✔ Ajax test api connection invalid nonce
+ ✔ Ajax test api connection empty api key
+ ✔ Ajax test api connection empty api secret
+ ✔ Ajax test api connection api service returns null
+ ✔ Ajax test api connection api service returns no account
+ ✔ Ajax test api connection api service returns account no id
+ ✔ Ajax test api connection api service throws ssl exception
+ ✔ Ajax test api connection api service throws dns exception
+ ✔ Ajax test api connection api service throws generic exception
+ ✔ Ajax test api connection updates options
+ ✔ Ajax test api connection returns correct metadata
+ ✔ Ajax simulate api request post method
+ ✔ Ajax simulate api request put method
+ ✔ Ajax simulate api request delete method
+ ✔ Ajax simulate api request throws exception
+ ✔ Ajax simulate api request returns timestamp
+ ✔ Assess connection quality returns expected color
+ ✔ Assess connection quality handles null details time
+ ✔ Assess connection quality handles zero times
+ ✔ Assess connection quality handles large times
+
+Admin Ajax Form Ajax
+ ✔ Can be constructed
+ ⚠ Register handlers adds actions
+ ⚠ Ajax get forms returns empty for unknown type
+ ⚠ Ajax get forms returns g f forms
+ ⚠ Ajax get forms returns c f 7 forms
+ ⚠ Ajax get fields returns empty for unknown type
+ ⚠ Ajax get fields returns g f fields
+ ⚠ Ajax get fields returns c f 7 fields
+ ⚠ Ajax save mapping success
+ ⚠ Ajax save mapping error on invalid data
+ ⚠ Ajax dismiss notice c f 7
+ ⚠ Ajax dismiss notice g f
+ ⚠ Ajax dismiss notice error on invalid type
+ ⚠ Ajax get forms no post type
+ ⚠ Ajax get fields no form id
+ ⚠ Ajax save mapping missing mapping
+ ⚠ Ajax save mapping mapping not array
+ ⚠ Ajax dismiss notice no type
+ ↩ Ajax get fields g f form no fields
+ ↩ Ajax get fields c f 7 form no tags
+ ↩ Ajax get fields g f form null
+ ↩ Ajax get fields c f 7 form null
+
+Admin Ajax Handlers
+ ✔ Can be constructed
+ ✔ Register handlers does not throw
+
+Admin Ajax Log Ajax
+ ✔ Can be constructed
+
+Admin Ajax System Ajax
+ ✔ Run system health checks returns array
+
+Admin Field Mapping
+ ✔ Save and get field mapping
+
+Admin Logging System
+ ✔ Can be constructed
+ ✔ Is debug enabled returns bool
+
+Admin Options
+ ✔ Can be constructed
+ ✔ Register settings does not throw
+ ✔ Register settings page adds options page
+ ✔ Initialize registers handlers and assets
+ ✔ Generate notices returns cf 7 notice
+ ✔ Generate notices returns gf notice
+ ✔ Get tab content routes to general
+ ✔ Get tab content routes to logs
+ ✔ Get tab content routes to mapping
+ ✔ Get tab content routes to api
+ ✔ Get tab content routes to documentation
+ ✔ Get tab content routes to debug
+ ✔ Add dashboard widget adds widget
+ ✔ Render dashboard widget outputs html
+ ✔ Get field mapping returns null if not set
+ ✔ Save field mapping and get field mapping
+ ✔ Log debug writes to error log
+ ✔ Is debug enabled returns bool
+
+Admin Settings Renderer
+ ✔ Get general tab content returns string
+ ✔ Render view outputs error if view missing
+ ✔ Render view includes view file
+ ✔ Get general tab content returns string with api status connected
+ ✔ Get general tab content returns string with api status not connected
+ ✔ Get logs tab content returns string with no logs
+ ✔ Get logs tab content returns string with logs
+ ✔ Get mapping tab content returns string no plugins
+ ✔ Get mapping tab content returns string with c f 7
+ ✔ Get mapping tab content returns string with g f
+ ✔ Get api tab content returns string connected
+ ✔ Get api tab content returns string not connected
+ ✔ Get documentation tab content returns string
+ ✔ Get debug tab content returns string debug enabled
+ ✔ Get debug tab content returns string debug disabled
+
+Api Service (CTM\Tests\ApiService)
+ ✔ Get account info returns null on failure
+ ✔ Submit form reactor returns null on failure
+ ✔ Get account info returns account on success
+ ✔ Get account info returns null on invalid json
+ ✔ Get account info throws exception
+ ✔ Get account by id returns details on success
+ ✔ Get account by id returns null on 404
+ ✔ Get account by id returns null on exception
+ ✔ Submit form reactor returns response on success
+ ✔ Submit form reactor returns null on 400
+ ✔ Submit form reactor returns null on exception
+ ✔ Get forms returns forms on success
+ ✔ Get forms returns null on error
+ ✔ Get tracking numbers returns numbers on success
+ ✔ Get tracking numbers returns null on error
+ ✔ Get calls returns calls on success
+ ✔ Get calls returns null on error
+ ✔ Validate credentials returns true for valid
+ ✔ Validate credentials returns false on exception
+ ✔ Check api health returns true if api up
+ ✔ Check api health returns false if api down
+ ✔ Set timeout sets timeout correctly
+ ✔ Set timeout minimum one second
+ ✔ Get base url returns correct url
+ ✔ Get timeout returns correct timeout
+
+CF7Service (CTM\Tests\CF7Service)
+ ✔ Process submission returns null if no c f 7
+ ✔ Process submission handles valid form
+
+GFService (CTM\Tests\GFService)
+ ✔ Process submission returns null if no g f a p i
+ ⚠ Process submission handles valid entry
+
+There were 17 risky tests:
+
+1) AdminAjaxFormAjaxTest::testRegisterHandlersAddsActions
+This test did not perform any assertions
+
+/Users/tomshafer/Sites/wordpress/wp-content/plugins/call-tracking-metrics/tests/AdminAjaxFormAjaxTest.php:43
+
+2) AdminAjaxFormAjaxTest::testAjaxGetFormsReturnsEmptyForUnknownType
+This test did not perform any assertions
+
+/Users/tomshafer/Sites/wordpress/wp-content/plugins/call-tracking-metrics/tests/AdminAjaxFormAjaxTest.php:50
+
+3) AdminAjaxFormAjaxTest::testAjaxGetFormsReturnsGFForms
+This test did not perform any assertions
+
+/Users/tomshafer/Sites/wordpress/wp-content/plugins/call-tracking-metrics/tests/AdminAjaxFormAjaxTest.php:58
+
+4) AdminAjaxFormAjaxTest::testAjaxGetFormsReturnsCF7Forms
+This test did not perform any assertions
+
+/Users/tomshafer/Sites/wordpress/wp-content/plugins/call-tracking-metrics/tests/AdminAjaxFormAjaxTest.php:71
+
+5) AdminAjaxFormAjaxTest::testAjaxGetFieldsReturnsEmptyForUnknownType
+This test did not perform any assertions
+
+/Users/tomshafer/Sites/wordpress/wp-content/plugins/call-tracking-metrics/tests/AdminAjaxFormAjaxTest.php:84
+
+6) AdminAjaxFormAjaxTest::testAjaxGetFieldsReturnsGFFields
+This test did not perform any assertions
+
+/Users/tomshafer/Sites/wordpress/wp-content/plugins/call-tracking-metrics/tests/AdminAjaxFormAjaxTest.php:92
+
+7) AdminAjaxFormAjaxTest::testAjaxGetFieldsReturnsCF7Fields
+This test did not perform any assertions
+
+/Users/tomshafer/Sites/wordpress/wp-content/plugins/call-tracking-metrics/tests/AdminAjaxFormAjaxTest.php:105
+
+8) AdminAjaxFormAjaxTest::testAjaxSaveMappingSuccess
+This test did not perform any assertions
+
+/Users/tomshafer/Sites/wordpress/wp-content/plugins/call-tracking-metrics/tests/AdminAjaxFormAjaxTest.php:118
+
+9) AdminAjaxFormAjaxTest::testAjaxSaveMappingErrorOnInvalidData
+This test did not perform any assertions
+
+/Users/tomshafer/Sites/wordpress/wp-content/plugins/call-tracking-metrics/tests/AdminAjaxFormAjaxTest.php:131
+
+10) AdminAjaxFormAjaxTest::testAjaxDismissNoticeCF7
+This test did not perform any assertions
+
+/Users/tomshafer/Sites/wordpress/wp-content/plugins/call-tracking-metrics/tests/AdminAjaxFormAjaxTest.php:139
+
+11) AdminAjaxFormAjaxTest::testAjaxDismissNoticeGF
+This test did not perform any assertions
+
+/Users/tomshafer/Sites/wordpress/wp-content/plugins/call-tracking-metrics/tests/AdminAjaxFormAjaxTest.php:149
+
+12) AdminAjaxFormAjaxTest::testAjaxDismissNoticeErrorOnInvalidType
+This test did not perform any assertions
+
+/Users/tomshafer/Sites/wordpress/wp-content/plugins/call-tracking-metrics/tests/AdminAjaxFormAjaxTest.php:159
+
+13) AdminAjaxFormAjaxTest::testAjaxGetFormsNoPostType
+This test did not perform any assertions
+
+/Users/tomshafer/Sites/wordpress/wp-content/plugins/call-tracking-metrics/tests/AdminAjaxFormAjaxTest.php:168
+
+14) AdminAjaxFormAjaxTest::testAjaxGetFieldsNoFormId
+This test did not perform any assertions
+
+/Users/tomshafer/Sites/wordpress/wp-content/plugins/call-tracking-metrics/tests/AdminAjaxFormAjaxTest.php:176
+
+15) AdminAjaxFormAjaxTest::testAjaxSaveMappingMissingMapping
+This test did not perform any assertions
+
+/Users/tomshafer/Sites/wordpress/wp-content/plugins/call-tracking-metrics/tests/AdminAjaxFormAjaxTest.php:184
+
+16) AdminAjaxFormAjaxTest::testAjaxSaveMappingMappingNotArray
+This test did not perform any assertions
+
+/Users/tomshafer/Sites/wordpress/wp-content/plugins/call-tracking-metrics/tests/AdminAjaxFormAjaxTest.php:194
+
+17) AdminAjaxFormAjaxTest::testAjaxDismissNoticeNoType
+This test did not perform any assertions
+
+/Users/tomshafer/Sites/wordpress/wp-content/plugins/call-tracking-metrics/tests/AdminAjaxFormAjaxTest.php:202
+
+OK, but there were issues!
+Tests: 119, Assertions: 167, Warnings: 2, PHPUnit Deprecations: 1, Skipped: 4, Risky: 17.

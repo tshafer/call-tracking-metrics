@@ -88,9 +88,7 @@ class CF7Service
             return $payload;
             
         } catch (\Exception $e) {
-            // Log error but don't break the form submission
-            error_log('CTM CF7 Processing Error: ' . $e->getMessage());
-            return null;
+            throw $e;
         }
     }
 

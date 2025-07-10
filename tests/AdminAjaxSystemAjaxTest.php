@@ -4,7 +4,6 @@ use CTM\Admin\Ajax\SystemAjax;
 use Brain\Monkey;
 
 class SystemAjaxTestLoggingSystemStub extends \CTM\Admin\LoggingSystem {}
-class SystemAjaxTestSettingsRendererStub extends \CTM\Admin\SettingsRenderer {}
 
 class AdminAjaxSystemAjaxTest extends TestCase
 {
@@ -58,7 +57,7 @@ class AdminAjaxSystemAjaxTest extends TestCase
     public function testRunSystemHealthChecksReturnsArray()
     {
         $loggingSystem = new SystemAjaxTestLoggingSystemStub();
-        $renderer = new SystemAjaxTestSettingsRendererStub();
+        $renderer = new \CTM\Admin\SettingsRenderer();
         $systemAjax = new SystemAjax();
         $method = (new \ReflectionClass($systemAjax))->getMethod('runSystemHealthChecks');
         $method->setAccessible(true);

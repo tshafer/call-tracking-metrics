@@ -11,7 +11,18 @@ class GFServiceTest extends TestCase
 
     protected function setUp(): void
     {
+        \Brain\Monkey\setUp();
+        \Brain\Monkey\Functions\when('get_option')->justReturn([]);
+        \Brain\Monkey\Functions\when('current_time')->justReturn('2024-01-01 00:00:00');
+        \Brain\Monkey\Functions\when('sanitize_text_field')->alias(function($v){return $v;});
         $this->gfService = new GFService();
+        if (!class_exists('GFAPI')) {
+            eval('class GFAPI { public static function get_form($id) { return ["id"=>$id, "title"=>"Test Form", "fields"=>[["id"=>1, "label"=>"Field 1", "type"=>"text"]]]; } }');
+        }
+    }
+    protected function tearDown(): void
+    {
+        \Brain\Monkey\tearDown();
     }
 
     public function testProcessSubmissionReturnsNullIfNoGFAPI()

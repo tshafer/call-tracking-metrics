@@ -7,32 +7,61 @@ use CTM\Service\CF7Service;
 
 class CF7ServiceTest extends TestCase
 {
-    protected CF7Service $cf7Service;
-
     protected function setUp(): void
     {
-        $this->cf7Service = new CF7Service();
+        \Brain\Monkey\setUp();
+        \Brain\Monkey\Functions\when('get_option')->justReturn([]);
+        \Brain\Monkey\Functions\when('current_time')->justReturn('2024-01-01 00:00:00');
+        \Brain\Monkey\Functions\when('sanitize_text_field')->alias(function($v){return $v;});
+    }
+    protected function tearDown(): void
+    {
+        \Brain\Monkey\tearDown();
     }
 
     public function testProcessSubmissionReturnsNullIfNoCF7()
     {
         // Simulate missing CF7 or invalid form
-        $result = $this->cf7Service->processSubmission(null, []);
+        $cf7Service = new \CTM\Service\CF7Service();
+        $result = $cf7Service->processSubmission(null, []);
         $this->assertNull($result, 'Should return null if CF7 is missing or form is invalid');
     }
 
     public function testProcessSubmissionHandlesValidForm()
     {
         if (!class_exists('WPCF7_ContactForm')) {
-            $this->markTestSkipped('WPCF7_ContactForm not available in test environment');
+            eval('class WPCF7_ContactForm {
+                public function id() { return 1; }
+                public function title() { return "Test Form"; }
+                public function prop($key) { if ($key === "form") return "[text* your-name]"; return null; }
+            }');
         }
-        // Provide a minimal valid form and data (mocked)
-        $form = $this->createMock('WPCF7_ContactForm');
-        $form->method('id')->willReturn(1);
-        $form->method('title')->willReturn('Test Form');
-        $data = ['field1' => 'value1'];
-        $result = $this->cf7Service->processSubmission($form, $data);
+        // Use a real instance of the minimal class
+        $form = new \WPCF7_ContactForm();
+        // Debug: check class and instanceof
+        $this->assertEquals('WPCF7_ContactForm', get_class($form));
+        $this->assertTrue($form instanceof \WPCF7_ContactForm);
+        // Mock environment
+        $_SERVER['HTTP_USER_AGENT'] = 'UnitTestAgent';
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['HTTP_REFERER'] = 'http://localhost';
+        $_SERVER['REQUEST_URI'] = '/test-form';
+        $_SERVER['HTTPS'] = 'off';
+        $_SERVER['HTTP_HOST'] = 'localhost';
+        $_GET = [];
+        $data = ['your-name' => 'Tom'];
+        $cf7Service = new \CTM\Service\CF7Service();
+        try {
+            $result = $cf7Service->processSubmission($form, $data);
+        } catch (\Throwable $e) {
+            $this->fail('Exception thrown: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+        }
         $this->assertIsArray($result, 'Should return an array for valid form and data');
+        $this->assertEquals('contact_form_7', $result['form_type']);
+        $this->assertEquals(2, $result['form_id']);
+        $this->assertEquals('CF7 Form', $result['form_title']);
+        $this->assertArrayHasKey('fields', $result);
+        $this->assertArrayHasKey('raw_data', $result);
     }
 
     // Add more tests for field mapping, error handling, and edge cases

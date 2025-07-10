@@ -55,12 +55,6 @@ class ApiServiceTest extends TestCase
         $this->assertNull($result, 'Should return null for failed submission');
     }
 
-    public function testValidateCredentialsReturnsFalseForInvalid()
-    {
-        $result = $this->apiService->validateCredentials('invalid', 'invalid');
-        $this->assertFalse($result, 'Should return false for invalid credentials');
-    }
-
     // Example: test a successful API response
     public function testGetAccountInfoReturnsAccountOnSuccess()
     {
@@ -79,5 +73,232 @@ class ApiServiceTest extends TestCase
         $this->assertIsArray($result);
         $this->assertArrayHasKey('account', $result);
         $this->assertEquals('123', $result['account']['id']);
+    }
+
+    public function testGetAccountInfoReturnsNullOnInvalidJson()
+    {
+        \Brain\Monkey\Functions\when('wp_remote_request')->justReturn([
+            'response' => ['code' => 200],
+            'body' => '{invalid json}'
+        ]);
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_body')->justReturn('{invalid json}');
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_response_code')->justReturn(200);
+        $result = $this->apiService->getAccountInfo('valid', 'valid');
+        $this->assertNull($result, 'Should return null for invalid JSON');
+    }
+
+    public function testGetAccountInfoThrowsException()
+    {
+        \Brain\Monkey\Functions\when('wp_remote_request')->alias(function() {
+            throw new \Exception('Simulated exception');
+        });
+        $result = $this->apiService->getAccountInfo('valid', 'valid');
+        $this->assertNull($result, 'Should return null on exception');
+    }
+
+    public function testGetAccountByIdReturnsDetailsOnSuccess()
+    {
+        \Brain\Monkey\Functions\when('wp_remote_request')->justReturn([
+            'response' => ['code' => 200],
+            'body' => json_encode(['id' => '123', 'name' => 'Test Account'])
+        ]);
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_body')->justReturn(json_encode(['id' => '123', 'name' => 'Test Account']));
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_response_code')->justReturn(200);
+        $result = $this->apiService->getAccountById('123', 'valid', 'valid');
+        $this->assertIsArray($result);
+        $this->assertEquals('123', $result['id']);
+    }
+
+    public function testGetAccountByIdReturnsNullOn404()
+    {
+        \Brain\Monkey\Functions\when('wp_remote_request')->justReturn([
+            'response' => ['code' => 404],
+            'body' => json_encode(['error' => 'Not found'])
+        ]);
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_body')->justReturn(json_encode(['error' => 'Not found']));
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_response_code')->justReturn(404);
+        $result = $this->apiService->getAccountById('404', 'valid', 'valid');
+        $this->assertNull($result, 'Should return null on 404');
+    }
+
+    public function testGetAccountByIdReturnsNullOnException()
+    {
+        \Brain\Monkey\Functions\when('wp_remote_request')->alias(function() {
+            throw new \Exception('Simulated exception');
+        });
+        $result = $this->apiService->getAccountById('123', 'valid', 'valid');
+        $this->assertNull($result, 'Should return null on exception');
+    }
+
+    public function testSubmitFormReactorReturnsResponseOnSuccess()
+    {
+        \Brain\Monkey\Functions\when('wp_remote_request')->justReturn([
+            'response' => ['code' => 200],
+            'body' => json_encode(['success' => true])
+        ]);
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_body')->justReturn(json_encode(['success' => true]));
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_response_code')->justReturn(200);
+        $result = $this->apiService->submitFormReactor(['foo' => 'bar'], 'valid', 'valid');
+        $this->assertIsArray($result);
+        $this->assertTrue($result['success']);
+    }
+
+    public function testSubmitFormReactorReturnsNullOn400()
+    {
+        \Brain\Monkey\Functions\when('wp_remote_request')->justReturn([
+            'response' => ['code' => 400],
+            'body' => json_encode(['error' => 'Bad request'])
+        ]);
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_body')->justReturn(json_encode(['error' => 'Bad request']));
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_response_code')->justReturn(400);
+        $result = $this->apiService->submitFormReactor(['foo' => 'bar'], 'valid', 'valid');
+        $this->assertNull($result, 'Should return null on 400');
+    }
+
+    public function testSubmitFormReactorReturnsNullOnException()
+    {
+        \Brain\Monkey\Functions\when('wp_remote_request')->alias(function() {
+            throw new \Exception('Simulated exception');
+        });
+        $result = $this->apiService->submitFormReactor(['foo' => 'bar'], 'valid', 'valid');
+        $this->assertNull($result, 'Should return null on exception');
+    }
+
+    public function testGetFormsReturnsFormsOnSuccess()
+    {
+        \Brain\Monkey\Functions\when('wp_remote_request')->justReturn([
+            'response' => ['code' => 200],
+            'body' => json_encode(['forms' => [['id' => 1, 'name' => 'Form 1']]])
+        ]);
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_body')->justReturn(json_encode(['forms' => [['id' => 1, 'name' => 'Form 1']]]));
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_response_code')->justReturn(200);
+        $result = $this->apiService->getForms('valid', 'valid');
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('forms', $result);
+    }
+
+    public function testGetFormsReturnsNullOnError()
+    {
+        \Brain\Monkey\Functions\when('wp_remote_request')->justReturn([
+            'response' => ['code' => 500],
+            'body' => json_encode(['error' => 'Server error'])
+        ]);
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_body')->justReturn(json_encode(['error' => 'Server error']));
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_response_code')->justReturn(500);
+        $result = $this->apiService->getForms('valid', 'valid');
+        $this->assertNull($result, 'Should return null on error');
+    }
+
+    public function testGetTrackingNumbersReturnsNumbersOnSuccess()
+    {
+        \Brain\Monkey\Functions\when('wp_remote_request')->justReturn([
+            'response' => ['code' => 200],
+            'body' => json_encode(['numbers' => [['id' => 1, 'number' => '1234567890']]])
+        ]);
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_body')->justReturn(json_encode(['numbers' => [['id' => 1, 'number' => '1234567890']]]));
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_response_code')->justReturn(200);
+        $result = $this->apiService->getTrackingNumbers('valid', 'valid');
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('numbers', $result);
+    }
+
+    public function testGetTrackingNumbersReturnsNullOnError()
+    {
+        \Brain\Monkey\Functions\when('wp_remote_request')->justReturn([
+            'response' => ['code' => 500],
+            'body' => json_encode(['error' => 'Server error'])
+        ]);
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_body')->justReturn(json_encode(['error' => 'Server error']));
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_response_code')->justReturn(500);
+        $result = $this->apiService->getTrackingNumbers('valid', 'valid');
+        $this->assertNull($result, 'Should return null on error');
+    }
+
+    public function testGetCallsReturnsCallsOnSuccess()
+    {
+        \Brain\Monkey\Functions\when('wp_remote_request')->justReturn([
+            'response' => ['code' => 200],
+            'body' => json_encode(['calls' => [['id' => 1, 'duration' => 60]]])
+        ]);
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_body')->justReturn(json_encode(['calls' => [['id' => 1, 'duration' => 60]]]));
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_response_code')->justReturn(200);
+        $result = $this->apiService->getCalls('valid', 'valid');
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('calls', $result);
+    }
+
+    public function testGetCallsReturnsNullOnError()
+    {
+        \Brain\Monkey\Functions\when('wp_remote_request')->justReturn([
+            'response' => ['code' => 500],
+            'body' => json_encode(['error' => 'Server error'])
+        ]);
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_body')->justReturn(json_encode(['error' => 'Server error']));
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_response_code')->justReturn(500);
+        $result = $this->apiService->getCalls('valid', 'valid');
+        $this->assertNull($result, 'Should return null on error');
+    }
+
+    public function testValidateCredentialsReturnsTrueForValid()
+    {
+        $mock = $this->getMockBuilder(ApiService::class)
+            ->setConstructorArgs(['https://dummy-ctm-api.test'])
+            ->onlyMethods(['getAccountInfo'])
+            ->getMock();
+        $mock->method('getAccountInfo')->willReturn(['account' => ['id' => 1]]);
+        $this->assertTrue($mock->validateCredentials('valid', 'valid'));
+    }
+
+    public function testValidateCredentialsReturnsFalseOnException()
+    {
+        $mock = $this->getMockBuilder(ApiService::class)
+            ->setConstructorArgs(['https://dummy-ctm-api.test'])
+            ->onlyMethods(['getAccountInfo'])
+            ->getMock();
+        $mock->method('getAccountInfo')->will($this->throwException(new \Exception('Simulated error')));
+        $this->assertFalse($mock->validateCredentials('invalid', 'invalid'));
+    }
+
+    public function testCheckApiHealthReturnsTrueIfApiUp()
+    {
+        \Brain\Monkey\Functions\when('wp_remote_get')->justReturn([
+            'response' => ['code' => 200],
+            'body' => 'pong'
+        ]);
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_response_code')->justReturn(200);
+        $this->assertTrue($this->apiService->checkApiHealth());
+    }
+
+    public function testCheckApiHealthReturnsFalseIfApiDown()
+    {
+        \Brain\Monkey\Functions\when('wp_remote_get')->justReturn([
+            'response' => ['code' => 500],
+            'body' => 'error'
+        ]);
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_response_code')->justReturn(500);
+        $this->assertFalse($this->apiService->checkApiHealth());
+    }
+
+    public function testSetTimeoutSetsTimeoutCorrectly()
+    {
+        $this->apiService->setTimeout(42);
+        $this->assertEquals(42, $this->apiService->getTimeout());
+    }
+
+    public function testSetTimeoutMinimumOneSecond()
+    {
+        $this->apiService->setTimeout(0);
+        $this->assertEquals(1, $this->apiService->getTimeout());
+    }
+
+    public function testGetBaseUrlReturnsCorrectUrl()
+    {
+        $this->assertEquals('https://dummy-ctm-api.test', $this->apiService->getBaseUrl());
+    }
+
+    public function testGetTimeoutReturnsCorrectTimeout()
+    {
+        $this->apiService->setTimeout(15);
+        $this->assertEquals(15, $this->apiService->getTimeout());
     }
 } 
