@@ -4,73 +4,111 @@
  * Displays comprehensive system information with copy functionality
  */
 
-// Generate system information for JavaScript
-$system_info_report = "=== SYSTEM INFORMATION REPORT ===\n";
-$system_info_report .= "Generated: " . current_time('Y-m-d H:i:s') . "\n";
-$system_info_report .= "Site: " . get_bloginfo('name') . "\n\n";
+// Helper function to get system info as an array
+function ctm_get_system_info_array() {
+    global $wpdb;
+    return [
+        'php_version' => PHP_VERSION,
+        'wp_version' => get_bloginfo('version'),
+        'memory_usage' => size_format(memory_get_usage(true)),
+        'db_queries' => get_num_queries(),
+        'wordpress_env' => [
+            'version' => get_bloginfo('version'),
+            'language' => get_locale(),
+            'debug_mode' => WP_DEBUG ? 'Enabled' : 'Disabled',
+            'memory_limit' => WP_MEMORY_LIMIT,
+            'multisite' => is_multisite() ? 'Yes' : 'No',
+            'timezone' => get_option('timezone_string') ?: 'UTC',
+        ],
+        'server_env' => [
+            'php_version' => PHP_VERSION,
+            'server_software' => $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown',
+            'os' => PHP_OS,
+            'memory_limit' => ini_get('memory_limit'),
+            'max_execution_time' => ini_get('max_execution_time') . 's',
+            'upload_max_size' => ini_get('upload_max_filesize'),
+        ],
+        'database_info' => [
+            'db_version' => $wpdb->db_version(),
+            'db_host' => DB_HOST,
+            'db_name' => DB_NAME,
+            'table_prefix' => $wpdb->prefix,
+            'db_charset' => DB_CHARSET,
+            'current_queries' => get_num_queries(),
+        ],
+    ];
+}
 
-$system_info_report .= "=== WORDPRESS ENVIRONMENT ===\n";
-$system_info_report .= "WordPress Version: " . get_bloginfo('version') . "\n";
-$system_info_report .= "Site URL: " . home_url() . "\n";
-$system_info_report .= "Admin URL: " . admin_url() . "\n";
-$system_info_report .= "WordPress Language: " . get_locale() . "\n";
-$system_info_report .= "WordPress Debug: " . (WP_DEBUG ? 'Enabled' : 'Disabled') . "\n";
-$system_info_report .= "WordPress Memory Limit: " . WP_MEMORY_LIMIT . "\n";
-$system_info_report .= "Multisite: " . (is_multisite() ? 'Yes' : 'No') . "\n\n";
+// Helper function to get system info as a report string
+function ctm_get_system_info_report() {
+    global $wpdb;
+    $report = "=== SYSTEM INFORMATION REPORT ===\n";
+    $report .= "Generated: " . current_time('Y-m-d H:i:s') . "\n";
+    $report .= "Site: " . get_bloginfo('name') . "\n\n";
+    $report .= "=== WORDPRESS ENVIRONMENT ===\n";
+    $report .= "WordPress Version: " . get_bloginfo('version') . "\n";
+    $report .= "Site URL: " . home_url() . "\n";
+    $report .= "Admin URL: " . admin_url() . "\n";
+    $report .= "WordPress Language: " . get_locale() . "\n";
+    $report .= "WordPress Debug: " . (WP_DEBUG ? 'Enabled' : 'Disabled') . "\n";
+    $report .= "WordPress Memory Limit: " . WP_MEMORY_LIMIT . "\n";
+    $report .= "Multisite: " . (is_multisite() ? 'Yes' : 'No') . "\n\n";
+    $report .= "=== SERVER ENVIRONMENT ===\n";
+    $report .= "PHP Version: " . PHP_VERSION . "\n";
+    $report .= "PHP SAPI: " . php_sapi_name() . "\n";
+    $report .= "Server Software: " . ($_SERVER['SERVER_SOFTWARE'] ?? 'Unknown') . "\n";
+    $report .= "Operating System: " . PHP_OS . "\n";
+    $report .= "Memory Limit: " . ini_get('memory_limit') . "\n";
+    $report .= "Max Execution Time: " . ini_get('max_execution_time') . "s\n";
+    $report .= "Max Input Vars: " . ini_get('max_input_vars') . "\n";
+    $report .= "Upload Max Size: " . ini_get('upload_max_filesize') . "\n";
+    $report .= "Post Max Size: " . ini_get('post_max_size') . "\n";
+    $report .= "Max File Uploads: " . ini_get('max_file_uploads') . "\n\n";
+    $report .= "=== DATABASE ===\n";
+    $report .= "Database Version: " . $wpdb->db_version() . "\n";
+    $report .= "Database Host: " . DB_HOST . "\n";
+    $report .= "Database Name: " . DB_NAME . "\n";
+    $report .= "Database Charset: " . DB_CHARSET . "\n";
+    $report .= "Table Prefix: " . $wpdb->prefix . "\n\n";
+    $report .= "=== PHP EXTENSIONS ===\n";
+    $report .= "cURL: " . (function_exists('curl_init') ? 'Available' : 'Missing') . "\n";
+    $report .= "OpenSSL: " . (extension_loaded('openssl') ? 'Available' : 'Missing') . "\n";
+    $report .= "mbstring: " . (extension_loaded('mbstring') ? 'Available' : 'Missing') . "\n";
+    $report .= "GD Library: " . (extension_loaded('gd') ? 'Available' : 'Missing') . "\n";
+    $report .= "XML: " . (extension_loaded('xml') ? 'Available' : 'Missing') . "\n";
+    $report .= "JSON: " . (extension_loaded('json') ? 'Available' : 'Missing') . "\n";
+    $report .= "ZIP: " . (extension_loaded('zip') ? 'Available' : 'Missing') . "\n\n";
+    $report .= "=== CALLTRACKINGMETRICS PLUGIN ===\n";
+    $report .= "Plugin Version: 2.0\n";
+    $report .= "Debug Mode: " . (get_option('ctm_debug_enabled') ? 'Enabled' : 'Disabled') . "\n";
+    $report .= "API Key Configured: " . (get_option('ctm_api_key') ? 'Yes' : 'No') . "\n";
+    $report .= "CF7 Integration: " . (get_option('ctm_api_cf7_enabled') ? 'Enabled' : 'Disabled') . "\n";
+    $report .= "GF Integration: " . (get_option('ctm_api_gf_enabled') ? 'Enabled' : 'Disabled') . "\n\n";
+    $report .= "=== THEME & PLUGINS ===\n";
+    $report .= "Active Theme: " . wp_get_theme()->get('Name') . "\n";
+    $report .= "Theme Version: " . wp_get_theme()->get('Version') . "\n";
+    $report .= "Active Plugins: " . count(get_option('active_plugins', [])) . "\n";
+    $report .= "Contact Form 7: " . (class_exists('WPCF7_ContactForm') ? 'Installed' : 'Not Installed') . "\n";
+    $report .= "Gravity Forms: " . (class_exists('GFAPI') ? 'Installed' : 'Not Installed') . "\n\n";
+    $report .= "=== CURRENT PERFORMANCE ===\n";
+    $report .= "Memory Usage: " . size_format(memory_get_usage(true)) . "\n";
+    $report .= "Peak Memory: " . size_format(memory_get_peak_usage(true)) . "\n";
+    $report .= "Database Queries: " . get_num_queries() . "\n";
+    $report .= "Admin Email: " . get_option('admin_email') . "\n";
+    $report .= "Timezone: " . (get_option('timezone_string') ?: 'UTC') . "\n\n";
+    $report .= "=== END REPORT ===";
+    return $report;
+}
 
-$system_info_report .= "=== SERVER ENVIRONMENT ===\n";
-$system_info_report .= "PHP Version: " . PHP_VERSION . "\n";
-$system_info_report .= "PHP SAPI: " . php_sapi_name() . "\n";
-$system_info_report .= "Server Software: " . ($_SERVER['SERVER_SOFTWARE'] ?? 'Unknown') . "\n";
-$system_info_report .= "Operating System: " . PHP_OS . "\n";
-$system_info_report .= "Memory Limit: " . ini_get('memory_limit') . "\n";
-$system_info_report .= "Max Execution Time: " . ini_get('max_execution_time') . "s\n";
-$system_info_report .= "Max Input Vars: " . ini_get('max_input_vars') . "\n";
-$system_info_report .= "Upload Max Size: " . ini_get('upload_max_filesize') . "\n";
-$system_info_report .= "Post Max Size: " . ini_get('post_max_size') . "\n";
-$system_info_report .= "Max File Uploads: " . ini_get('max_file_uploads') . "\n\n";
-
-$system_info_report .= "=== DATABASE ===\n";
-$system_info_report .= "Database Version: " . $GLOBALS['wpdb']->db_version() . "\n";
-$system_info_report .= "Database Host: " . DB_HOST . "\n";
-$system_info_report .= "Database Name: " . DB_NAME . "\n";
-$system_info_report .= "Database Charset: " . DB_CHARSET . "\n";
-$system_info_report .= "Table Prefix: " . $GLOBALS['wpdb']->prefix . "\n\n";
-
-$system_info_report .= "=== PHP EXTENSIONS ===\n";
-$system_info_report .= "cURL: " . (function_exists('curl_init') ? 'Available' : 'Missing') . "\n";
-$system_info_report .= "OpenSSL: " . (extension_loaded('openssl') ? 'Available' : 'Missing') . "\n";
-$system_info_report .= "mbstring: " . (extension_loaded('mbstring') ? 'Available' : 'Missing') . "\n";
-$system_info_report .= "GD Library: " . (extension_loaded('gd') ? 'Available' : 'Missing') . "\n";
-$system_info_report .= "XML: " . (extension_loaded('xml') ? 'Available' : 'Missing') . "\n";
-$system_info_report .= "JSON: " . (extension_loaded('json') ? 'Available' : 'Missing') . "\n";
-$system_info_report .= "ZIP: " . (extension_loaded('zip') ? 'Available' : 'Missing') . "\n\n";
-
-$system_info_report .= "=== CALLTRACKINGMETRICS PLUGIN ===\n";
-$system_info_report .= "Plugin Version: 2.0\n";
-$system_info_report .= "Debug Mode: " . (get_option('ctm_debug_enabled') ? 'Enabled' : 'Disabled') . "\n";
-$system_info_report .= "API Key Configured: " . (get_option('ctm_api_key') ? 'Yes' : 'No') . "\n";
-$system_info_report .= "CF7 Integration: " . (get_option('ctm_api_cf7_enabled') ? 'Enabled' : 'Disabled') . "\n";
-$system_info_report .= "GF Integration: " . (get_option('ctm_api_gf_enabled') ? 'Enabled' : 'Disabled') . "\n\n";
-
-$system_info_report .= "=== THEME & PLUGINS ===\n";
-$system_info_report .= "Active Theme: " . wp_get_theme()->get('Name') . "\n";
-$system_info_report .= "Theme Version: " . wp_get_theme()->get('Version') . "\n";
-$system_info_report .= "Active Plugins: " . count(get_option('active_plugins', [])) . "\n";
-$system_info_report .= "Contact Form 7: " . (class_exists('WPCF7_ContactForm') ? 'Installed' : 'Not Installed') . "\n";
-$system_info_report .= "Gravity Forms: " . (class_exists('GFAPI') ? 'Installed' : 'Not Installed') . "\n\n";
-
-$system_info_report .= "=== CURRENT PERFORMANCE ===\n";
-$system_info_report .= "Memory Usage: " . size_format(memory_get_usage(true)) . "\n";
-$system_info_report .= "Peak Memory: " . size_format(memory_get_peak_usage(true)) . "\n";
-$system_info_report .= "Database Queries: " . get_num_queries() . "\n";
-$system_info_report .= "Admin Email: " . get_option('admin_email') . "\n";
-$system_info_report .= "Timezone: " . (get_option('timezone_string') ?: 'UTC') . "\n\n";
-
-$system_info_report .= "=== END REPORT ===";
+$system_info = ctm_get_system_info_array();
+$system_info_report = ctm_get_system_info_report();
 ?>
 
 <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+    <!-- Export System Info Button -->
+    <button id="ctm-export-system-info" class="button button-primary float-right mb-2" type="button" style="float:right; margin-bottom:10px;">
+        Export System Info
+    </button>
     <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
         <svg class="w-6 h-6 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
@@ -81,19 +119,19 @@ $system_info_report .= "=== END REPORT ===";
     <!-- Quick Stats Grid -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center" data-metric="php_version">
-            <div class="text-2xl font-bold text-blue-600"><?= PHP_VERSION ?></div>
+            <div class="text-2xl font-bold text-blue-600" data-field="php_version"><?= esc_html($system_info['php_version']) ?></div>
             <div class="text-xs text-blue-700">PHP Version</div>
         </div>
         <div class="bg-green-50 border border-green-200 rounded-lg p-3 text-center" data-metric="wp_version">
-            <div class="text-2xl font-bold text-green-600"><?= get_bloginfo('version') ?></div>
+            <div class="text-2xl font-bold text-green-600" data-field="wp_version"><?= esc_html($system_info['wp_version']) ?></div>
             <div class="text-xs text-green-700">WordPress</div>
         </div>
         <div class="bg-purple-50 border border-purple-200 rounded-lg p-3 text-center" data-metric="memory_usage">
-            <div class="text-2xl font-bold text-purple-600"><?= size_format(memory_get_usage(true)) ?></div>
+            <div class="text-2xl font-bold text-purple-600" data-field="memory_usage"><?= esc_html($system_info['memory_usage']) ?></div>
             <div class="text-xs text-purple-700">Memory Usage</div>
         </div>
         <div class="bg-orange-50 border border-orange-200 rounded-lg p-3 text-center" data-metric="db_queries">
-            <div class="text-2xl font-bold text-orange-600"><?= get_num_queries() ?></div>
+            <div class="text-2xl font-bold text-orange-600" data-field="db_queries"><?= esc_html($system_info['db_queries']) ?></div>
             <div class="text-xs text-orange-700">DB Queries</div>
         </div>
     </div>
@@ -114,29 +152,29 @@ $system_info_report .= "=== END REPORT ===";
             <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div class="flex justify-between">
                     <span class="text-gray-600">Version:</span>
-                    <span class="font-medium"><?= get_bloginfo('version') ?></span>
+                    <span class="font-medium" data-field="version"><?= esc_html($system_info['wordpress_env']['version']) ?></span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-600">Language:</span>
-                    <span class="font-medium"><?= get_locale() ?></span>
+                    <span class="font-medium" data-field="language"><?= esc_html($system_info['wordpress_env']['language']) ?></span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-600">Debug Mode:</span>
-                    <span class="font-medium <?= WP_DEBUG ? 'text-yellow-600' : 'text-green-600' ?>">
-                        <?= WP_DEBUG ? 'Enabled' : 'Disabled' ?>
+                    <span class="font-medium <?= WP_DEBUG ? 'text-yellow-600' : 'text-green-600' ?>" data-field="debug_mode">
+                        <?= esc_html($system_info['wordpress_env']['debug_mode']) ?>
                     </span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-600">Memory Limit:</span>
-                    <span class="font-medium"><?= WP_MEMORY_LIMIT ?></span>
+                    <span class="font-medium" data-field="memory_limit"><?= esc_html($system_info['wordpress_env']['memory_limit']) ?></span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-600">Multisite:</span>
-                    <span class="font-medium"><?= is_multisite() ? 'Yes' : 'No' ?></span>
+                    <span class="font-medium" data-field="multisite"><?= esc_html($system_info['wordpress_env']['multisite']) ?></span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-600">Timezone:</span>
-                    <span class="font-medium"><?= get_option('timezone_string') ?: 'UTC' ?></span>
+                    <span class="font-medium" data-field="timezone"><?= esc_html($system_info['wordpress_env']['timezone']) ?></span>
                 </div>
             </div>
         </div>
@@ -154,27 +192,27 @@ $system_info_report .= "=== END REPORT ===";
             <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div class="flex justify-between">
                     <span class="text-gray-600">PHP Version:</span>
-                    <span class="font-medium"><?= PHP_VERSION ?></span>
+                    <span class="font-medium" data-field="php_version"><?= esc_html($system_info['server_env']['php_version']) ?></span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-600">Server Software:</span>
-                    <span class="font-medium text-xs"><?= $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown' ?></span>
+                    <span class="font-medium text-xs" data-field="server_software"><?= esc_html($system_info['server_env']['server_software']) ?></span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-600">Operating System:</span>
-                    <span class="font-medium"><?= PHP_OS ?></span>
+                    <span class="font-medium" data-field="os"><?= esc_html($system_info['server_env']['os']) ?></span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-600">Memory Limit:</span>
-                    <span class="font-medium"><?= ini_get('memory_limit') ?></span>
+                    <span class="font-medium" data-field="memory_limit"><?= esc_html($system_info['server_env']['memory_limit']) ?></span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-600">Max Execution Time:</span>
-                    <span class="font-medium"><?= ini_get('max_execution_time') ?>s</span>
+                    <span class="font-medium" data-field="max_execution_time"><?= esc_html($system_info['server_env']['max_execution_time']) ?></span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-600">Upload Max Size:</span>
-                    <span class="font-medium"><?= ini_get('upload_max_filesize') ?></span>
+                    <span class="font-medium" data-field="upload_max_size"><?= esc_html($system_info['server_env']['upload_max_size']) ?></span>
                 </div>
             </div>
         </div>
@@ -192,27 +230,27 @@ $system_info_report .= "=== END REPORT ===";
             <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div class="flex justify-between">
                     <span class="text-gray-600">Database Version:</span>
-                    <span class="font-medium"><?= $GLOBALS['wpdb']->db_version() ?></span>
+                    <span class="font-medium" data-field="db_version"><?= esc_html($system_info['database_info']['db_version']) ?></span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-600">Database Host:</span>
-                    <span class="font-medium text-xs"><?= DB_HOST ?></span>
+                    <span class="font-medium text-xs" data-field="db_host"><?= esc_html($system_info['database_info']['db_host']) ?></span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-600">Database Name:</span>
-                    <span class="font-medium"><?= DB_NAME ?></span>
+                    <span class="font-medium" data-field="db_name"><?= esc_html($system_info['database_info']['db_name']) ?></span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-600">Table Prefix:</span>
-                    <span class="font-medium"><?= $GLOBALS['wpdb']->prefix ?></span>
+                    <span class="font-medium" data-field="table_prefix"><?= esc_html($system_info['database_info']['table_prefix']) ?></span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-600">Database Charset:</span>
-                    <span class="font-medium"><?= DB_CHARSET ?></span>
+                    <span class="font-medium" data-field="db_charset"><?= esc_html($system_info['database_info']['db_charset']) ?></span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-600">Current Queries:</span>
-                    <span class="font-medium"><?= get_num_queries() ?></span>
+                    <span class="font-medium" data-field="current_queries"><?= esc_html($system_info['database_info']['current_queries']) ?></span>
                 </div>
             </div>
         </div>
@@ -333,4 +371,280 @@ $system_info_report .= "=== END REPORT ===";
     </div>
 </div>
 
+<script>
+// Use the PHP-generated report for JS
+const SYSTEM_INFO_REPORT = <?= json_encode($system_info_report) ?>;
+
+function updateSystemInfoDisplay(systemInfo) {
+  // Update the metric cards
+  for (const key of ['php_version', 'wp_version', 'memory_usage', 'db_queries']) {
+    const el = document.querySelector(`[data-field="${key}"]`);
+    if (el && systemInfo[key]) {
+      el.textContent = systemInfo[key];
+    }
+  }
+  // Update detailed sections
+  if (systemInfo.wordpress_env) {
+    updateSectionFields('wordpress-env', systemInfo.wordpress_env);
+  }
+  if (systemInfo.server_env) {
+    updateSectionFields('server-env', systemInfo.server_env);
+  }
+  if (systemInfo.database_info) {
+    updateSectionFields('database-info', systemInfo.database_info);
+  }
+}
+
+function updateSectionFields(section, data) {
+  const sectionEl = document.querySelector(`[data-section="${section}"]`);
+  if (!sectionEl) return;
+  for (const key in data) {
+    const el = sectionEl.querySelector(`[data-field="${key}"]`);
+    if (el) {
+      el.textContent = data[key];
+    }
+  }
+}
+
+    function copySystemInfo() {
+        const button = document.getElementById('copy-system-btn');
+        const originalText = button.innerHTML;
+        
+        console.log('Copy button clicked'); // Debug log
+        
+        // Show loading state
+        button.innerHTML = '<svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Copying...';
+        button.disabled = true;
+        
+        const systemInfo = SYSTEM_INFO_REPORT;
+        
+        console.log('System info length:', systemInfo ? systemInfo.length : 'undefined'); // Debug log
+        
+        // Check if clipboard API is available
+        if (navigator.clipboard && window.isSecureContext) {
+            console.log('Using modern clipboard API'); // Debug log
+            navigator.clipboard.writeText(systemInfo).then(() => {
+                console.log('Clipboard write successful'); // Debug log
+                // Success state
+                button.innerHTML = '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Copied!';
+                button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                button.classList.add('bg-green-600', 'hover:bg-green-700');
+                
+                showDebugMessage('System information copied to clipboard!', 'success');
+                
+                // Reset button after 3 seconds
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.classList.remove('bg-green-600', 'hover:bg-green-700');
+                    button.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                    button.disabled = false;
+                }, 3000);
+            }).catch((error) => {
+                console.error('Clipboard API failed:', error); // Debug log
+                fallbackCopyToClipboard();
+            });
+        } else {
+            console.log('Using fallback clipboard method'); // Debug log
+            fallbackCopyToClipboard();
+        }
+        
+        function fallbackCopyToClipboard() {
+            try {
+                // Fallback for older browsers or non-secure contexts
+                const textArea = document.createElement('textarea');
+                textArea.value = systemInfo;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                textArea.style.top = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                
+                const successful = document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                if (successful) {
+                    console.log('Fallback copy successful'); // Debug log
+                    // Success state
+                    button.innerHTML = '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Copied!';
+                    button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                    button.classList.add('bg-green-600', 'hover:bg-green-700');
+                    
+                    showDebugMessage('System information copied to clipboard!', 'success');
+                    
+                    // Reset button after 3 seconds
+                    setTimeout(() => {
+                        button.innerHTML = originalText;
+                        button.classList.remove('bg-green-600', 'hover:bg-green-700');
+                        button.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                        button.disabled = false;
+                    }, 3000);
+                } else {
+                    throw new Error('execCommand copy failed');
+                }
+            } catch (error) {
+                console.error('Fallback copy failed:', error); // Debug log
+                // Show error state
+                button.innerHTML = '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>Failed';
+                button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                button.classList.add('bg-red-600', 'hover:bg-red-700');
+                
+                showDebugMessage('Failed to copy to clipboard. Please copy the information manually from the display above.', 'error');
+                
+                // Reset button after 3 seconds
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.classList.remove('bg-red-600', 'hover:bg-red-700');
+                    button.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                    button.disabled = false;
+                }, 3000);
+            }
+        }
+    }
+
+
+    // Email System Information
+    function emailSystemInfo() {
+        document.getElementById('email-system-modal')?.classList.remove('hidden');
+    }
+
+    function hideEmailSystemForm() {
+        document.getElementById('email-system-modal')?.classList.add('hidden');
+    }
+
+    // Attach email system info form handler after DOM is loaded
+
+document.addEventListener('DOMContentLoaded', function() {
+  const emailSystemForm = document.getElementById('email-system-form');
+  if (emailSystemForm) {
+    emailSystemForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      console.log('[CTM] Email System Info form submitted');
+
+      const button = document.getElementById('send-system-email-btn');
+      const originalText = button.textContent;
+
+      button.disabled = true;
+      button.textContent = 'Sending...';
+
+      const formData = new FormData();
+      formData.append('action', 'ctm_email_system_info');
+      formData.append('email_to', document.getElementById('system_email_to').value);
+      formData.append('subject', document.getElementById('system_email_subject').value);
+      formData.append('message', document.getElementById('system_email_message').value);
+      formData.append('nonce', '<?= wp_create_nonce('ctm_email_system_info') ?>');
+
+      fetch('<?= admin_url('admin-ajax.php') ?>', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('[CTM] Email AJAX response:', data);
+        if (data.success) {
+          ctmShowToast('System information email sent successfully!', 'success');
+          hideEmailSystemForm();
+        } else {
+          ctmShowToast('Failed to send email: ' + (data.data?.message || 'Unknown error'), 'error');
+        }
+      })
+      .catch(error => {
+        console.error('[CTM] Email AJAX error:', error);
+        ctmShowToast('Network error while sending email', 'error');
+      })
+      .finally(() => {
+        button.disabled = false;
+        button.textContent = originalText;
+      });
+    });
+  }
+});
+
+
+function refreshSystemInfo() {
+    const button = document.getElementById('refresh-system-btn');
+    const originalText = button.textContent;
+    
+    // Show loading state
+    button.disabled = true;
+    button.innerHTML = `
+        <svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        </svg>
+        Refreshing...
+    `;
+    
+    showDebugMessage('Refreshing system information...', 'info');
+    
+    const formData = new FormData();
+    formData.append('action', 'ctm_refresh_system_info');
+    formData.append('nonce', '<?= wp_create_nonce('ctm_refresh_system_info') ?>');
+    
+    fetch('<?= admin_url('admin-ajax.php') ?>', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update system info panels with fresh data
+            if (data.data && data.data.system_info) {
+                updateSystemInfoDisplay(data.data.system_info);
+            }
+            showDebugMessage('System information refreshed successfully', 'success');
+        } else {
+            const errorMessage = (data && data.data && data.data.message) || 
+                                (data && data.message) || 
+                                'Unknown error occurred';
+            showDebugMessage('Failed to refresh system info: ' + errorMessage, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('System info refresh error:', error);
+        showDebugMessage('Error refreshing system information: ' + error.message, 'error');
+    })
+    .finally(() => {
+        // Restore button state
+        button.disabled = false;
+        button.innerHTML = `
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+            Refresh System Info
+        `;
+    });
+}
+
+function showDebugMessage(message, type = 'info') {
+  const container = document.getElementById('ctm-toast-container');
+  if (!container) return;
+
+  // Remove any existing toasts after a short delay
+  Array.from(container.children).forEach(child => {
+    child.style.opacity = 0;
+    setTimeout(() => child.remove(), 500);
+  });
+
+  // Toast color based on type
+  let bg = 'bg-blue-600';
+  if (type === 'success') bg = 'bg-green-600';
+  if (type === 'error') bg = 'bg-red-600';
+  if (type === 'warning') bg = 'bg-yellow-600';
+
+  // Create toast element
+  const toast = document.createElement('div');
+  toast.className = `${bg} text-white px-4 py-2 rounded shadow mb-2 transition-opacity duration-500`;
+  toast.style.opacity = 1;
+  toast.textContent = message;
+
+  container.appendChild(toast);
+
+  // Fade out and remove after 3 seconds
+  setTimeout(() => {
+    toast.style.opacity = 0;
+    setTimeout(() => toast.remove(), 500);
+  }, 3000);
+}
+
+</script>
  

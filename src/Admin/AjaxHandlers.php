@@ -40,6 +40,8 @@ class AjaxHandlers
         add_action('wp_ajax_ctm_full_diagnostic', [$this, 'ajaxFullDiagnostic']);
         add_action('wp_ajax_ctm_security_scan', [$this, 'ajaxSecurityScan']);
         add_action('wp_ajax_ctm_performance_analysis', [$this, 'ajaxPerformanceAnalysis']);
+        // Register Export Diagnostic Report handler
+        add_action('wp_ajax_ctm_export_diagnostic_report', [$this, 'ajaxExportDiagnosticReport']);
     }
 
     /**
@@ -1057,23 +1059,28 @@ class AjaxHandlers
             $subject = 'System Information Report - ' . get_bloginfo('name');
         }
         
-        // Generate comprehensive system information
-        $system_info = $this->generateSystemInfoReport();
-        
-        // Prepare email content
-        $email_body = '';
+        // Generate comprehensive system information (HTML)
+        $system_info_html = $this->generateSystemInfoReport(true);
+
+        // Prepare email content as HTML
+        $email_body = '<div style="font-family: Arial, sans-serif; color: #222; background: #f9f9f9; padding: 24px;">';
+        $email_body .= '<div style="max-width: 700px; margin: 0 auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); padding: 32px;">';
+        $email_body .= '<h2 style="color: #2563eb; margin-top: 0;">System Information Report</h2>';
+        $email_body .= '<p style="color: #666; font-size: 14px; margin-bottom: 24px;">Generated: <strong>' . esc_html(current_time('Y-m-d H:i:s')) . '</strong></p>';
         
         if ($additional_message) {
-            $email_body .= "Message from sender:\n";
-            $email_body .= $additional_message . "\n\n";
-            $email_body .= str_repeat('-', 50) . "\n\n";
+            $email_body .= '<div style="margin-bottom: 24px; padding: 16px; background: #f1f5f9; border-left: 4px solid #2563eb; border-radius: 4px;">';
+            $email_body .= '<strong>Message from sender:</strong><br>';
+            $email_body .= nl2br(esc_html($additional_message));
+            $email_body .= '</div>';
         }
-        
-        $email_body .= $system_info;
-        
-        // Send email
+
+        $email_body .= $system_info_html;
+        $email_body .= '</div></div>';
+
+        // Send email as HTML
         $headers = [
-            'Content-Type: text/plain; charset=UTF-8',
+            'Content-Type: text/html; charset=UTF-8',
             'From: ' . get_bloginfo('name') . ' <' . get_option('admin_email') . '>'
         ];
         
@@ -1092,46 +1099,66 @@ class AjaxHandlers
 
     /**
      * Generate comprehensive system information report
+     * @param bool $as_html If true, returns HTML. Otherwise, returns plain text.
      */
-    private function generateSystemInfoReport(): string
+    private function generateSystemInfoReport($as_html = false): string
     {
-        $report = "=== SYSTEM INFORMATION REPORT ===\n";
-        $report .= "Generated: " . current_time('Y-m-d H:i:s') . "\n";
-        $report .= "Site: " . get_bloginfo('name') . "\n\n";
-        
+        $nl = $as_html ? '<br>' : "\n";
+        $section_title = function($title) use ($as_html) {
+            return $as_html
+                ? '<h3 style="color:#2563eb; margin-top:32px; margin-bottom:8px; font-size:18px;">' . esc_html($title) . '</h3>'
+                : "=== {$title} ===\n";
+        };
+        $row = function($label, $value) use ($as_html) {
+            return $as_html
+                ? '<tr><td style="padding:4px 12px 4px 0; color:#444; font-weight:500;">' . esc_html($label) . '</td><td style="padding:4px 0; color:#222;">' . esc_html($value) . '</td></tr>'
+                : "{$label}: {$value}\n";
+        };
+
+        if ($as_html) {
+            $report = '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
+        } else {
+            $report = "=== SYSTEM INFORMATION REPORT ===\n";
+            $report .= "Generated: " . current_time('Y-m-d H:i:s') . "\n";
+            $report .= "Site: " . get_bloginfo('name') . "\n\n";
+        }
+
         // WordPress Environment
-        $report .= "=== WORDPRESS ENVIRONMENT ===\n";
-        $report .= "WordPress Version: " . get_bloginfo('version') . "\n";
-        $report .= "Site URL: " . home_url() . "\n";
-        $report .= "Admin URL: " . admin_url() . "\n";
-        $report .= "WordPress Language: " . get_locale() . "\n";
-        $report .= "WordPress Debug: " . (WP_DEBUG ? 'Enabled' : 'Disabled') . "\n";
-        $report .= "WordPress Memory Limit: " . WP_MEMORY_LIMIT . "\n";
-        $report .= "Multisite: " . (is_multisite() ? 'Yes' : 'No') . "\n\n";
-        
+        if ($as_html) $report .= '</table>' . $section_title('WordPress Environment') . '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
+        $report .= $row('WordPress Version', get_bloginfo('version'));
+        $report .= $row('Site URL', home_url());
+        $report .= $row('Admin URL', admin_url());
+        $report .= $row('WordPress Language', get_locale());
+        $report .= $row('WordPress Debug', WP_DEBUG ? 'Enabled' : 'Disabled');
+        $report .= $row('WordPress Memory Limit', WP_MEMORY_LIMIT);
+        $report .= $row('Multisite', is_multisite() ? 'Yes' : 'No');
+        if (!$as_html) $report .= $nl;
+
         // Server Environment
-        $report .= "=== SERVER ENVIRONMENT ===\n";
-        $report .= "PHP Version: " . PHP_VERSION . "\n";
-        $report .= "PHP SAPI: " . php_sapi_name() . "\n";
-        $report .= "Server Software: " . ($_SERVER['SERVER_SOFTWARE'] ?? 'Unknown') . "\n";
-        $report .= "Operating System: " . PHP_OS . "\n";
-        $report .= "Memory Limit: " . ini_get('memory_limit') . "\n";
-        $report .= "Max Execution Time: " . ini_get('max_execution_time') . "s\n";
-        $report .= "Max Input Vars: " . ini_get('max_input_vars') . "\n";
-        $report .= "Upload Max Size: " . ini_get('upload_max_filesize') . "\n";
-        $report .= "Post Max Size: " . ini_get('post_max_size') . "\n";
-        $report .= "Max File Uploads: " . ini_get('max_file_uploads') . "\n\n";
-        
+        if ($as_html) $report .= '</table>' . $section_title('Server Environment') . '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
+        $report .= $row('PHP Version', PHP_VERSION);
+        $report .= $row('PHP SAPI', php_sapi_name());
+        $report .= $row('Server Software', $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown');
+        $report .= $row('Operating System', PHP_OS);
+        $report .= $row('Memory Limit', ini_get('memory_limit'));
+        $report .= $row('Max Execution Time', ini_get('max_execution_time') . 's');
+        $report .= $row('Max Input Vars', ini_get('max_input_vars'));
+        $report .= $row('Upload Max Size', ini_get('upload_max_filesize'));
+        $report .= $row('Post Max Size', ini_get('post_max_size'));
+        $report .= $row('Max File Uploads', ini_get('max_file_uploads'));
+        if (!$as_html) $report .= $nl;
+
         // Database
-        $report .= "=== DATABASE ===\n";
-        $report .= "Database Version: " . $GLOBALS['wpdb']->db_version() . "\n";
-        $report .= "Database Host: " . DB_HOST . "\n";
-        $report .= "Database Name: " . DB_NAME . "\n";
-        $report .= "Database Charset: " . DB_CHARSET . "\n";
-        $report .= "Table Prefix: " . $GLOBALS['wpdb']->prefix . "\n\n";
-        
+        if ($as_html) $report .= '</table>' . $section_title('Database') . '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
+        $report .= $row('Database Version', $GLOBALS['wpdb']->db_version());
+        $report .= $row('Database Host', DB_HOST);
+        $report .= $row('Database Name', DB_NAME);
+        $report .= $row('Database Charset', DB_CHARSET);
+        $report .= $row('Table Prefix', $GLOBALS['wpdb']->prefix);
+        if (!$as_html) $report .= $nl;
+
         // PHP Extensions
-        $report .= "=== PHP EXTENSIONS ===\n";
+        if ($as_html) $report .= '</table>' . $section_title('PHP Extensions') . '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
         $extensions = [
             'cURL' => function_exists('curl_init'),
             'OpenSSL' => extension_loaded('openssl'),
@@ -1141,38 +1168,45 @@ class AjaxHandlers
             'JSON' => extension_loaded('json'),
             'ZIP' => extension_loaded('zip')
         ];
-        
         foreach ($extensions as $name => $available) {
-            $report .= $name . ": " . ($available ? 'Available' : 'Missing') . "\n";
+            $report .= $row($name, $available ? 'Available' : 'Missing');
         }
-        $report .= "\n";
-        
+        if (!$as_html) $report .= $nl;
+
         // CallTrackingMetrics Plugin
-        $report .= "=== CALLTRACKINGMETRICS PLUGIN ===\n";
-        $report .= "Plugin Version: 2.0\n";
-        $report .= "Debug Mode: " . (get_option('ctm_debug_enabled') ? 'Enabled' : 'Disabled') . "\n";
-        $report .= "API Key Configured: " . (get_option('ctm_api_key') ? 'Yes' : 'No') . "\n";
-        $report .= "CF7 Integration: " . (get_option('ctm_api_cf7_enabled') ? 'Enabled' : 'Disabled') . "\n";
-        $report .= "GF Integration: " . (get_option('ctm_api_gf_enabled') ? 'Enabled' : 'Disabled') . "\n\n";
-        
+        if ($as_html) $report .= '</table>' . $section_title('CallTrackingMetrics Plugin') . '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
+        $report .= $row('Plugin Version', '2.0');
+        $report .= $row('Debug Mode', get_option('ctm_debug_enabled') ? 'Enabled' : 'Disabled');
+        $report .= $row('API Key Configured', get_option('ctm_api_key') ? 'Yes' : 'No');
+        $report .= $row('CF7 Integration', get_option('ctm_api_cf7_enabled') ? 'Enabled' : 'Disabled');
+        $report .= $row('GF Integration', get_option('ctm_api_gf_enabled') ? 'Enabled' : 'Disabled');
+        if (!$as_html) $report .= $nl;
+
         // Theme & Plugins
-        $report .= "=== THEME & PLUGINS ===\n";
-        $report .= "Active Theme: " . wp_get_theme()->get('Name') . "\n";
-        $report .= "Theme Version: " . wp_get_theme()->get('Version') . "\n";
-        $report .= "Active Plugins: " . count(get_option('active_plugins', [])) . "\n";
-        $report .= "Contact Form 7: " . (class_exists('WPCF7_ContactForm') ? 'Installed' : 'Not Installed') . "\n";
-        $report .= "Gravity Forms: " . (class_exists('GFAPI') ? 'Installed' : 'Not Installed') . "\n\n";
-        
+        if ($as_html) $report .= '</table>' . $section_title('Theme & Plugins') . '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
+        $report .= $row('Active Theme', wp_get_theme()->get('Name'));
+        $report .= $row('Theme Version', wp_get_theme()->get('Version'));
+        $report .= $row('Active Plugins', count(get_option('active_plugins', [])));
+        $report .= $row('Contact Form 7', class_exists('WPCF7_ContactForm') ? 'Installed' : 'Not Installed');
+        $report .= $row('Gravity Forms', class_exists('GFAPI') ? 'Installed' : 'Not Installed');
+        if (!$as_html) $report .= $nl;
+
         // Current Performance
-        $report .= "=== CURRENT PERFORMANCE ===\n";
-        $report .= "Memory Usage: " . size_format(memory_get_usage(true)) . "\n";
-        $report .= "Peak Memory: " . size_format(memory_get_peak_usage(true)) . "\n";
-        $report .= "Database Queries: " . get_num_queries() . "\n";
-        $report .= "Admin Email: " . get_option('admin_email') . "\n";
-        $report .= "Timezone: " . (get_option('timezone_string') ?: 'UTC') . "\n\n";
-        
-        $report .= "=== END REPORT ===\n";
-        
+        if ($as_html) $report .= '</table>' . $section_title('Current Performance') . '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
+        $report .= $row('Memory Usage', size_format(memory_get_usage(true)));
+        $report .= $row('Peak Memory', size_format(memory_get_peak_usage(true)));
+        $report .= $row('Database Queries', get_num_queries());
+        $report .= $row('Admin Email', get_option('admin_email'));
+        $report .= $row('Timezone', get_option('timezone_string') ?: 'UTC');
+        if ($as_html) $report .= '</table>';
+        if (!$as_html) $report .= $nl;
+
+        if ($as_html) {
+            $report .= '<div style="margin-top:32px; color:#888; font-size:12px;">End of report</div>';
+        } else {
+            $report .= "=== END REPORT ===\n";
+        }
+
         return $report;
     }
 
@@ -2561,5 +2595,194 @@ class AjaxHandlers
                 'optimizations' => $optimizations
             ]
         ]);
+    }
+
+    /**
+     * AJAX: Export Diagnostic Report
+     */
+    public function ajaxExportDiagnosticReport(): void
+    {
+        check_ajax_referer('ctm_export_diagnostic_report', 'nonce');
+        try {
+            // Generate system info
+            $system_info = $this->generateSystemInfoReport();
+            // Run full diagnostic
+            ob_start();
+            $diagnostic_results = null;
+            if (method_exists($this, 'ajaxFullDiagnostic')) {
+                // Use the same logic as ajaxFullDiagnostic, but capture output
+                $diagnostic_results = $this->runFullDiagnosticForExport();
+            }
+            $diagnostic_text = "=== DIAGNOSTIC RESULTS ===\n";
+            if ($diagnostic_results && is_array($diagnostic_results)) {
+                $diagnostic_text .= "Passed Checks: " . ($diagnostic_results['passed_checks'] ?? 0) . "\n";
+                $diagnostic_text .= "Warning Checks: " . ($diagnostic_results['warning_checks'] ?? 0) . "\n";
+                $diagnostic_text .= "Failed Checks: " . ($diagnostic_results['failed_checks'] ?? 0) . "\n";
+                $diagnostic_text .= "\n";
+                if (!empty($diagnostic_results['critical_issues'])) {
+                    $diagnostic_text .= "Critical Issues:\n";
+                    foreach ($diagnostic_results['critical_issues'] as $issue) {
+                        $diagnostic_text .= "- " . ($issue['title'] ?? '') . ": " . ($issue['description'] ?? '') . "\n";
+                    }
+                    $diagnostic_text .= "\n";
+                }
+                if (!empty($diagnostic_results['categories'])) {
+                    foreach ($diagnostic_results['categories'] as $cat) {
+                        $diagnostic_text .= ($cat['title'] ?? 'Category') . ": " . ($cat['status'] ?? '') . " (Score: " . ($cat['score'] ?? 'N/A') . ")\n";
+                        if (!empty($cat['issues'])) {
+                            foreach ($cat['issues'] as $issue) {
+                                $diagnostic_text .= "  - Issue: $issue\n";
+                            }
+                        }
+                        if (!empty($cat['recommendations'])) {
+                            foreach ($cat['recommendations'] as $rec) {
+                                $diagnostic_text .= "  - Recommendation: $rec\n";
+                            }
+                        }
+                        $diagnostic_text .= "\n";
+                    }
+                }
+            } else {
+                $diagnostic_text .= "No diagnostic results available.\n";
+            }
+            $diagnostic_text .= "=== END DIAGNOSTIC RESULTS ===\n";
+            $report = $system_info . "\n" . $diagnostic_text;
+            // Return as downloadable file (base64 for JS Blob)
+            wp_send_json_success([
+                'report' => $report
+            ]);
+        } catch (\Exception $e) {
+            wp_send_json_error([
+                'message' => 'Failed to generate diagnostic report: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Helper for export: run full diagnostic and return array (not JSON)
+     */
+    private function runFullDiagnosticForExport(): ?array
+    {
+        try {
+            $diagnostic_results = [
+                'passed_checks' => 0,
+                'warning_checks' => 0,
+                'failed_checks' => 0,
+                'critical_issues' => [],
+                'categories' => []
+            ];
+            $api_analysis = $this->analyzeApiCredentials();
+            $api_score = isset($api_analysis['score']) && is_numeric($api_analysis['score']) ? $api_analysis['score'] : 0;
+            $diagnostic_results['categories']['api_credentials'] = [
+                'title' => 'API Credentials',
+                'description' => 'Validation of CallTrackingMetrics API connectivity and authentication',
+                'status' => $api_analysis['status'],
+                'score' => $api_score,
+                'issues' => $api_analysis['issues'] ?? [],
+                'recommendations' => $api_analysis['recommendations'] ?? []
+            ];
+            if ($api_analysis['status'] === 'healthy') {
+                $diagnostic_results['passed_checks']++;
+            } elseif ($api_analysis['status'] === 'warning') {
+                $diagnostic_results['warning_checks']++;
+            } else {
+                $diagnostic_results['failed_checks']++;
+                if ($api_score < 30) {
+                    $diagnostic_results['critical_issues'][] = [
+                        'title' => 'API Credentials Failed',
+                        'description' => 'Cannot connect to CallTrackingMetrics API. Plugin functionality will be severely limited.',
+                        'auto_fix_available' => false,
+                        'fix_id' => 'api_credentials'
+                    ];
+                }
+            }
+            $form_analysis = $this->analyzeFormIntegration();
+            $form_score = isset($form_analysis['score']) && is_numeric($form_analysis['score']) ? $form_analysis['score'] : 0;
+            $diagnostic_results['categories']['form_integration'] = [
+                'title' => 'Form Integration',
+                'description' => 'Analysis of Contact Form 7 and Gravity Forms integration status',
+                'status' => $form_analysis['status'],
+                'score' => $form_score,
+                'issues' => $form_analysis['issues'] ?? [],
+                'recommendations' => $form_analysis['recommendations'] ?? []
+            ];
+            if ($form_analysis['status'] === 'healthy') {
+                $diagnostic_results['passed_checks']++;
+            } elseif ($form_analysis['status'] === 'warning') {
+                $diagnostic_results['warning_checks']++;
+            } else {
+                $diagnostic_results['failed_checks']++;
+            }
+            $network_analysis = $this->analyzeNetworkConnectivity();
+            $network_score = isset($network_analysis['score']) && is_numeric($network_analysis['score']) ? $network_analysis['score'] : 0;
+            $diagnostic_results['categories']['network_connectivity'] = [
+                'title' => 'Network Connectivity',
+                'description' => 'Testing network connectivity and DNS resolution for CTM services',
+                'status' => $network_analysis['status'],
+                'score' => $network_score,
+                'issues' => $network_analysis['issues'] ?? [],
+                'recommendations' => $network_analysis['recommendations'] ?? []
+            ];
+            if ($network_analysis['status'] === 'healthy') {
+                $diagnostic_results['passed_checks']++;
+            } elseif ($network_analysis['status'] === 'warning') {
+                $diagnostic_results['warning_checks']++;
+            } else {
+                $diagnostic_results['failed_checks']++;
+                if ($network_score < 40) {
+                    $diagnostic_results['critical_issues'][] = [
+                        'title' => 'Network Connectivity Issues',
+                        'description' => 'Cannot reach CallTrackingMetrics servers. Check firewall and DNS settings.',
+                        'auto_fix_available' => false,
+                        'fix_id' => 'network_connectivity'
+                    ];
+                }
+            }
+            $conflicts_analysis = $this->analyzePluginConflicts();
+            $conflicts_score = isset($conflicts_analysis['score']) && is_numeric($conflicts_analysis['score']) ? $conflicts_analysis['score'] : 0;
+            $diagnostic_results['categories']['plugin_conflicts'] = [
+                'title' => 'Plugin Conflicts',
+                'description' => 'Scanning for potential conflicts with other WordPress plugins',
+                'status' => $conflicts_analysis['status'],
+                'score' => $conflicts_score,
+                'issues' => $conflicts_analysis['issues'] ?? [],
+                'recommendations' => $conflicts_analysis['recommendations'] ?? []
+            ];
+            if ($conflicts_analysis['status'] === 'healthy') {
+                $diagnostic_results['passed_checks']++;
+            } elseif ($conflicts_analysis['status'] === 'warning') {
+                $diagnostic_results['warning_checks']++;
+            } else {
+                $diagnostic_results['failed_checks']++;
+            }
+            $system_health = $this->runSystemHealthChecks();
+            $system_score = isset($system_health['score']) && is_numeric($system_health['score']) ? $system_health['score'] : 0;
+            $diagnostic_results['categories']['system_health'] = [
+                'title' => 'System Health',
+                'description' => 'WordPress environment and server configuration analysis',
+                'status' => $system_health['status'],
+                'score' => $system_score,
+                'issues' => $system_health['issues'] ?? [],
+                'recommendations' => $system_health['recommendations'] ?? []
+            ];
+            if ($system_health['status'] === 'healthy') {
+                $diagnostic_results['passed_checks']++;
+            } elseif ($system_health['status'] === 'warning') {
+                $diagnostic_results['warning_checks']++;
+            } else {
+                $diagnostic_results['failed_checks']++;
+                if ($system_score < 50) {
+                    $diagnostic_results['critical_issues'][] = [
+                        'title' => 'System Health Issues',
+                        'description' => 'WordPress environment has configuration issues that may affect plugin performance.',
+                        'auto_fix_available' => true,
+                        'fix_id' => 'system_health'
+                    ];
+                }
+            }
+            return $diagnostic_results;
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 } 

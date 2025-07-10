@@ -490,3 +490,24 @@ class CallTrackingMetrics
  * initialize all services.
  */
 new CallTrackingMetrics();
+
+// Enqueue debug JS and localize export nonce for debug tab
+add_action('admin_enqueue_scripts', function($hook) {
+    // Only enqueue on the CallTrackingMetrics debug/settings page
+    if (strpos($hook, 'call-tracking-metrics') === false) return;
+    
+    // Enqueue debug JS if not already enqueued
+    wp_enqueue_script(
+        'ctm-debug-js',
+        plugins_url('assets/js/debug.js', __FILE__),
+        ['jquery'],
+        '2.0.0',
+        true
+    );
+    
+    // Localize export diagnostic report nonce
+    wp_localize_script('ctm-debug-js', 'ctmDebugVars', [
+        'ajaxurl' => admin_url('admin-ajax.php'),
+        'ctm_export_diagnostic_report_nonce' => wp_create_nonce('ctm_export_diagnostic_report'),
+    ]);
+});

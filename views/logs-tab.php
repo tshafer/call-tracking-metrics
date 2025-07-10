@@ -101,7 +101,7 @@ function clearLogs(logType) {
     .then(data => {
         if (data.success) {
             // Show success message
-            showLogMessage(data.data.message, 'success');
+            ctmShowToast(data.data.message, 'success');
             
             // Clear the log table
             const logTable = button.closest('.bg-white').querySelector('table');
@@ -118,56 +118,17 @@ function clearLogs(logType) {
                 logTable.parentElement.parentElement.appendChild(noLogsDiv);
             }
         } else {
-            showLogMessage(data.data.message || 'Failed to clear logs', 'error');
+            ctmShowToast(data.data.message || 'Failed to clear logs', 'error');
         }
     })
     .catch(error => {
         console.error('Error clearing logs:', error);
-        showLogMessage('Network error occurred while clearing logs', 'error');
+        ctmShowToast('Network error occurred while clearing logs', 'error');
     })
     .finally(() => {
         // Re-enable button
         button.disabled = false;
         button.textContent = originalText;
     });
-}
-
-function showLogMessage(message, type = 'info') {
-    // Create message element
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `p-4 mb-4 rounded-lg border-l-4 ${
-        type === 'success' ? 'bg-green-50 border-green-400 text-green-700' :
-        type === 'error' ? 'bg-red-50 border-red-400 text-red-700' :
-        'bg-blue-50 border-blue-400 text-blue-700'
-    }`;
-    
-    messageDiv.innerHTML = `
-        <div class="flex items-center">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                ${type === 'success' ? 
-                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>' :
-                    type === 'error' ?
-                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>' :
-                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
-                }
-            </svg>
-            <span class="font-medium">${message}</span>
-        </div>
-    `;
-    
-    // Insert at top of logs container
-    const container = document.querySelector('.mb-12');
-    container.insertBefore(messageDiv, container.firstChild);
-    
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-        messageDiv.style.transition = 'opacity 0.5s ease';
-        messageDiv.style.opacity = '0';
-        setTimeout(() => {
-            if (messageDiv.parentNode) {
-                messageDiv.parentNode.removeChild(messageDiv);
-            }
-        }, 500);
-    }, 5000);
 }
 </script>

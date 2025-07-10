@@ -152,4 +152,48 @@
     </div>
 </div>
 
- 
+ <script>
+function simulateApiRequest() {
+    const endpoint = document.getElementById('api-endpoint').value;
+    const method = document.getElementById('api-method').value;
+    const button = document.getElementById('simulate-btn');
+    const responseDiv = document.getElementById('api-response');
+    const responseContent = document.getElementById('api-response-content');
+    
+    button.disabled = true;
+    button.textContent = 'Sending...';
+    responseDiv.classList.add('hidden');
+    
+    const formData = new FormData();
+    formData.append('action', 'ctm_simulate_api_request');
+    formData.append('endpoint', endpoint);
+    formData.append('method', method);
+    formData.append('nonce', '<?= wp_create_nonce('ctm_simulate_api_request') ?>');
+    
+    fetch('<?= admin_url('admin-ajax.php') ?>', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        responseDiv.classList.remove('hidden');
+        responseContent.textContent = JSON.stringify(data, null, 2);
+        
+        if (data.success) {
+            showDebugMessage('API request completed successfully', 'success');
+        } else {
+            showDebugMessage('API request failed: ' + (data.data?.message || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        responseDiv.classList.remove('hidden');
+        responseContent.textContent = 'Error: ' + error.message;
+        showDebugMessage('Network error during API simulation', 'error');
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.textContent = 'Send Test Request';
+    });
+}
+
+ </script>

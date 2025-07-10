@@ -181,16 +181,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     options += `<option value="${form.id}">${form.title}</option>`;
                 });
                 formIdSelect.innerHTML = options;
-                showMappingMessage('Forms loaded successfully', 'success');
+                ctmShowToast('Forms loaded successfully', 'success');
             } else {
                 formIdSelect.innerHTML = '<option value="">Error loading forms</option>';
-                showMappingMessage(data.data?.message || 'Failed to load forms', 'error');
+                ctmShowToast(data.data?.message || 'Failed to load forms', 'error');
             }
         })
         .catch(error => {
             console.error('Error loading forms:', error);
             formIdSelect.innerHTML = '<option value="">Error loading forms</option>';
-            showMappingMessage('Network error while loading forms', 'error');
+            ctmShowToast('Network error while loading forms', 'error');
         });
     }
     
@@ -216,16 +216,16 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success && data.data) {
                 displayFieldMapping(data.data);
-                showMappingMessage('Form fields loaded successfully', 'success');
+                ctmShowToast('Form fields loaded successfully', 'success');
             } else {
                 mappingContainer.innerHTML = '<div class="text-red-600 text-center py-4">Error loading fields</div>';
-                showMappingMessage(data.data?.message || 'Failed to load form fields', 'error');
+                ctmShowToast(data.data?.message || 'Failed to load form fields', 'error');
             }
         })
         .catch(error => {
             console.error('Error loading fields:', error);
             mappingContainer.innerHTML = '<div class="text-red-600 text-center py-4">Network error loading fields</div>';
-            showMappingMessage('Network error while loading fields', 'error');
+            ctmShowToast('Network error while loading fields', 'error');
         });
     }
     
@@ -275,7 +275,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const formId = formIdSelect.value;
         
         if (!formType || !formId) {
-            showMappingMessage('Please select a form type and form first', 'error');
+            ctmShowToast('Please select a form type and form first', 'error');
             return;
         }
         
@@ -311,22 +311,22 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                showMappingMessage(data.data.message || 'Mapping saved successfully', 'success');
+                ctmShowToast(data.data.message || 'Mapping saved successfully', 'success');
                 
                 // Show what was mapped
                 const mappedFields = Object.keys(mappingData).length;
                 if (mappedFields > 0) {
                     setTimeout(() => {
-                        showMappingMessage(`Successfully mapped ${mappedFields} field${mappedFields !== 1 ? 's' : ''} for ${formType.toUpperCase()} form`, 'info');
+                        ctmShowToast(`Successfully mapped ${mappedFields} field${mappedFields !== 1 ? 's' : ''} for ${formType.toUpperCase()} form`, 'info');
                     }, 1000);
                 }
             } else {
-                showMappingMessage(data.data?.message || 'Failed to save mapping', 'error');
+                ctmShowToast(data.data?.message || 'Failed to save mapping', 'error');
             }
         })
         .catch(error => {
             console.error('Error saving mapping:', error);
-            showMappingMessage('Network error occurred while saving mapping', 'error');
+            ctmShowToast('Network error occurred while saving mapping', 'error');
         })
         .finally(() => {
             saveBtn.disabled = false;
@@ -339,7 +339,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const formId = formIdSelect.value;
         
         if (!formType || !formId) {
-            showMappingMessage('Please select a form type and form first', 'error');
+            ctmShowToast('Please select a form type and form first', 'error');
             return;
         }
         
@@ -353,7 +353,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         if (Object.keys(mappingData).length === 0) {
-            showMappingMessage('No field mappings configured to preview', 'error');
+            ctmShowToast('No field mappings configured to preview', 'error');
             return;
         }
         
@@ -383,10 +383,10 @@ document.addEventListener('DOMContentLoaded', function() {
         previewContainer.innerHTML = previewHtml;
         previewContainer.classList.remove('hidden');
         
-        showMappingMessage('Mapping preview generated', 'success');
+        ctmShowToast('Mapping preview generated', 'success');
     }
     
-    function showMappingMessage(message, type = 'info') {
+    function ctmShowToast(message, type = 'info') {
         // Create message element
         const messageDiv = document.createElement('div');
         messageDiv.className = `p-4 mb-4 rounded-lg border-l-4 ${

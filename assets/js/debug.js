@@ -1,6 +1,3 @@
-
-<script>
-
 // Toast notification function available globally
 function ctmShowToast(message, type = 'info') {
   const container = document.getElementById('ctm-toast-container');
@@ -41,14 +38,13 @@ function updateElement(elementId, value) {
     }
 }
 
-// Remove showDebugMessage function and replace all calls with ctmShowToast
 document.addEventListener('DOMContentLoaded', function() {
     const exportBtn = document.getElementById('ctm-export-system-info');
     if (exportBtn) {
         exportBtn.addEventListener('click', function() {
             exportBtn.disabled = true;
             exportBtn.textContent = 'Exporting...';
-            fetch(window.ajaxurl, {
+            fetch(window.ctmDebugVars?.ajaxurl || window.ajaxurl, {
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -74,15 +70,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         URL.revokeObjectURL(url);
                     }, 100);
                 } else {
-                    alert('Failed to export system info: ' + (data.data?.message || 'Unknown error'));
+                    ctmShowToast('Failed to export system info: ' + (data.data?.message || 'Unknown error'), 'error');
                 }
             })
             .catch(err => {
                 exportBtn.disabled = false;
                 exportBtn.textContent = 'Export System Info';
-                alert('Export failed: ' + err);
+                ctmShowToast('Export failed: ' + err, 'error');
             });
         });
     }
-});
-</script> 
+}); 

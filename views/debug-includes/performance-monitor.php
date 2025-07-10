@@ -255,4 +255,260 @@
     </div>
 </div>
 
- 
+ <script>
+
+// Performance Monitor
+let pageLoadStart = performance.now();
+let autoRefreshInterval = null;
+let autoRefreshEnabled = false;
+
+    function toggleAutoRefresh() {
+        const button = document.getElementById('auto-refresh-btn');
+        
+        if (!button) return;
+        
+        if (autoRefreshEnabled) {
+            // Disable auto-refresh
+            clearInterval(autoRefreshInterval);
+            autoRefreshInterval = null;
+            autoRefreshEnabled = false;
+            button.textContent = 'Auto: OFF';
+            button.classList.remove('bg-green-600', 'hover:bg-green-700');
+            button.classList.add('bg-gray-600', 'hover:bg-gray-700');
+            showDebugMessage('Auto-refresh disabled', 'info');
+        } else {
+            // Enable auto-refresh
+            autoRefreshInterval = setInterval(refreshPerformance, 30000); // Refresh every 30 seconds
+            autoRefreshEnabled = true;
+            button.textContent = 'Auto: ON';
+            button.classList.remove('bg-gray-600', 'hover:bg-gray-700');
+            button.classList.add('bg-green-600', 'hover:bg-green-700');
+            showDebugMessage('Auto-refresh enabled (30s intervals)', 'success');
+        }
+    }
+
+
+    // Enhanced refresh performance function
+    function refreshPerformance() {
+        const button = document.getElementById('refresh-performance-btn');
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'Refreshing...';
+        }
+
+        // Get stored client-side metrics
+        const clientMetrics = getStoredPerformanceMetrics();
+
+        const formData = new FormData();
+        formData.append('action', 'ctm_get_performance_metrics');
+        formData.append('nonce', '<?= wp_create_nonce('ctm_get_performance_metrics') ?>');
+        if (clientMetrics) {
+            formData.append('client_metrics', JSON.stringify(clientMetrics));
+        }
+
+        fetch('<?= admin_url('admin-ajax.php') ?>', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(response => {
+            if (response.success) {
+                const data = response.data;
+                
+                // Update top metrics cards
+                updateElement('memory-usage', data.memory_usage || '--');
+                updateElement('memory-percentage', data.memory_percentage || '--');
+                updateElement('page-load-time', data.page_load_time || '--');
+                updateElement('load-time-status', data.server_response || '--');
+                updateElement('db-queries', data.db_queries || '--');
+                updateElement('query-time', data.query_time || '--');
+                updateElement('api-calls', data.api_calls || '--');
+                updateElement('api-response-time', data.api_response_time || '--');
+                
+                // Memory & Processing
+                updateElement('current-memory', data.current_memory || '--');
+                updateElement('peak-memory', data.peak_memory || '--');
+                updateElement('memory-limit', data.memory_limit || '--');
+                updateElement('cpu-usage', data.cpu_usage || '--');
+                updateElement('execution-time', data.execution_time || '--');
+                updateElement('time-limit', data.time_limit || '--');
+                
+                // Database Performance
+                updateElement('total-queries', data.total_queries || '--');
+                updateElement('total-query-time', data.total_query_time || '--');
+                updateElement('slow-queries', data.slow_queries || '--');
+                updateElement('cache-hits', data.cache_hits || '--');
+                updateElement('cache-misses', data.cache_misses || '--');
+                updateElement('db-version', data.db_version || '--');
+                
+                // Page Load Performance (enhanced with client-side data)
+                updateElement('ttfb', data.ttfb || '--');
+                updateElement('dom-ready', data.dom_ready || '--');
+                updateElement('load-complete', data.load_complete || '--');
+                updateElement('scripts-loaded', data.scripts_loaded || '--');
+                updateElement('styles-loaded', data.styles_loaded || '--');
+                updateElement('images-loaded', data.images_loaded || '--');
+                
+                // WordPress Performance
+                updateElement('active-plugins', data.active_plugins || '--');
+                updateElement('theme-load-time', data.theme_load_time || '--');
+                updateElement('plugin-load-time', data.plugin_load_time || '--');
+                updateElement('admin-queries', data.admin_queries || '--');
+                updateElement('frontend-queries', data.frontend_queries || '--');
+                updateElement('cron-jobs', data.cron_jobs || '--');
+                
+                // Real-time Metrics
+                updateElement('server-load', data.server_load || '--');
+                updateElement('disk-usage', data.disk_usage || '--');
+                updateElement('network-io', data.network_io || '--');
+                updateElement('active-sessions', data.active_sessions || '--');
+                updateElement('error-rate', data.error_rate || '--');
+                updateElement('last-updated', data.last_updated || '--');
+                
+                showDebugMessage('Performance metrics updated successfully!', 'success');
+            } else {
+                showDebugMessage('Failed to refresh performance metrics: ' + (response.data?.message || 'Unknown error'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Performance refresh error:', error);
+            showDebugMessage('Failed to refresh performance metrics. Please try again.', 'error');
+        })
+        .finally(() => {
+            if (button) {
+                button.disabled = false;
+                button.textContent = 'Refresh';
+            }
+        });
+    }
+
+    // Get stored performance metrics
+    function getStoredPerformanceMetrics() {
+        try {
+            const stored = localStorage.getItem('ctm_performance_metrics');
+            return stored ? JSON.parse(stored) : null;
+        } catch (e) {
+            console.log('Could not retrieve performance metrics:', e);
+            return null;
+        }
+    }
+
+
+// Performance measurement functionality
+let performanceData = {
+    navigationStart: 0,
+    domContentLoaded: 0,
+    loadComplete: 0,
+    scriptsLoaded: 0,
+    stylesLoaded: 0,
+    imagesLoaded: 0
+};
+
+// Capture navigation start time with modern API support
+if (window.performance) {
+    if (window.performance.timeOrigin) {
+        // Modern browsers - use timeOrigin
+        performanceData.navigationStart = window.performance.timeOrigin;
+    } else if (window.performance.timing) {
+        // Legacy browsers - use timing.navigationStart
+        performanceData.navigationStart = window.performance.timing.navigationStart;
+    } else {
+        // Ultimate fallback
+        performanceData.navigationStart = Date.now();
+    }
+} else {
+    // Fallback for browsers without Performance API
+    performanceData.navigationStart = Date.now();
+}
+
+// Measure DOM Content Loaded with multiple fallback methods
+document.addEventListener('DOMContentLoaded', function() {
+    refreshPerformance();
+    // Method 1: Try modern PerformanceNavigationTiming API first
+    if (window.performance && window.performance.getEntriesByType) {
+        const navEntries = window.performance.getEntriesByType('navigation');
+        if (navEntries.length > 0 && navEntries[0].domContentLoadedEventEnd) {
+            performanceData.domContentLoaded = navEntries[0].domContentLoadedEventEnd;
+            console.log('DOM Ready (Navigation Timing 2):', performanceData.domContentLoaded + 'ms');
+        }
+    }
+    
+    // Method 2: Legacy Navigation Timing API
+    if (!performanceData.domContentLoaded && window.performance && window.performance.timing) {
+        setTimeout(() => {
+            let domTiming = 0;
+            
+            // Try domContentLoadedEventEnd first (most accurate)
+            if (window.performance.timing.domContentLoadedEventEnd > 0) {
+                domTiming = window.performance.timing.domContentLoadedEventEnd - window.performance.timing.navigationStart;
+            }
+            // Fallback to domContentLoadedEventStart
+            else if (window.performance.timing.domContentLoadedEventStart > 0) {
+                domTiming = window.performance.timing.domContentLoadedEventStart - window.performance.timing.navigationStart;
+            }
+            // Final fallback to current time
+            else {
+                domTiming = Date.now() - window.performance.timing.navigationStart;
+            }
+            
+            performanceData.domContentLoaded = domTiming > 0 ? domTiming : Date.now() - performanceData.navigationStart;
+            console.log('DOM Ready (Navigation Timing 1):', performanceData.domContentLoaded + 'ms');
+            storePerformanceMetrics();
+        }, 10); // Small delay to ensure timing data is available
+    }
+    
+    // Method 3: Fallback timing measurement
+    if (!performanceData.domContentLoaded) {
+        performanceData.domContentLoaded = Date.now() - performanceData.navigationStart;
+        console.log('DOM Ready (Fallback):', performanceData.domContentLoaded + 'ms');
+    }
+    
+    // Count loaded scripts
+    performanceData.scriptsLoaded = document.querySelectorAll('script').length;
+    
+    // Count loaded stylesheets
+    performanceData.stylesLoaded = document.querySelectorAll('link[rel="stylesheet"]').length;
+    
+    // Store initial performance data
+    storePerformanceMetrics();
+});
+
+// Measure window load complete
+window.addEventListener('load', function() {
+    if (window.performance && window.performance.timing) {
+        // Wait a bit for loadEventEnd to be available
+        setTimeout(() => {
+            const loadTiming = window.performance.timing.loadEventEnd - window.performance.timing.navigationStart;
+            performanceData.loadComplete = loadTiming > 0 ? loadTiming : Date.now() - performanceData.navigationStart;
+            storePerformanceMetrics();
+        }, 100);
+    } else {
+        // Fallback timing
+        performanceData.loadComplete = Date.now() - performanceData.navigationStart;
+    }
+    
+    // Count loaded images
+    const images = document.querySelectorAll('img');
+    let loadedImages = 0;
+    images.forEach(img => {
+        if (img.complete && img.naturalHeight !== 0) {
+            loadedImages++;
+        }
+    });
+    performanceData.imagesLoaded = loadedImages;
+    
+    // Store final performance data
+    storePerformanceMetrics();
+});
+
+// Store performance metrics in localStorage
+function storePerformanceMetrics() {
+    try {
+        localStorage.setItem('ctm_performance_metrics', JSON.stringify(performanceData));
+    } catch (e) {
+        console.log('Could not store performance metrics:', e);
+    }
+}
+
+
+ </script>
