@@ -15,6 +15,7 @@ use CTM\Service\ApiService;
 use CTM\Service\CF7Service;
 use CTM\Service\GFService;
 use CTM\Admin\Options;
+use CTM\Admin\LoggingSystem;
 
 class CallTrackingMetrics
 {
@@ -32,17 +33,14 @@ class CallTrackingMetrics
         $this->adminOptions = new Options();
 
         // Initialize logging system once
-        Options::initializeLoggingSystem();
+        LoggingSystem::initializeLoggingSystem();
+
+        // Initialize admin components (includes AJAX handlers and mapping assets)
+        $this->adminOptions->initialize();
 
         // Register WordPress hooks
         add_action('admin_init', [$this->adminOptions, 'registerSettings']);
         add_action('admin_menu', [$this->adminOptions, 'registerSettingsPage']);
-        add_action('admin_enqueue_scripts', [$this->adminOptions, 'enqueueMappingAssets']);
-        add_action('wp_ajax_ctm_get_forms', [$this->adminOptions, 'ajaxGetForms']);
-        add_action('wp_ajax_ctm_get_fields', [$this->adminOptions, 'ajaxGetFields']);
-        add_action('wp_ajax_ctm_save_mapping', [$this->adminOptions, 'ajaxSaveMapping']);
-        add_action('wp_ajax_ctm_dismiss_notice', [$this->adminOptions, 'ajaxDismissNotice']);
-        add_action('wp_ajax_ctm_test_api_connection', [$this->adminOptions, 'ajaxTestApiConnection']);
         
         // Plugin functionality hooks
         add_action('wp_head', [$this, 'printTrackingScript'], 10);
@@ -56,8 +54,8 @@ class CallTrackingMetrics
         }
 
         // Register activation/deactivation hooks
-        register_activation_hook(__FILE__, [Options::class, 'onPluginActivation']);
-        register_deactivation_hook(__FILE__, [Options::class, 'onPluginDeactivation']);
+        register_activation_hook(__FILE__, [LoggingSystem::class, 'onPluginActivation']);
+        register_deactivation_hook(__FILE__, [LoggingSystem::class, 'onPluginDeactivation']);
     }
 
     /** Print the tracking script in the site head. */
@@ -97,7 +95,7 @@ class CallTrackingMetrics
         $apiSecret = get_option('ctm_api_secret');
         if ($result && $apiKey && $apiSecret) {
             $response = $this->apiService->submitFormReactor($result, $apiKey, $apiSecret);
-            \CTM\Admin\Options::logDebug([
+            LoggingSystem::logDebug([
                 'type' => 'cf7',
                 'payload' => $result,
                 'response' => $response
@@ -121,7 +119,7 @@ class CallTrackingMetrics
         $apiSecret = get_option('ctm_api_secret');
         if ($result && $apiKey && $apiSecret) {
             $response = $this->apiService->submitFormReactor($result, $apiKey, $apiSecret);
-            \CTM\Admin\Options::logDebug([
+            LoggingSystem::logDebug([
                 'type' => 'gf',
                 'payload' => $result,
                 'response' => $response

@@ -67,14 +67,14 @@ if ($debugEnabled) {
             <div>
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">Debug Controls</h3>
                 <div class="space-y-4">
-                    <form method="post" class="flex flex-wrap gap-3">
-                        <button type="submit" name="toggle_debug" class="<?= $debugEnabled ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700' ?> text-white font-medium px-6 py-2 rounded-lg shadow transition duration-200">
+                    <div class="flex flex-wrap gap-3">
+                        <button type="button" onclick="toggleDebugMode()" id="toggle-debug-btn" class="<?= $debugEnabled ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700' ?> text-white font-medium px-6 py-2 rounded-lg shadow transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                             <?= $debugEnabled ? 'Disable Debug Mode' : 'Enable Debug Mode' ?>
                         </button>
-                        <button type="submit" name="clear_debug_log" onclick="return confirm('Are you sure you want to clear all debug logs? This action cannot be undone.')" class="bg-red-500 hover:bg-red-600 text-white font-medium px-6 py-2 rounded-lg shadow transition duration-200">
+                        <button type="button" onclick="clearDebugLogs('debug_all')" class="bg-red-500 hover:bg-red-600 text-white font-medium px-6 py-2 rounded-lg shadow transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed" id="clear-debug-all-btn">
                             Clear All Logs
                         </button>
-                    </form>
+                    </div>
                     
                     <?php if ($debugEnabled): ?>
                         <div class="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -130,6 +130,7 @@ if ($debugEnabled) {
         </div>
     </div>
 
+    <?php if ($debugEnabled): ?>
     <!-- Log Settings -->
     <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mb-8">
         <h3 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
@@ -140,7 +141,7 @@ if ($debugEnabled) {
             Log Settings
         </h3>
 
-        <form method="post" class="space-y-6">
+        <form id="log-settings-form" class="space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label for="log_retention_days" class="block text-sm font-medium text-gray-700 mb-2">Log Retention (Days)</label>
@@ -171,7 +172,7 @@ if ($debugEnabled) {
                 </div>
             </div>
 
-            <button type="submit" name="update_log_settings" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg shadow transition duration-200">
+            <button type="button" onclick="updateLogSettings()" id="update-log-settings-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg shadow transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                 Update Log Settings
             </button>
         </form>
@@ -228,12 +229,9 @@ if ($debugEnabled) {
                                         Email Log
                                     </button>
                                     
-                                    <form method="post" class="inline" onsubmit="return confirm('Are you sure you want to clear this log?')">
-                                        <input type="hidden" name="log_date" value="<?= $date ?>">
-                                        <button type="submit" name="clear_single_log" class="text-red-600 hover:text-red-800 text-sm font-medium">
-                                            Clear
-                                        </button>
-                                    </form>
+                                    <button type="button" onclick="clearDebugLogs('debug_single', '<?= $date ?>')" class="text-red-600 hover:text-red-800 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed" id="clear-single-<?= $date ?>-btn">
+                                        Clear
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -284,6 +282,33 @@ if ($debugEnabled) {
             </div>
         <?php endif; ?>
     </div>
+    <?php else: ?>
+    <!-- Debug Disabled State -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+        <div class="text-center py-12">
+            <svg class="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+            </svg>
+            <h3 class="text-xl font-semibold text-gray-800 mb-3">Debug Mode is Disabled</h3>
+            <p class="text-gray-600 mb-6 max-w-md mx-auto">
+                Debug mode is currently disabled. Enable it to start logging plugin activity, API requests, and troubleshooting information.
+            </p>
+            <div class="bg-gray-50 rounded-lg p-4 mb-6 max-w-lg mx-auto">
+                <h4 class="font-medium text-gray-800 mb-2">What debug mode provides:</h4>
+                <ul class="text-sm text-gray-600 space-y-1 text-left">
+                    <li>• Detailed API request and response logging</li>
+                    <li>• Error tracking and troubleshooting information</li>
+                    <li>• Plugin activity monitoring</li>
+                    <li>• Performance metrics and timing data</li>
+                    <li>• Integration debugging for forms and webhooks</li>
+                </ul>
+            </div>
+            <button type="button" onclick="toggleDebugMode()" id="toggle-debug-btn" class="bg-green-600 hover:bg-green-700 text-white font-medium px-8 py-3 rounded-lg shadow transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                Enable Debug Mode
+            </button>
+        </div>
+    </div>
+    <?php endif; ?>
 </div>
 
 <!-- Email Log Modal -->
@@ -331,4 +356,296 @@ document.getElementById('email-modal').addEventListener('click', function(e) {
         hideEmailForm();
     }
 });
-</script> 
+
+function clearDebugLogs(logType, logDate = '') {
+    const buttonId = logType === 'debug_all' ? 'clear-debug-all-btn' : `clear-single-${logDate}-btn`;
+    const button = document.getElementById(buttonId);
+    const originalText = button.textContent;
+    
+    // Confirm action
+    const confirmMessage = logType === 'debug_all' 
+        ? 'Are you sure you want to clear all debug logs? This action cannot be undone.'
+        : `Are you sure you want to clear the debug log for ${logDate}? This action cannot be undone.`;
+    
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+    
+    // Disable button and show loading state
+    button.disabled = true;
+    button.textContent = 'Clearing...';
+    
+    // Prepare form data
+    const formData = new FormData();
+    formData.append('action', 'ctm_clear_logs');
+    formData.append('log_type', logType);
+    if (logDate) {
+        formData.append('log_date', logDate);
+    }
+    formData.append('nonce', '<?= wp_create_nonce('ctm_clear_logs') ?>');
+    
+    // Send AJAX request
+    fetch('<?= admin_url('admin-ajax.php') ?>', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            showDebugMessage(data.data.message, 'success');
+            
+            if (logType === 'debug_all') {
+                // Reload the page to show empty state
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                // Remove the specific log container
+                const logContainer = button.closest('.border.border-gray-200.rounded-lg.overflow-hidden');
+                if (logContainer) {
+                    logContainer.style.transition = 'opacity 0.5s ease';
+                    logContainer.style.opacity = '0';
+                    setTimeout(() => {
+                        logContainer.remove();
+                        
+                        // Check if there are any remaining logs
+                        const remainingLogs = document.querySelectorAll('.border.border-gray-200.rounded-lg.overflow-hidden');
+                        if (remainingLogs.length === 0) {
+                            // Show "no logs" message
+                            const logsContainer = document.querySelector('.space-y-4');
+                            if (logsContainer) {
+                                logsContainer.innerHTML = `
+                                    <div class="text-center py-12">
+                                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                        </svg>
+                                        <h3 class="mt-4 text-lg font-medium text-gray-900">No debug logs found</h3>
+                                        <p class="mt-2 text-gray-500">Enable debug mode to start logging plugin activity.</p>
+                                    </div>
+                                `;
+                            }
+                        }
+                    }, 500);
+                }
+            }
+        } else {
+            showDebugMessage(data.data.message || 'Failed to clear logs', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error clearing logs:', error);
+        showDebugMessage('Network error occurred while clearing logs', 'error');
+    })
+    .finally(() => {
+        // Re-enable button if it still exists
+        if (button && button.parentNode) {
+            button.disabled = false;
+            button.textContent = originalText;
+        }
+    });
+}
+
+function showDebugMessage(message, type = 'info') {
+    // Create message element
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `p-4 mb-4 rounded-lg border-l-4 ${
+        type === 'success' ? 'bg-green-50 border-green-400 text-green-700' :
+        type === 'error' ? 'bg-red-50 border-red-400 text-red-700' :
+        'bg-blue-50 border-blue-400 text-blue-700'
+    }`;
+    
+    messageDiv.innerHTML = `
+        <div class="flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                ${type === 'success' ? 
+                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>' :
+                    type === 'error' ?
+                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>' :
+                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
+                }
+            </svg>
+            <span class="font-medium">${message}</span>
+        </div>
+    `;
+    
+    // Insert at top of debug container
+    const container = document.querySelector('.mb-12');
+    container.insertBefore(messageDiv, container.firstChild);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        messageDiv.style.transition = 'opacity 0.5s ease';
+        messageDiv.style.opacity = '0';
+        setTimeout(() => {
+            if (messageDiv.parentNode) {
+                messageDiv.parentNode.removeChild(messageDiv);
+            }
+        }, 500);
+         }, 5000);
+ }
+
+function toggleDebugMode() {
+    const button = document.getElementById('toggle-debug-btn');
+    const originalText = button.textContent;
+    
+    // Disable button and show loading state
+    button.disabled = true;
+    button.textContent = 'Processing...';
+    
+    // Prepare form data
+    const formData = new FormData();
+    formData.append('action', 'ctm_toggle_debug_mode');
+    formData.append('nonce', '<?= wp_create_nonce('ctm_toggle_debug_mode') ?>');
+    
+    // Send AJAX request
+    fetch('<?= admin_url('admin-ajax.php') ?>', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showDebugMessage(data.data.message, 'success');
+            
+                         // Update the entire debug tab content
+             const debugTabContent = document.querySelector('.bg-gray-50.p-6.rounded-b-lg');
+             if (debugTabContent) {
+                 debugTabContent.innerHTML = data.data.updated_content;
+             } else {
+                 // Fallback: reload the page if we can't find the tab content
+                 window.location.reload();
+             }
+            
+            // Show additional feedback
+            setTimeout(() => {
+                const action = data.data.action;
+                if (action === 'enabled') {
+                    showDebugMessage('Debug logging is now active. All plugin activity will be recorded.', 'info');
+                } else {
+                    showDebugMessage('Debug logging has been stopped. Existing logs are preserved.', 'info');
+                }
+            }, 1000);
+            
+        } else {
+            showDebugMessage(data.data.message || 'Failed to toggle debug mode', 'error');
+            // Re-enable button on error
+            button.disabled = false;
+            button.textContent = originalText;
+        }
+    })
+    .catch(error => {
+        console.error('Error toggling debug mode:', error);
+        showDebugMessage('Network error occurred while toggling debug mode', 'error');
+        // Re-enable button on error
+        button.disabled = false;
+        button.textContent = originalText;
+    });
+}
+
+function updateLogSettings() {
+    const button = document.getElementById('update-log-settings-btn');
+    const form = document.getElementById('log-settings-form');
+    const originalText = button.textContent;
+    
+    // Disable button and show loading state
+    button.disabled = true;
+    button.textContent = 'Updating...';
+    
+    // Get form data
+    const formData = new FormData();
+    formData.append('action', 'ctm_update_log_settings');
+    formData.append('log_retention_days', document.getElementById('log_retention_days').value);
+    formData.append('log_notification_email', document.getElementById('log_notification_email').value);
+    formData.append('log_auto_cleanup', document.getElementById('log_auto_cleanup').checked ? '1' : '0');
+    formData.append('log_email_notifications', document.getElementById('log_email_notifications').checked ? '1' : '0');
+    formData.append('nonce', '<?= wp_create_nonce('ctm_update_log_settings') ?>');
+    
+    // Send AJAX request
+    fetch('<?= admin_url('admin-ajax.php') ?>', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showDebugMessage(data.data.message, 'success');
+            
+            // Show what was updated
+            const settings = data.data.settings;
+            let updateDetails = [];
+            
+            if (settings.retention_days) {
+                updateDetails.push(`Retention: ${settings.retention_days} days`);
+            }
+            
+            if (settings.auto_cleanup) {
+                updateDetails.push('Auto-cleanup: enabled');
+            } else {
+                updateDetails.push('Auto-cleanup: disabled');
+            }
+            
+            if (settings.email_notifications) {
+                updateDetails.push('Email notifications: enabled');
+            } else {
+                updateDetails.push('Email notifications: disabled');
+            }
+            
+            if (settings.notification_email) {
+                updateDetails.push(`Email: ${settings.notification_email}`);
+            }
+            
+            // Show detailed update message after a short delay
+            setTimeout(() => {
+                showDebugMessage(`Settings updated: ${updateDetails.join(', ')}`, 'info');
+            }, 1000);
+            
+        } else {
+            showDebugMessage(data.data.message || 'Failed to update log settings', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating log settings:', error);
+        showDebugMessage('Network error occurred while updating settings', 'error');
+    })
+    .finally(() => {
+        // Re-enable button
+        button.disabled = false;
+        button.textContent = originalText;
+    });
+}
+
+// Add form validation
+document.getElementById('log_retention_days').addEventListener('input', function() {
+    const value = parseInt(this.value);
+    if (value < 1) {
+        this.value = 1;
+    } else if (value > 365) {
+        this.value = 365;
+    }
+});
+
+// Add email validation for notifications
+document.getElementById('log_email_notifications').addEventListener('change', function() {
+    const emailField = document.getElementById('log_notification_email');
+    const emailLabel = emailField.previousElementSibling;
+    
+    if (this.checked) {
+        emailField.required = true;
+        emailLabel.classList.add('text-red-600');
+        emailLabel.innerHTML = emailLabel.innerHTML.replace('Notification Email', 'Notification Email *');
+    } else {
+        emailField.required = false;
+        emailLabel.classList.remove('text-red-600');
+        emailLabel.innerHTML = emailLabel.innerHTML.replace('Notification Email *', 'Notification Email');
+    }
+});
+
+// Initialize email field requirement state
+document.addEventListener('DOMContentLoaded', function() {
+    const emailNotifications = document.getElementById('log_email_notifications');
+    if (emailNotifications && emailNotifications.checked) {
+        emailNotifications.dispatchEvent(new Event('change'));
+    }
+});
+ </script> 

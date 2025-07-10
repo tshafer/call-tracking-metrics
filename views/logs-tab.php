@@ -7,9 +7,9 @@
             <svg class="w-7 h-7 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 014-4h3m4 4v1a3 3 0 01-3 3H7a3 3 0 01-3-3v-1a9 9 0 0118 0z" /></svg>
             <h2 class="text-2xl font-bold text-blue-800 tracking-tight">CF7 Logs</h2>
         </div>
-        <form method="post" class="mb-6">
-            <button type="submit" name="clear_cf7_logs" class="bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 text-white font-bold px-6 py-2 rounded-lg shadow transition-transform transform hover:scale-105">Clear CF7 Logs</button>
-        </form>
+        <div class="mb-6">
+            <button type="button" onclick="clearLogs('cf7')" class="bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 text-white font-bold px-6 py-2 rounded-lg shadow transition-transform transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed" id="clear-cf7-btn">Clear CF7 Logs</button>
+        </div>
         <?php if (empty($cf7Logs)): ?>
             <div class="text-gray-500">No CF7 logs found.</div>
         <?php else: ?>
@@ -41,9 +41,9 @@
             <svg class="w-7 h-7 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v4a1 1 0 001 1h3m10-5v4a1 1 0 001 1h3m-7 4v4m0 0H7m5 0h5" /></svg>
             <h2 class="text-2xl font-bold text-blue-800 tracking-tight">Gravity Forms Logs</h2>
         </div>
-        <form method="post" class="mb-6">
-            <button type="submit" name="clear_gf_logs" class="bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 text-white font-bold px-6 py-2 rounded-lg shadow transition-transform transform hover:scale-105">Clear GF Logs</button>
-        </form>
+        <div class="mb-6">
+            <button type="button" onclick="clearLogs('gf')" class="bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 text-white font-bold px-6 py-2 rounded-lg shadow transition-transform transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed" id="clear-gf-btn">Clear GF Logs</button>
+        </div>
         <?php if (empty($gfLogs)): ?>
             <div class="text-gray-500">No Gravity Forms logs found.</div>
         <?php else: ?>
@@ -70,4 +70,104 @@
             </table></div>
         <?php endif; ?>
     </div>
-</div> 
+</div>
+
+<script>
+function clearLogs(logType) {
+    const button = document.getElementById(`clear-${logType}-btn`);
+    const originalText = button.textContent;
+    
+    // Confirm action
+    if (!confirm(`Are you sure you want to clear all ${logType.toUpperCase()} logs? This action cannot be undone.`)) {
+        return;
+    }
+    
+    // Disable button and show loading state
+    button.disabled = true;
+    button.textContent = 'Clearing...';
+    
+    // Prepare form data
+    const formData = new FormData();
+    formData.append('action', 'ctm_clear_logs');
+    formData.append('log_type', logType);
+    formData.append('nonce', '<?= wp_create_nonce('ctm_clear_logs') ?>');
+    
+    // Send AJAX request
+    fetch('<?= admin_url('admin-ajax.php') ?>', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            showLogMessage(data.data.message, 'success');
+            
+            // Clear the log table
+            const logTable = button.closest('.bg-white').querySelector('table');
+            if (logTable) {
+                const tbody = logTable.querySelector('tbody');
+                if (tbody) {
+                    tbody.innerHTML = '';
+                }
+                // Hide table and show "no logs" message
+                logTable.parentElement.style.display = 'none';
+                const noLogsDiv = document.createElement('div');
+                noLogsDiv.className = 'text-gray-500';
+                noLogsDiv.textContent = `No ${logType.toUpperCase()} logs found.`;
+                logTable.parentElement.parentElement.appendChild(noLogsDiv);
+            }
+        } else {
+            showLogMessage(data.data.message || 'Failed to clear logs', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error clearing logs:', error);
+        showLogMessage('Network error occurred while clearing logs', 'error');
+    })
+    .finally(() => {
+        // Re-enable button
+        button.disabled = false;
+        button.textContent = originalText;
+    });
+}
+
+function showLogMessage(message, type = 'info') {
+    // Create message element
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `p-4 mb-4 rounded-lg border-l-4 ${
+        type === 'success' ? 'bg-green-50 border-green-400 text-green-700' :
+        type === 'error' ? 'bg-red-50 border-red-400 text-red-700' :
+        'bg-blue-50 border-blue-400 text-blue-700'
+    }`;
+    
+    messageDiv.innerHTML = `
+        <div class="flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                ${type === 'success' ? 
+                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>' :
+                    type === 'error' ?
+                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>' :
+                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
+                }
+            </svg>
+            <span class="font-medium">${message}</span>
+        </div>
+    `;
+    
+    // Insert at top of logs container
+    const container = document.querySelector('.mb-12');
+    container.insertBefore(messageDiv, container.firstChild);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        messageDiv.style.transition = 'opacity 0.5s ease';
+        messageDiv.style.opacity = '0';
+        setTimeout(() => {
+            if (messageDiv.parentNode) {
+                messageDiv.parentNode.removeChild(messageDiv);
+            }
+        }, 500);
+    }, 5000);
+}
+</script>
