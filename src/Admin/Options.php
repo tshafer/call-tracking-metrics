@@ -189,8 +189,24 @@ class Options
 
     private function getApiTabContent(): string
     {
+        $apiKey = get_option('ctm_api_key');
+        $apiSecret = get_option('ctm_api_secret');
+        $apiStatus = 'not_tested';
+        $accountInfo = null;
+        
+        if ($apiKey && $apiSecret) {
+            $apiService = new \CTM\Service\ApiService('https://api.calltrackingmetrics.com');
+            $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
+            $apiStatus = ($accountInfo && isset($accountInfo['account'])) ? 'connected' : 'not_connected';
+        }
+        
         ob_start();
-        $this->renderView('api-tab');
+        $this->renderView('api-tab', [
+            'apiKey' => $apiKey,
+            'apiSecret' => $apiSecret,
+            'apiStatus' => $apiStatus,
+            'accountInfo' => $accountInfo,
+        ]);
         return ob_get_clean();
     }
 

@@ -143,30 +143,7 @@
                     <?php if ($debugEnabled): ?><span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Enabled</span><?php else: ?><span class="bg-gray-100 text-gray-700 px-2 py-1 rounded">Disabled</span><?php endif; ?>
                 </div>
             </div>
-            <?php if ($accountInfo && isset($accountInfo['account'])): ?>
-                <?php $acct = $accountInfo['account']; ?>
-                <div class="bg-white border border-blue-200 rounded p-4 mt-2">
-                    <div class="flex items-center gap-4 mb-2">
-                        <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                        <span class="font-semibold text-blue-800">CTM Account:</span>
-                        <span class="ml-2"><?= esc_html($acct['name'] ?? 'N/A') ?></span>
-                        <span class="ml-4 text-gray-500">ID: <span class="font-mono"><?= esc_html($acct['id'] ?? 'N/A') ?></span></span>
-                        <?php if (!empty($acct['email'])): ?><span class="ml-4 text-gray-500">Email: <span class="font-mono"><?= esc_html($acct['email']) ?></span></span><?php endif; ?>
-                    </div>
-                    <?php if (isset($acctDetails['account'])): ?>
-                        <?php $details = $acctDetails['account']; ?>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 text-sm">
-                            <?php if (!empty($details['timezone'])): ?><div><span class="font-semibold">Timezone:</span> <?= esc_html($details['timezone']) ?></div><?php endif; ?>
-                            <?php if (!empty($details['created_at'])): ?><div><span class="font-semibold">Created:</span> <?= esc_html($details['created_at']) ?></div><?php endif; ?>
-                            <?php if (!empty($details['status'])): ?><div><span class="font-semibold">Status:</span> <?= esc_html($details['status']) ?></div><?php endif; ?>
-                            <?php if (!empty($details['phone'])): ?><div><span class="font-semibold">Phone:</span> <?= esc_html($details['phone']) ?></div><?php endif; ?>
-                            <?php if (!empty($details['website'])): ?><div><span class="font-semibold">Website:</span> <a href="<?= esc_url($details['website']) ?>" class="text-blue-600 underline" target="_blank"><?= esc_html($details['website']) ?></a></div><?php endif; ?>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            <?php elseif ($apiKey && $apiSecret): ?>
-                <div class="bg-yellow-50 text-yellow-800 p-2 rounded mt-2">Unable to load account info. Please check your API keys.</div>
-            <?php endif; ?>
+
         </div>
         <!-- Settings Form Fields -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -247,8 +224,6 @@
                         <div id="tech-details-content" class="hidden mt-2 p-3 bg-gray-100 rounded text-xs font-mono overflow-x-auto"></div>
                     </div>
                 </div>
-                
-                <div class="text-sm text-gray-500">Account ID: <span class="font-mono"><?= esc_html($accountId) ?></span></div>
             </div>
             <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
                 <h2 class="text-xl font-semibold mb-4 text-gray-700">Tracking</h2>

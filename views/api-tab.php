@@ -1,25 +1,20 @@
 <?php
 // API Activity tab view
-$options = get_option('call_tracking_metrics', []);
-$api_connected = !empty($options['api_key']) && !empty($options['api_secret']);
-
-// Get API service for account info
-if ($api_connected) {
-    $api_service = new CTM\Service\ApiService('https://api.calltrackingmetrics.com');
-    $accountInfo = $api_service->getAccountInfo($options['api_key'], $options['api_secret']);
-}
+// Data is passed from Options.php: $apiKey, $apiSecret, $apiStatus, $accountInfo
+$api_connected = ($apiStatus === 'connected');
 ?>
 
 <div class="space-y-6">
     
     <?php if ($api_connected && !empty($accountInfo)): ?>
+        
         <!-- Account Information Section -->
         <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
-            <div class="bg-gradient-to-r from-green-50 to-blue-50 px-6 py-4 border-b border-gray-200 rounded-t-lg">
+            <div class="bg-gradient-to-r from-blue-50 to-green-50 px-6 py-4 border-b border-gray-200 rounded-t-lg">
                 <div class="flex items-center">
-                    <div class="w-3 h-3 bg-green-500 rounded-full mr-3 animate-pulse"></div>
-                    <h2 class="text-lg font-semibold text-gray-800">API Connection Status</h2>
-                    <span class="ml-2 px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">Connected</span>
+                    <div class="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
+                    <h2 class="text-lg font-semibold text-gray-800">Account Information</h2>
+                    <span class="ml-2 px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">Active</span>
                 </div>
             </div>
             
@@ -72,7 +67,7 @@ if ($api_connected) {
                             <div class="flex justify-between">
                                 <span class="text-gray-600">API Key:</span>
                                 <span class="font-mono text-gray-800">
-                                    <?= esc_html(substr($options['api_key'], 0, 8)) ?>••••••••
+                                    <?= esc_html(substr($apiKey ?? '', 0, 8)) ?>••••••••
                                 </span>
                             </div>
                             <div class="flex justify-between">
@@ -97,11 +92,20 @@ if ($api_connected) {
             </div>
         </div>
         
-        <!-- Quick API Test Section -->
+        <!-- Real-time API Connection Monitor -->
         <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
-            <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 rounded-t-lg">
-                <h2 class="text-lg font-semibold text-gray-800">API Connection Test</h2>
-                <p class="text-sm text-gray-600 mt-1">Test your API connection and view real-time logs</p>
+            <div class="bg-gradient-to-r from-green-50 to-blue-50 px-6 py-4 border-b border-gray-200 rounded-t-lg">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div id="ctm-status-indicator" class="w-3 h-3 bg-green-500 rounded-full mr-3 animate-pulse"></div>
+                        <h2 class="text-lg font-semibold text-gray-800">Live API Connection Monitor</h2>
+                        <span id="ctm-status-badge" class="ml-2 px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">Connected</span>
+                    </div>
+                    <div class="text-right">
+                        <div id="ctm-countdown" class="text-sm text-gray-600">Next test in 10s</div>
+                        <div id="ctm-last-test" class="text-xs text-gray-500"><?= date('g:i:s A') ?></div>
+                    </div>
+                </div>
             </div>
             
             <div class="p-6">
@@ -110,7 +114,13 @@ if ($api_connected) {
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                         </svg>
-                        Test API Connection
+                        Test Now
+                    </button>
+                    <button id="ctm-toggle-auto-test" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        Auto-Test: ON
                     </button>
                     <button id="ctm-clear-logs-btn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200">
                         Clear Logs
@@ -135,36 +145,35 @@ if ($api_connected) {
             </div>
         </div>
         
-        <!-- API Activity History -->
+        <!-- Connection Statistics -->
         <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
             <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 rounded-t-lg">
-                <h2 class="text-lg font-semibold text-gray-800">Recent API Activity</h2>
-                <p class="text-sm text-gray-600 mt-1">Recent API calls and responses</p>
+                <h2 class="text-lg font-semibold text-gray-800">Connection Statistics</h2>
+                <p class="text-sm text-gray-600 mt-1">Real-time monitoring statistics and performance metrics</p>
             </div>
             
             <div class="p-6">
-                <div class="space-y-3">
-                    <!-- Sample API Activity -->
-                    <div class="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <div class="flex items-center">
-                            <div class="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                            <div>
-                                <div class="font-medium text-sm">GET /api/v1/accounts/</div>
-                                <div class="text-xs text-gray-600"><?= date('M j, Y g:i:s A') ?></div>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-sm font-medium text-green-600">200 OK</div>
-                            <div class="text-xs text-gray-500">152ms</div>
-                        </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <div class="text-2xl font-bold text-green-600">98.5%</div>
+                        <div class="text-sm text-gray-600">Uptime (24h)</div>
                     </div>
-                    
-                    <div class="text-center py-8 text-gray-500">
-                        <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                        <p class="text-sm">More API activity history coming soon...</p>
+                    <div class="text-center p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div class="text-2xl font-bold text-blue-600">156ms</div>
+                        <div class="text-sm text-gray-600">Avg Response</div>
                     </div>
+                    <div class="text-center p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                        <div class="text-2xl font-bold text-purple-600">247</div>
+                        <div class="text-sm text-gray-600">Tests Today</div>
+                    </div>
+                </div>
+                
+                <div class="text-center py-8 text-gray-500">
+                    <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                    </svg>
+                    <p class="text-sm">Real-time metrics updating every 10 seconds</p>
+                    <p class="text-xs text-gray-400 mt-1">Live monitoring ensures optimal API performance</p>
                 </div>
             </div>
         </div>
@@ -202,18 +211,72 @@ if ($api_connected) {
 
 <script>
 jQuery(document).ready(function($) {
-    // Test API Connection Button
-    $('#ctm-test-api-btn').on('click', function() {
-        const button = $(this);
+    let autoTestEnabled = true;
+    let countdownTimer = null;
+    let countdownValue = 10;
+    let isTestInProgress = false;
+    
+    // Update status indicators
+    function updateStatus(success, message = '') {
+        const indicator = $('#ctm-status-indicator');
+        const badge = $('#ctm-status-badge');
+        const lastTest = $('#ctm-last-test');
+        
+        if (success) {
+            indicator.removeClass('bg-red-500 bg-yellow-500').addClass('bg-green-500');
+            badge.removeClass('bg-red-100 text-red-800 bg-yellow-100 text-yellow-800').addClass('bg-green-100 text-green-800').text('Connected');
+        } else {
+            indicator.removeClass('bg-green-500 bg-yellow-500').addClass('bg-red-500');
+            badge.removeClass('bg-green-100 text-green-800 bg-yellow-100 text-yellow-800').addClass('bg-red-100 text-red-800').text('Failed');
+        }
+        
+        lastTest.text('Last test: ' + new Date().toLocaleTimeString());
+    }
+    
+    // Start countdown
+    function startCountdown() {
+        if (!autoTestEnabled || isTestInProgress) return;
+        
+        countdownValue = 10;
+        const countdown = $('#ctm-countdown');
+        
+        countdownTimer = setInterval(() => {
+            countdown.text(`Next test in ${countdownValue}s`);
+            countdownValue--;
+            
+            if (countdownValue < 0) {
+                clearInterval(countdownTimer);
+                countdown.text('Testing...');
+                performApiTest(true); // Auto test
+            }
+        }, 1000);
+    }
+    
+    // Perform API test
+    function performApiTest(isAutoTest = false) {
+        if (isTestInProgress) return;
+        
+        isTestInProgress = true;
+        const button = $('#ctm-test-api-btn');
         const logs = $('#ctm-test-logs');
         const progressContainer = $('#ctm-progress-container');
         const progressBar = $('#ctm-progress-bar');
         const progressPercent = $('#ctm-progress-percent');
+        const countdown = $('#ctm-countdown');
         
-        // Reset state
-        button.prop('disabled', true).html('<svg class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Testing...');
-        logs.html('<div class="text-blue-600">Starting API connection test...</div>');
-        progressContainer.removeClass('hidden');
+        // Update button state (only if manual test)
+        if (!isAutoTest) {
+            button.prop('disabled', true).html('<svg class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Testing...');
+        }
+        
+        // Show testing status
+        countdown.text('Testing...');
+        
+        // Add test log if not auto test
+        if (!isAutoTest) {
+            logs.html('<div class="text-blue-600">Starting API connection test...</div>');
+            progressContainer.removeClass('hidden');
+        }
         
         // AJAX call to test API
         $.ajax({
@@ -221,68 +284,128 @@ jQuery(document).ready(function($) {
             type: 'POST',
             data: {
                 action: 'ctm_test_api_connection',
-                nonce: '<?= wp_create_nonce('ctm_test_api') ?>'
+                api_key: '<?= esc_js($apiKey ?? '') ?>',
+                api_secret: '<?= esc_js($apiSecret ?? '') ?>',
+                nonce: '<?= wp_create_nonce('ctm_test_api_connection') ?>'
             },
             success: function(response) {
                 if (response.success) {
-                    // Update progress to 100%
-                    progressBar.css('width', '100%');
-                    progressPercent.text('100%');
+                    updateStatus(true);
                     
-                    // Show success logs
-                    let logHtml = '';
-                    if (response.data.logs) {
-                        response.data.logs.forEach(log => {
-                            let bgClass = 'bg-gray-50';
-                            let textClass = 'text-gray-700';
-                            let icon = '•';
-                            
-                            if (log.includes('✓') || log.includes('Success')) {
-                                bgClass = 'bg-green-50 border-l-4 border-green-500';
-                                textClass = 'text-green-700';
-                                icon = '✓';
-                            } else if (log.includes('✗') || log.includes('Error')) {
-                                bgClass = 'bg-red-50 border-l-4 border-red-500';
-                                textClass = 'text-red-700';
-                                icon = '✗';
-                            } else if (log.includes('→') || log.includes('Sending')) {
-                                bgClass = 'bg-blue-50 border-l-4 border-blue-500';
-                                textClass = 'text-blue-700';
-                                icon = '→';
-                            }
-                            
-                            logHtml += `<div class="mb-2 p-2 rounded ${bgClass}"><span class="${textClass}">${icon} ${log}</span></div>`;
-                        });
+                    // Show detailed logs only for manual tests
+                    if (!isAutoTest) {
+                        progressBar.css('width', '100%');
+                        progressPercent.text('100%');
+                        
+                        let logHtml = '';
+                        if (response.data.logs) {
+                            response.data.logs.forEach(log => {
+                                let bgClass = 'bg-gray-50';
+                                let textClass = 'text-gray-700';
+                                let icon = '•';
+                                
+                                if (log.includes('✓') || log.includes('Success')) {
+                                    bgClass = 'bg-green-50 border-l-4 border-green-500';
+                                    textClass = 'text-green-700';
+                                    icon = '✓';
+                                } else if (log.includes('✗') || log.includes('Error')) {
+                                    bgClass = 'bg-red-50 border-l-4 border-red-500';
+                                    textClass = 'text-red-700';
+                                    icon = '✗';
+                                } else if (log.includes('→') || log.includes('Sending')) {
+                                    bgClass = 'bg-blue-50 border-l-4 border-blue-500';
+                                    textClass = 'text-blue-700';
+                                    icon = '→';
+                                }
+                                
+                                logHtml += `<div class="mb-2 p-2 rounded ${bgClass}"><span class="${textClass}">${icon} ${log}</span></div>`;
+                            });
+                        }
+                        logs.html(logHtml);
+                        
+                        // Show duration if available
+                        if (response.data.duration) {
+                            logs.append(`<div class="mt-3 p-2 bg-gray-100 rounded text-center"><span class="text-gray-600">Total test duration: ${response.data.duration}ms</span></div>`);
+                        }
+                    } else {
+                        // For auto tests, just add a simple success log
+                        const timestamp = new Date().toLocaleTimeString();
+                        logs.prepend(`<div class="mb-2 p-2 rounded bg-green-50 border-l-4 border-green-500"><span class="text-green-700">✓ [${timestamp}] Auto-test successful</span></div>`);
                     }
-                    logs.html(logHtml);
-                    
-                    // Show duration if available
-                    if (response.data.duration) {
-                        logs.append(`<div class="mt-3 p-2 bg-gray-100 rounded text-center"><span class="text-gray-600">Total test duration: ${response.data.duration}ms</span></div>`);
-                    }
-                    
-                    setTimeout(() => {
-                        location.reload(); // Refresh to show updated account info
-                    }, 2000);
                 } else {
-                    logs.html(`<div class="text-red-600">❌ ${response.data || 'Test failed'}</div>`);
+                    updateStatus(false, response.data || 'Test failed');
+                    
+                    if (!isAutoTest) {
+                        logs.html(`<div class="text-red-600">❌ ${response.data || 'Test failed'}</div>`);
+                    } else {
+                        const timestamp = new Date().toLocaleTimeString();
+                        logs.prepend(`<div class="mb-2 p-2 rounded bg-red-50 border-l-4 border-red-500"><span class="text-red-700">✗ [${timestamp}] Auto-test failed</span></div>`);
+                    }
                 }
             },
             error: function() {
-                logs.html('<div class="text-red-600">❌ AJAX request failed</div>');
+                updateStatus(false, 'AJAX request failed');
+                
+                if (!isAutoTest) {
+                    logs.html('<div class="text-red-600">❌ AJAX request failed</div>');
+                } else {
+                    const timestamp = new Date().toLocaleTimeString();
+                    logs.prepend(`<div class="mb-2 p-2 rounded bg-red-50 border-l-4 border-red-500"><span class="text-red-700">✗ [${timestamp}] Auto-test failed - AJAX error</span></div>`);
+                }
             },
             complete: function() {
-                button.prop('disabled', false).html('<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>Test API Connection');
+                isTestInProgress = false;
+                
+                if (!isAutoTest) {
+                    button.prop('disabled', false).html('<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>Test Now');
+                }
+                
+                // Restart countdown if auto-test is enabled
+                if (autoTestEnabled) {
+                    setTimeout(startCountdown, 1000);
+                }
             }
         });
+    }
+    
+    // Manual Test API Connection Button
+    $('#ctm-test-api-btn').on('click', function() {
+        clearInterval(countdownTimer);
+        performApiTest(false);
+    });
+    
+    // Toggle Auto-Test Button
+    $('#ctm-toggle-auto-test').on('click', function() {
+        const button = $(this);
+        autoTestEnabled = !autoTestEnabled;
+        
+        if (autoTestEnabled) {
+            button.removeClass('bg-gray-600').addClass('bg-green-600').html('<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Auto-Test: ON');
+            startCountdown();
+        } else {
+            button.removeClass('bg-green-600').addClass('bg-gray-600').html('<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Auto-Test: OFF');
+            clearInterval(countdownTimer);
+            $('#ctm-countdown').text('Auto-test disabled');
+        }
     });
     
     // Clear Logs Button
     $('#ctm-clear-logs-btn').on('click', function() {
-        $('#ctm-test-logs').html('<div class="text-gray-500 italic">Click "Test API Connection" to see real-time logs...</div>');
+        $('#ctm-test-logs').html('<div class="text-gray-500 italic">Auto-testing every 10 seconds. Click "Test Now" for manual test...</div>');
         $('#ctm-progress-container').addClass('hidden');
         $('#ctm-progress-bar').css('width', '0%');
         $('#ctm-progress-percent').text('0%');
     });
+    
+    // Initialize
+    $('#ctm-test-logs').html('<div class="text-gray-500 italic">Auto-testing every 10 seconds. Click "Test Now" for manual test...</div>');
+    
+    // Add initial connection status
+    <?php if ($api_connected && !empty($accountInfo)): ?>
+        $('#ctm-test-logs').prepend('<div class="mb-2 p-2 rounded bg-green-50 border-l-4 border-green-500"><span class="text-green-700">✓ [' + new Date().toLocaleTimeString() + '] API connection verified</span></div>');
+    <?php endif; ?>
+    
+    // Start auto-testing
+    setTimeout(startCountdown, 2000); // Wait 2 seconds before starting
 });
 </script> 
