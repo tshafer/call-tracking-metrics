@@ -106,7 +106,10 @@ $system_info_report = ctm_get_system_info_report();
 
 <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
     <!-- Export System Info Button -->
-    <button id="ctm-export-system-info" class="button button-primary float-right mb-2" type="button" style="float:right; margin-bottom:10px;">
+    <button id="ctm-export-system-info" class="bg-gray-600 hover:bg-gray-700 text-white font-medium px-4 py-2 rounded-lg transition duration-200 float-right mb-2" type="button">
+        <svg class="w-4 h-4 inline-block mr-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7"></path>
+        </svg>
         Export System Info
     </button>
     <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">

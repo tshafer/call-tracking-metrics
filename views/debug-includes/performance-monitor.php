@@ -25,7 +25,7 @@
     
     <div class="space-y-6">
         <!-- Real-time Metrics Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-3 text-center min-h-[100px] flex flex-col justify-center">
                 <div id="memory-usage" class="text-xl font-bold text-blue-600 mb-1">--</div>
                 <div class="text-xs text-blue-700 font-medium">Memory Usage</div>

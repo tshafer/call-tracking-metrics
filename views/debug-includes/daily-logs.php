@@ -112,6 +112,27 @@ $available_dates = $available_dates ?? [];
     <?php endif; ?>
 </div> 
 
+<!-- Email Log Modal -->
+<div id="email-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative">
+        <button onclick="hideEmailForm()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Email Debug Log</h3>
+        <form id="email-log-form" onsubmit="submitEmailLog(event)">
+            <input type="hidden" id="email-log-date" name="log_date" value="">
+            <label for="email-log-to" class="block text-sm font-medium text-gray-700 mb-1">Send to</label>
+            <input type="email" id="email-log-to" name="to" class="w-full border border-gray-300 rounded px-3 py-2 mb-4" required>
+            <div class="flex justify-end space-x-2">
+                <button type="button" onclick="hideEmailForm()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded">Cancel</button>
+                <button type="submit" id="email-log-send-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Send</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
     function toggleLogView(date) {
         const logDiv = document.getElementById('log-' + date);
@@ -124,11 +145,50 @@ $available_dates = $available_dates ?? [];
 
     function showEmailForm(date) {
         document.getElementById('email-log-date').value = date;
+        document.getElementById('email-log-to').value = '<?= esc_js(get_option('admin_email')) ?>';
         document.getElementById('email-modal').classList.remove('hidden');
     }
 
     function hideEmailForm() {
         document.getElementById('email-modal').classList.add('hidden');
+    }
+
+    function submitEmailLog(e) {
+        e.preventDefault();
+        const btn = document.getElementById('email-log-send-btn');
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+
+        const date = document.getElementById('email-log-date').value;
+        const email_to = document.getElementById('email-log-to').value;
+
+        const formData = new FormData();
+        formData.append('action', 'ctm_email_daily_log');
+        formData.append('nonce', '<?= wp_create_nonce('ctm_email_daily_log') ?>');
+        formData.append('log_date', date);
+        formData.append('email_to', email_to);
+
+        fetch('<?= admin_url('admin-ajax.php') ?>', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showDebugMessage(data.data.message, 'success');
+                hideEmailForm();
+            } else {
+                showDebugMessage(data.data.message || 'Failed to email log', 'error');
+            }
+        })
+        .catch(() => {
+            showDebugMessage('Network error while emailing log', 'error');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        });
     }
 
     // Close modal when clicking outside

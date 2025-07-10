@@ -6,12 +6,20 @@
 ?>
 
 <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-    <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-        <svg class="w-6 h-6 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        Plugin Health Check
-    </h3>
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-semibold text-gray-800 flex items-center">
+            <svg class="w-6 h-6 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Plugin Health Check
+        </h3>
+        <button onclick="exportHealthReport()" class="bg-gray-600 hover:bg-gray-700 text-white font-medium px-4 py-2 rounded-lg transition duration-200">
+            <svg class="w-4 h-4 inline-block mr-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7"></path>
+            </svg>
+            Export Report
+        </button>
+    </div>
     
     <div class="space-y-4">
         <!-- Overall Health Score -->
@@ -142,9 +150,6 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
                 Run Health Check
-            </button>
-            <button onclick="exportHealthReport()" class="bg-gray-600 hover:bg-gray-700 text-white font-medium px-4 py-2 rounded-lg transition duration-200">
-                Export Report
             </button>
         </div>
 
