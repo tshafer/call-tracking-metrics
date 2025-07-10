@@ -44,9 +44,8 @@ class Options
      */
     public function renderSettingsPage(): void
     {
-        error_log('renderSettingsPage called');
-        if (!current_user_can('manage_options')) {
-            wp_die(__('You do not have sufficient permissions to access this page.'));
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->handleFormSubmission();
         }
         
         // Check API connection status for tab visibility
@@ -101,6 +100,112 @@ class Options
         error_log('About to render settings-page view');
         $this->renderView('settings-page', compact('notices', 'active_tab', 'tab_content', 'apiStatus'));
         error_log('Finished rendering settings-page view');
+    }
+
+    private function handleFormSubmission(): void
+    {
+        // Handle debug mode toggle
+        if (isset($_POST['toggle_debug'])) {
+            $current = get_option('ctm_debug_enabled', false);
+            $new_value = !$current;
+            update_option('ctm_debug_enabled', $new_value);
+            
+            $this->logActivity(
+                $new_value ? 'Debug mode enabled' : 'Debug mode disabled',
+                'debug',
+                ['previous_state' => $current, 'new_state' => $new_value]
+            );
+            
+            wp_redirect(add_query_arg(['tab' => 'debug'], wp_get_referer()));
+            exit;
+        }
+        
+        // Handle clear debug log
+        if (isset($_POST['clear_debug_log'])) {
+            $this->clearAllLogs();
+            $this->logActivity('All debug logs cleared', 'system');
+            wp_redirect(add_query_arg(['tab' => 'debug'], wp_get_referer()));
+            exit;
+        }
+        
+        // Handle clear single day log
+        if (isset($_POST['clear_single_log']) && !empty($_POST['log_date'])) {
+            $log_date = sanitize_text_field($_POST['log_date']);
+            $this->clearDayLog($log_date);
+            $this->logActivity("Log cleared for date: {$log_date}", 'system');
+            wp_redirect(add_query_arg(['tab' => 'debug'], wp_get_referer()));
+            exit;
+        }
+        
+        // Handle email log
+        if (isset($_POST['email_log']) && !empty($_POST['log_date']) && !empty($_POST['email_to'])) {
+            $log_date = sanitize_text_field($_POST['log_date']);
+            $email_to = sanitize_email($_POST['email_to']);
+            $this->emailLog($log_date, $email_to);
+            $this->logActivity("Log emailed for date: {$log_date} to: {$email_to}", 'system');
+            wp_redirect(add_query_arg(['tab' => 'debug'], wp_get_referer()));
+            exit;
+        }
+        
+        // Handle log retention settings
+        if (isset($_POST['update_log_settings'])) {
+            $retention_days = (int) ($_POST['log_retention_days'] ?? 7);
+            $retention_days = max(1, min(365, $retention_days)); // Between 1-365 days
+            
+            update_option('ctm_log_retention_days', $retention_days);
+            update_option('ctm_log_auto_cleanup', isset($_POST['log_auto_cleanup']));
+            update_option('ctm_log_email_notifications', isset($_POST['log_email_notifications']));
+            update_option('ctm_log_notification_email', sanitize_email($_POST['log_notification_email'] ?? ''));
+            
+            $this->logActivity("Log settings updated - Retention: {$retention_days} days", 'system');
+            wp_redirect(add_query_arg(['tab' => 'debug'], wp_get_referer()));
+            exit;
+        }
+        
+        // Handle general settings
+        if (isset($_POST['ctm_api_key'])) {
+            $this->saveGeneralSettings();
+        }
+    }
+
+    private function saveGeneralSettings(): void
+    {
+        $apiKey = sanitize_text_field($_POST['ctm_api_key']);
+        $apiSecret = sanitize_text_field($_POST['ctm_api_secret']);
+        $trackingEnabled = isset($_POST['ctm_api_tracking_enabled']);
+        $cf7Enabled = isset($_POST['ctm_api_cf7_enabled']);
+        $gfEnabled = isset($_POST['ctm_api_gf_enabled']);
+        $dashboardEnabled = isset($_POST['ctm_api_dashboard_enabled']);
+        
+        // Log configuration changes
+        $old_key = get_option('ctm_api_key');
+        if ($old_key !== $apiKey) {
+            $this->logActivity('API Key updated', 'config', [
+                'old_key_partial' => substr($old_key, 0, 8) . '...',
+                'new_key_partial' => substr($apiKey, 0, 8) . '...'
+            ]);
+        }
+        
+        update_option('ctm_api_key', $apiKey);
+        update_option('ctm_api_secret', $apiSecret);
+        update_option('ctm_api_tracking_enabled', $trackingEnabled);
+        update_option('ctm_api_cf7_enabled', $cf7Enabled);
+        update_option('ctm_api_gf_enabled', $gfEnabled);
+        update_option('ctm_api_dashboard_enabled', $dashboardEnabled);
+        
+        if (!empty($_POST['call_track_account_script'])) {
+            update_option('call_track_account_script', wp_kses_post($_POST['call_track_account_script']));
+        }
+        
+        $this->logActivity('General settings saved', 'config', [
+            'tracking_enabled' => $trackingEnabled,
+            'cf7_enabled' => $cf7Enabled,
+            'gf_enabled' => $gfEnabled,
+            'dashboard_enabled' => $dashboardEnabled
+        ]);
+        
+        wp_redirect(add_query_arg(['tab' => 'general'], wp_get_referer()));
+        exit;
     }
 
     private function renderView($view, $vars = []) {
@@ -220,13 +325,14 @@ class Options
     private function getDebugTabContent(): string
     {
         $debugEnabled = self::isDebugEnabled();
+        error_log('debugEnabled: ' . var_export($debugEnabled, true));
+        
+        // Legacy log support (for backwards compatibility)
         $log = get_option('ctm_debug_log', []);
         if (!is_array($log)) $log = [];
+        
         ob_start();
-        $this->renderView('debug-tab', [
-            'debugEnabled' => $debugEnabled,
-            'log' => $log,
-        ]);
+        $this->renderView('debug-tab', compact('debugEnabled', 'log'));
         return ob_get_clean();
     }
 
@@ -611,5 +717,414 @@ class Options
     public static function isDebugEnabled(): bool
     {
         return (bool) get_option('ctm_debug_enabled', false);
+    }
+
+    /**
+     * Enhanced logging system with daily logs and categorization
+     */
+    public function logActivity(string $message, string $type = 'info', array $context = []): void
+    {
+        if (!self::isDebugEnabled()) {
+            return; // Only log when debug mode is enabled
+        }
+
+        $log_entry = [
+            'timestamp' => current_time('mysql'),
+            'type' => $type, // info, error, warning, debug, api, config, system
+            'message' => $message,
+            'context' => $context,
+            'user_id' => get_current_user_id(),
+            'ip_address' => $this->getUserIP(),
+            'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown',
+            'memory_usage' => memory_get_usage(true),
+            'memory_peak' => memory_get_peak_usage(true)
+        ];
+
+        $this->writeToLog($log_entry);
+        
+        // Auto-cleanup old logs
+        $this->cleanupOldLogs();
+    }
+
+    /**
+     * Write log entry to daily log file
+     */
+    private function writeToLog(array $log_entry): void
+    {
+        $log_date = date('Y-m-d');
+        $daily_logs = get_option("ctm_daily_log_{$log_date}", []);
+        
+        if (!is_array($daily_logs)) {
+            $daily_logs = [];
+        }
+        
+        $daily_logs[] = $log_entry;
+        
+        // Keep only last 1000 entries per day to prevent memory issues
+        if (count($daily_logs) > 1000) {
+            $daily_logs = array_slice($daily_logs, -1000);
+        }
+        
+        update_option("ctm_daily_log_{$log_date}", $daily_logs);
+        
+        // Update log index
+        $this->updateLogIndex($log_date);
+    }
+
+    /**
+     * Update the log index to track available log dates
+     */
+    private function updateLogIndex(string $log_date): void
+    {
+        $log_index = get_option('ctm_log_index', []);
+        if (!is_array($log_index)) {
+            $log_index = [];
+        }
+        
+        if (!in_array($log_date, $log_index)) {
+            $log_index[] = $log_date;
+            // Keep index sorted
+            sort($log_index);
+            update_option('ctm_log_index', $log_index);
+        }
+    }
+
+    /**
+     * Get all available log dates
+     */
+    public function getAvailableLogDates(): array
+    {
+        $log_index = get_option('ctm_log_index', []);
+        return is_array($log_index) ? array_reverse($log_index) : [];
+    }
+
+    /**
+     * Get logs for a specific date
+     */
+    public function getLogsForDate(string $date): array
+    {
+        $logs = get_option("ctm_daily_log_{$date}", []);
+        return is_array($logs) ? $logs : [];
+    }
+
+    /**
+     * Clear logs for a specific date
+     */
+    public function clearDayLog(string $date): void
+    {
+        delete_option("ctm_daily_log_{$date}");
+        
+        // Update log index
+        $log_index = get_option('ctm_log_index', []);
+        if (is_array($log_index)) {
+            $log_index = array_filter($log_index, function($d) use ($date) {
+                return $d !== $date;
+            });
+            update_option('ctm_log_index', array_values($log_index));
+        }
+    }
+
+    /**
+     * Clear all logs
+     */
+    public function clearAllLogs(): void
+    {
+        $log_index = get_option('ctm_log_index', []);
+        if (is_array($log_index)) {
+            foreach ($log_index as $date) {
+                delete_option("ctm_daily_log_{$date}");
+            }
+        }
+        
+        delete_option('ctm_log_index');
+        delete_option('ctm_debug_log'); // Clear old format logs too
+    }
+
+    /**
+     * Email log for a specific date
+     */
+    public function emailLog(string $date, string $email_to): bool
+    {
+        $logs = $this->getLogsForDate($date);
+        
+        if (empty($logs)) {
+            return false;
+        }
+
+        $site_name = get_bloginfo('name');
+        $subject = "CTM Debug Log for {$date} - {$site_name}";
+        
+        $message = "Debug log for {$date}\n";
+        $message .= "Site: {$site_name}\n";
+        $message .= "Generated: " . current_time('mysql') . "\n";
+        $message .= str_repeat('=', 60) . "\n\n";
+        
+        foreach ($logs as $entry) {
+            $message .= "[{$entry['timestamp']}] [{$entry['type']}] {$entry['message']}\n";
+            
+            if (!empty($entry['context'])) {
+                $message .= "Context: " . print_r($entry['context'], true) . "\n";
+            }
+            
+            $message .= "User: " . ($entry['user_id'] ? get_userdata($entry['user_id'])->user_login : 'Anonymous') . "\n";
+            $message .= "IP: {$entry['ip_address']}\n";
+            $message .= "Memory: " . size_format($entry['memory_usage']) . " (Peak: " . size_format($entry['memory_peak']) . ")\n";
+            $message .= str_repeat('-', 40) . "\n\n";
+        }
+
+        $headers = [
+            'Content-Type: text/plain; charset=UTF-8',
+            'From: ' . get_option('admin_email')
+        ];
+
+        return wp_mail($email_to, $subject, $message, $headers);
+    }
+
+    /**
+     * Auto-cleanup old logs based on retention settings
+     */
+    private function cleanupOldLogs(): void
+    {
+        if (!get_option('ctm_log_auto_cleanup', true)) {
+            return;
+        }
+
+        $retention_days = (int) get_option('ctm_log_retention_days', 7);
+        $cutoff_date = date('Y-m-d', strtotime("-{$retention_days} days"));
+        
+        $log_index = get_option('ctm_log_index', []);
+        if (!is_array($log_index)) {
+            return;
+        }
+
+        $updated = false;
+        foreach ($log_index as $key => $date) {
+            if ($date < $cutoff_date) {
+                delete_option("ctm_daily_log_{$date}");
+                unset($log_index[$key]);
+                $updated = true;
+            }
+        }
+
+        if ($updated) {
+            update_option('ctm_log_index', array_values($log_index));
+        }
+    }
+
+    /**
+     * Get user IP address
+     */
+    private function getUserIP(): string
+    {
+        $ip_keys = ['HTTP_CF_CONNECTING_IP', 'HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR'];
+        
+        foreach ($ip_keys as $key) {
+            if (!empty($_SERVER[$key])) {
+                $ip = $_SERVER[$key];
+                if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                    return $ip;
+                }
+            }
+        }
+        
+        return $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
+    }
+
+    /**
+     * Get log statistics
+     */
+    public function getLogStatistics(): array
+    {
+        $log_index = $this->getAvailableLogDates();
+        $total_entries = 0;
+        $total_size = 0;
+        $type_counts = [];
+        
+        foreach ($log_index as $date) {
+            $logs = $this->getLogsForDate($date);
+            $total_entries += count($logs);
+            $total_size += strlen(serialize($logs));
+            
+            foreach ($logs as $log) {
+                $type = $log['type'] ?? 'unknown';
+                $type_counts[$type] = ($type_counts[$type] ?? 0) + 1;
+            }
+        }
+        
+        return [
+            'total_days' => count($log_index),
+            'total_entries' => $total_entries,
+            'total_size' => $total_size,
+            'type_counts' => $type_counts,
+            'oldest_log' => !empty($log_index) ? end($log_index) : null,
+            'newest_log' => !empty($log_index) ? reset($log_index) : null
+        ];
+    }
+
+    /**
+     * Initialize the logging system (call this once from main plugin file)
+     */
+    public static function initializeLoggingSystem(): void
+    {
+        static $initialized = false;
+        
+        if ($initialized) {
+            return; // Prevent duplicate initialization
+        }
+        
+        // Schedule daily log cleanup if not already scheduled
+        if (!wp_next_scheduled('ctm_daily_log_cleanup')) {
+            wp_schedule_event(time(), 'daily', 'ctm_daily_log_cleanup');
+        }
+        
+        // Register cleanup action
+        add_action('ctm_daily_log_cleanup', [__CLASS__, 'performScheduledLogCleanup']);
+        
+        $initialized = true;
+    }
+
+    /**
+     * Handle plugin activation - set up logging defaults
+     */
+    public static function onPluginActivation(): void
+    {
+        // Set default log settings if not already set
+        if (get_option('ctm_log_retention_days') === false) {
+            update_option('ctm_log_retention_days', 7);
+        }
+        
+        if (get_option('ctm_log_auto_cleanup') === false) {
+            update_option('ctm_log_auto_cleanup', true);
+        }
+        
+        if (get_option('ctm_log_email_notifications') === false) {
+            update_option('ctm_log_email_notifications', false);
+        }
+        
+        if (get_option('ctm_log_notification_email') === false) {
+            update_option('ctm_log_notification_email', get_option('admin_email'));
+        }
+        
+        // Initialize logging system
+        self::initializeLoggingSystem();
+        
+        // Log plugin activation
+        $instance = new self();
+        $instance->logActivity('CTM Plugin activated', 'system', [
+            'wp_version' => get_bloginfo('version'),
+            'php_version' => PHP_VERSION,
+            'memory_limit' => ini_get('memory_limit')
+        ]);
+    }
+
+    /**
+     * Handle plugin deactivation - clean up scheduled tasks
+     */
+    public static function onPluginDeactivation(): void
+    {
+        // Remove scheduled cleanup
+        wp_clear_scheduled_hook('ctm_daily_log_cleanup');
+        
+        // Log plugin deactivation
+        $instance = new self();
+        $instance->logActivity('CTM Plugin deactivated', 'system');
+    }
+
+    /**
+     * Perform scheduled log cleanup
+     */
+    public static function performScheduledLogCleanup(): void
+    {
+        $instance = new self();
+        $instance->performInstanceLogCleanup();
+    }
+
+    /**
+     * Instance method for log cleanup
+     */
+    private function performInstanceLogCleanup(): void
+    {
+        if (!get_option('ctm_log_auto_cleanup', true)) {
+            return;
+        }
+
+        $retention_days = (int) get_option('ctm_log_retention_days', 7);
+        $cutoff_date = date('Y-m-d', strtotime("-{$retention_days} days"));
+        
+        $log_index = get_option('ctm_log_index', []);
+        if (!is_array($log_index)) {
+            return;
+        }
+
+        $cleaned_count = 0;
+        $cleaned_size = 0;
+        
+        foreach ($log_index as $key => $date) {
+            if ($date < $cutoff_date) {
+                $log_data = get_option("ctm_daily_log_{$date}", []);
+                $cleaned_size += strlen(serialize($log_data));
+                
+                delete_option("ctm_daily_log_{$date}");
+                unset($log_index[$key]);
+                $cleaned_count++;
+            }
+        }
+
+        if ($cleaned_count > 0) {
+            update_option('ctm_log_index', array_values($log_index));
+            
+            // Log cleanup activity
+            $this->logActivity('Automatic log cleanup completed', 'system', [
+                'cleaned_days' => $cleaned_count,
+                'cleaned_size' => size_format($cleaned_size),
+                'retention_days' => $retention_days,
+                'cutoff_date' => $cutoff_date
+            ]);
+            
+            // Send email notification if enabled
+            if (get_option('ctm_log_email_notifications', false)) {
+                $this->sendCleanupNotification($cleaned_count, $cleaned_size, $retention_days);
+            }
+        }
+    }
+
+    /**
+     * Send email notification about log cleanup
+     */
+    private function sendCleanupNotification(int $cleaned_count, int $cleaned_size, int $retention_days): void
+    {
+        $notification_email = get_option('ctm_log_notification_email', get_option('admin_email'));
+        if (empty($notification_email)) {
+            return;
+        }
+
+        $site_name = get_bloginfo('name');
+        $subject = "CTM Log Cleanup Report - {$site_name}";
+        
+        $message = "Call Tracking Metrics Plugin - Log Cleanup Report\n\n";
+        $message .= "Site: {$site_name}\n";
+        $message .= "Date: " . current_time('Y-m-d H:i:s') . "\n";
+        $message .= str_repeat('=', 50) . "\n\n";
+        
+        $message .= "Cleanup Summary:\n";
+        $message .= "- Days cleaned: {$cleaned_count}\n";
+        $message .= "- Data cleaned: " . size_format($cleaned_size) . "\n";
+        $message .= "- Retention period: {$retention_days} days\n\n";
+        
+        $remaining_stats = $this->getLogStatistics();
+        $message .= "Remaining Logs:\n";
+        $message .= "- Total days: {$remaining_stats['total_days']}\n";
+        $message .= "- Total entries: " . number_format($remaining_stats['total_entries']) . "\n";
+        $message .= "- Storage size: " . size_format($remaining_stats['total_size']) . "\n\n";
+        
+        $message .= "This is an automated notification from the CTM plugin.\n";
+        $message .= "You can adjust log settings in the WordPress admin panel.\n";
+
+        $headers = [
+            'Content-Type: text/plain; charset=UTF-8',
+            'From: ' . get_option('admin_email')
+        ];
+
+        wp_mail($notification_email, $subject, $message, $headers);
     }
 } 

@@ -31,17 +31,33 @@ class CallTrackingMetrics
         $this->gfService = new GFService();
         $this->adminOptions = new Options();
 
+        // Initialize logging system once
+        Options::initializeLoggingSystem();
+
+        // Register WordPress hooks
         add_action('admin_init', [$this->adminOptions, 'registerSettings']);
         add_action('admin_menu', [$this->adminOptions, 'registerSettingsPage']);
-        $this->adminOptions->enqueueMappingAssets();
+        add_action('admin_enqueue_scripts', [$this->adminOptions, 'enqueueMappingAssets']);
+        add_action('wp_ajax_ctm_get_forms', [$this->adminOptions, 'ajaxGetForms']);
+        add_action('wp_ajax_ctm_get_fields', [$this->adminOptions, 'ajaxGetFields']);
+        add_action('wp_ajax_ctm_save_mapping', [$this->adminOptions, 'ajaxSaveMapping']);
+        add_action('wp_ajax_ctm_dismiss_notice', [$this->adminOptions, 'ajaxDismissNotice']);
+        add_action('wp_ajax_ctm_test_api_connection', [$this->adminOptions, 'ajaxTestApiConnection']);
+        
+        // Plugin functionality hooks
         add_action('wp_head', [$this, 'printTrackingScript'], 10);
         add_action('init', [$this, 'formInit']);
         add_action('admin_menu', [$this, 'attachDashboard']);
         add_filter('gform_confirmation', [$this, 'gfConfirmation'], 10, 1);
         add_action('wp_footer', [$this, 'cf7Confirmation'], 10, 1);
+        
         if (get_option('ctm_api_dashboard_enabled')) {
             add_action('wp_dashboard_setup', [$this->adminOptions, 'addDashboardWidget']);
         }
+
+        // Register activation/deactivation hooks
+        register_activation_hook(__FILE__, [Options::class, 'onPluginActivation']);
+        register_deactivation_hook(__FILE__, [Options::class, 'onPluginDeactivation']);
     }
 
     /** Print the tracking script in the site head. */
