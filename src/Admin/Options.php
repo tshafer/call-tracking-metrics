@@ -1,16 +1,87 @@
 <?php
+/**
+ * Admin Options and Settings Management
+ * 
+ * This file contains the main Options class that handles WordPress admin
+ * settings registration, page rendering, and form submission processing
+ * for the CallTrackingMetrics plugin.
+ * 
+ * @package     CallTrackingMetrics
+ * @subpackage  Admin
+ * @author      CallTrackingMetrics Team
+ * @copyright   2024 CallTrackingMetrics
+ * @license     GPL-2.0+
+ * @version     2.0
+ * @since       2.0.0
+ */
+
 namespace CTM\Admin;
 
 /**
- * Handles admin options and settings for CallTrackingMetrics.
+ * Main Admin Options Class
+ * 
+ * Handles the core WordPress admin functionality including:
+ * - Settings registration with WordPress
+ * - Admin page rendering and tab management
+ * - Form submission processing
+ * - Dashboard widget integration
+ * - Notice generation and management
+ * 
+ * This class has been refactored to use dependency injection and delegates
+ * complex functionality to specialized classes for better maintainability.
+ * 
+ * @since 2.0.0
  */
 class Options
 {
+    /**
+     * Settings page renderer instance
+     * 
+     * Handles all view rendering and tab content generation
+     * 
+     * @since 2.0.0
+     * @var SettingsRenderer
+     */
     private SettingsRenderer $renderer;
+
+    /**
+     * AJAX request handlers instance
+     * 
+     * Manages all AJAX endpoints and request processing
+     * 
+     * @since 2.0.0
+     * @var AjaxHandlers
+     */
     private AjaxHandlers $ajaxHandlers;
+
+    /**
+     * Field mapping management instance
+     * 
+     * Handles form field mapping between WordPress forms and CTM
+     * 
+     * @since 2.0.0
+     * @var FieldMapping
+     */
     private FieldMapping $fieldMapping;
+
+    /**
+     * Logging system instance
+     * 
+     * Manages debug logging and activity tracking
+     * 
+     * @since 2.0.0
+     * @var LoggingSystem
+     */
     private LoggingSystem $loggingSystem;
 
+    /**
+     * Initialize the Options class with dependency injection
+     * 
+     * Creates instances of all required dependencies and sets up
+     * the composition pattern for better separation of concerns.
+     * 
+     * @since 2.0.0
+     */
     public function __construct()
     {
         $this->renderer = new SettingsRenderer();
@@ -20,86 +91,135 @@ class Options
     }
 
     /**
-     * Register plugin settings with WordPress.
+     * Register plugin settings with WordPress
+     * 
+     * Registers all plugin options with WordPress settings API.
+     * These settings are automatically sanitized and stored by WordPress.
+     * 
+     * @since 2.0.0
+     * @return void
      */
     public function registerSettings(): void
     {
+        // API Configuration Settings
         register_setting("call-tracking-metrics", "ctm_api_key");
         register_setting("call-tracking-metrics", "ctm_api_secret");
         register_setting("call-tracking-metrics", "ctm_api_active_key");
         register_setting("call-tracking-metrics", "ctm_api_active_secret");
         register_setting("call-tracking-metrics", "ctm_api_auth_account");
+        
+        // Tracking Script Settings
         register_setting("call-tracking-metrics", "call_track_account_script");
+        
+        // Feature Toggle Settings
         register_setting("call-tracking-metrics", "ctm_api_dashboard_enabled");
         register_setting("call-tracking-metrics", "ctm_api_tracking_enabled");
         register_setting("call-tracking-metrics", "ctm_api_cf7_enabled");
         register_setting("call-tracking-metrics", "ctm_api_gf_enabled");
+        
+        // Logging Settings
         register_setting("call-tracking-metrics", "ctm_api_cf7_logs");
         register_setting("call-tracking-metrics", "ctm_api_gf_logs");
     }
 
     /**
-     * Register the settings page in the WordPress admin menu.
+     * Register the settings page in the WordPress admin menu
+     * 
+     * Adds the CallTrackingMetrics settings page under the WordPress
+     * Settings menu with appropriate permissions and callback.
+     * 
+     * @since 2.0.0
+     * @return void
      */
     public function registerSettingsPage(): void
     {
         add_options_page(
-            'CallTrackingMetrics',
-            'CallTrackingMetrics',
-            'manage_options',
-            'call-tracking-metrics',
-            [$this, 'renderSettingsPage']
+            'CallTrackingMetrics',           // Page title
+            'CallTrackingMetrics',           // Menu title
+            'manage_options',                // Capability required
+            'call-tracking-metrics',         // Menu slug
+            [$this, 'renderSettingsPage']   // Callback function
         );
     }
 
     /**
-     * Initialize all components
+     * Initialize all component subsystems
+     * 
+     * Sets up AJAX handlers, mapping assets, and other components
+     * that require WordPress hooks to be registered.
+     * 
+     * @since 2.0.0
+     * @return void
      */
     public function initialize(): void
     {
-        // Register AJAX handlers
+        // Register all AJAX endpoint handlers
         $this->ajaxHandlers->registerHandlers();
         
-        // Enqueue mapping assets
+        // Enqueue JavaScript and CSS assets for field mapping
         $this->fieldMapping->enqueueMappingAssets();
     }
 
     /**
-     * Render the plugin settings page.
+     * Render the main plugin settings page
+     * 
+     * Handles both GET requests (display the page) and POST requests
+     * (process form submissions). Generates tab content and notices
+     * based on current plugin state and user permissions.
+     * 
+     * @since 2.0.0
+     * @return void
      */
     public function renderSettingsPage(): void
     {
+        // Process form submissions if this is a POST request
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->handleFormSubmission();
         }
         
-        // Check API connection status for tab visibility
+        // Determine API connection status for conditional UI elements
         $apiKey = get_option('ctm_api_key');
         $apiSecret = get_option('ctm_api_secret');
         $apiStatus = 'not_tested';
         
+        // Test API connection if credentials are available
         if ($apiKey && $apiSecret) {
             $apiService = new \CTM\Service\ApiService('https://api.calltrackingmetrics.com');
             $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
             $apiStatus = ($accountInfo && isset($accountInfo['account'])) ? 'connected' : 'not_connected';
         }
         
+        // Generate plugin notices (missing dependencies, etc.)
         $notices = $this->generateNotices();
+        
+        // Determine active tab from URL parameter
         $active_tab = $_GET['tab'] ?? 'general';
+        
+        // Generate content for the active tab
         $tab_content = $this->getTabContent($active_tab);
         
+        // Render the complete settings page
         $this->renderer->renderView('settings-page', compact('notices', 'active_tab', 'tab_content', 'apiStatus'));
     }
 
     /**
-     * Generate plugin notices
+     * Generate plugin notices for missing dependencies
+     * 
+     * Checks for Contact Form 7 and Gravity Forms plugins and generates
+     * dismissible notices if they're not installed but haven't been dismissed.
+     * 
+     * @since 2.0.0
+     * @return array Array of notice HTML strings
      */
     private function generateNotices(): array
     {
         $notices = [];
+        
+        // Check plugin installation status
         $cf7_installed = class_exists('WPCF7_ContactForm');
         $gf_installed = class_exists('GFAPI');
         
+        // Generate Contact Form 7 notice if needed
         if (!$cf7_installed && !get_option('ctm_cf7_notice_dismissed', false)) {
             $cf7_url = admin_url('plugin-install.php?s=contact+form+7&tab=search&type=term');
             ob_start();
@@ -107,6 +227,7 @@ class Options
             $notices[] = ob_get_clean();
         }
         
+        // Generate Gravity Forms notice if needed
         if (!$gf_installed && !get_option('ctm_gf_notice_dismissed', false)) {
             $gf_url = 'https://www.gravityforms.com/';
             ob_start();
@@ -118,7 +239,15 @@ class Options
     }
 
     /**
-     * Get content for the specified tab
+     * Get content for the specified admin tab
+     * 
+     * Routes tab requests to the appropriate content generation method
+     * in the SettingsRenderer class. Falls back to general tab if
+     * an invalid tab is requested.
+     * 
+     * @since 2.0.0
+     * @param string $active_tab The requested tab identifier
+     * @return string The rendered tab content HTML
      */
     private function getTabContent(string $active_tab): string
     {
@@ -140,7 +269,14 @@ class Options
     }
 
     /**
-     * Handle form submissions
+     * Handle form submissions from the admin interface
+     * 
+     * Processes various form submissions including debug mode toggles,
+     * log management actions, and general settings updates. Each form
+     * type is handled separately with appropriate validation and logging.
+     * 
+     * @since 2.0.0
+     * @return void
      */
     private function handleFormSubmission(): void
     {
@@ -150,18 +286,21 @@ class Options
             $new_value = !$current;
             update_option('ctm_debug_enabled', $new_value);
             
+            // Log the debug mode change
             $this->loggingSystem->logActivity(
                 $new_value ? 'Debug mode enabled' : 'Debug mode disabled',
                 'debug',
                 ['previous_state' => $current, 'new_state' => $new_value]
             );
             
+            // Redirect to prevent form resubmission
             wp_redirect(admin_url('admin.php?page=ctm-settings&tab=debug'));
             exit;
         }
         
-        // Handle clear debug log
+        // Handle clear all debug logs
         if (isset($_POST['clear_debug_log'])) {
+            // Log the clear action before clearing (so it gets recorded)
             $this->loggingSystem->logActivity('All debug logs cleared', 'system');
             $this->loggingSystem->clearAllLogs();
             wp_redirect(admin_url('admin.php?page=ctm-settings&tab=debug'));
@@ -177,12 +316,13 @@ class Options
             exit;
         }
         
-        // Handle email log
+        // Handle email log functionality
         if (isset($_POST['email_log']) && !empty($_POST['log_date']) && !empty($_POST['email_to'])) {
             $log_date = sanitize_text_field($_POST['log_date']);
             $email_to = sanitize_email($_POST['email_to']);
             $result = $this->loggingSystem->emailLog($log_date, $email_to);
             
+            // Log the email attempt result
             if ($result) {
                 $this->loggingSystem->logActivity("Log emailed for date: {$log_date} to: {$email_to}", 'system');
             } else {
@@ -193,11 +333,12 @@ class Options
             exit;
         }
         
-        // Handle log retention settings
+        // Handle log retention settings update
         if (isset($_POST['update_log_settings'])) {
             $retention_days = (int) ($_POST['log_retention_days'] ?? 7);
-            $retention_days = max(1, min(365, $retention_days)); // Between 1-365 days
+            $retention_days = max(1, min(365, $retention_days)); // Clamp between 1-365 days
             
+            // Update log management settings
             update_option('ctm_log_retention_days', $retention_days);
             update_option('ctm_log_auto_cleanup', isset($_POST['log_auto_cleanup']));
             update_option('ctm_log_email_notifications', isset($_POST['log_email_notifications']));
@@ -208,17 +349,25 @@ class Options
             exit;
         }
         
-        // Handle general settings
+        // Handle general plugin settings
         if (isset($_POST['ctm_api_key'])) {
             $this->saveGeneralSettings();
         }
     }
 
     /**
-     * Save general settings
+     * Save general plugin settings
+     * 
+     * Processes and saves the main plugin configuration including
+     * API credentials, feature toggles, and tracking script settings.
+     * Includes validation and activity logging.
+     * 
+     * @since 2.0.0
+     * @return void
      */
     private function saveGeneralSettings(): void
     {
+        // Sanitize and extract form data
         $apiKey = sanitize_text_field($_POST['ctm_api_key']);
         $apiSecret = sanitize_text_field($_POST['ctm_api_secret']);
         $trackingEnabled = isset($_POST['ctm_api_tracking_enabled']);
@@ -226,7 +375,7 @@ class Options
         $gfEnabled = isset($_POST['ctm_api_gf_enabled']);
         $dashboardEnabled = isset($_POST['ctm_api_dashboard_enabled']);
         
-        // Log configuration changes
+        // Log API key changes for security auditing
         $old_key = get_option('ctm_api_key');
         if ($old_key !== $apiKey) {
             $this->loggingSystem->logActivity('API Key updated', 'config', [
@@ -235,6 +384,7 @@ class Options
             ]);
         }
         
+        // Save settings to WordPress options
         update_option('ctm_api_key', $apiKey);
         update_option('ctm_api_secret', $apiSecret);
         update_option('ctm_api_tracking_enabled', $trackingEnabled);
@@ -242,10 +392,12 @@ class Options
         update_option('ctm_api_gf_enabled', $gfEnabled);
         update_option('ctm_api_dashboard_enabled', $dashboardEnabled);
         
+        // Save tracking script if provided
         if (!empty($_POST['call_track_account_script'])) {
             update_option('call_track_account_script', wp_kses_post($_POST['call_track_account_script']));
         }
         
+        // Log the settings change
         $this->loggingSystem->logActivity('General settings saved', 'config', [
             'tracking_enabled' => $trackingEnabled,
             'cf7_enabled' => $cf7Enabled,
@@ -253,44 +405,71 @@ class Options
             'dashboard_enabled' => $dashboardEnabled
         ]);
         
+        // Redirect to prevent form resubmission
         wp_redirect(add_query_arg(['tab' => 'general'], wp_get_referer()));
         exit;
     }
 
     /**
-     * Add a dashboard widget for call statistics.
+     * Add a dashboard widget for call statistics
+     * 
+     * Registers a WordPress dashboard widget that displays call tracking
+     * statistics and metrics from the CTM API.
+     * 
+     * @since 2.0.0
+     * @return void
      */
     public function addDashboardWidget(): void
     {
         wp_add_dashboard_widget(
-            'ctm_dashboard_widget',
-            'CallTrackingMetrics Call Stats',
-            [$this, 'renderDashboardWidget']
+            'ctm_dashboard_widget',                    // Widget ID
+            'CallTrackingMetrics Call Stats',         // Widget title
+            [$this, 'renderDashboardWidget']          // Callback function
         );
     }
 
     /**
-     * Render the dashboard widget content.
+     * Render the dashboard widget content
+     * 
+     * Displays call statistics and metrics in the WordPress dashboard.
+     * Currently shows placeholder data but can be enhanced to fetch
+     * real data from the CTM API.
+     * 
+     * @since 2.0.0
+     * @return void
      */
     public function renderDashboardWidget(): void
     {
         echo '<div style="padding:10px;">';
         echo '<h3 style="margin-top:0;">Recent Call Volume</h3>';
-        // Placeholder: In a real implementation, fetch and display call stats from the API
+        
+        // TODO: Replace with real API data
         echo '<p><em>Call stats will appear here once API integration is complete.</em></p>';
         echo '<ul style="margin:0 0 10px 20px;">';
+        
+        // Generate sample data for the last 7 days
         for ($i = 6; $i >= 0; $i--) {
             $date = date('M j', strtotime("-$i days"));
             $calls = rand(0, 10); // Placeholder random data
             echo '<li>' . esc_html($date) . ': <strong>' . esc_html($calls) . '</strong> calls</li>';
         }
+        
         echo '</ul>';
         echo '<span class="hint">Connect your account to see real data. <a href="options-general.php?page=call-tracking-metrics">Settings</a></span>';
         echo '</div>';
     }
 
+    // ===================================================================
+    // Delegation Methods for Field Mapping
+    // ===================================================================
+
     /**
-     * Get field mapping (delegated to FieldMapping class)
+     * Get field mapping for a form (delegated to FieldMapping class)
+     * 
+     * @since 2.0.0
+     * @param string     $form_type The form type ('gf' or 'cf7')
+     * @param string|int $form_id   The form ID
+     * @return array|null The field mapping or null if not found
      */
     public function getFieldMapping(string $form_type, $form_id): ?array
     {
@@ -298,15 +477,29 @@ class Options
     }
 
     /**
-     * Save field mapping (delegated to FieldMapping class)
+     * Save field mapping for a form (delegated to FieldMapping class)
+     * 
+     * @since 2.0.0
+     * @param string     $form_type The form type ('gf' or 'cf7')
+     * @param string|int $form_id   The form ID
+     * @param array      $mapping   The field mapping array
+     * @return void
      */
     public function saveFieldMapping(string $form_type, $form_id, array $mapping): void
     {
         $this->fieldMapping->saveFieldMapping($form_type, $form_id, $mapping);
     }
 
+    // ===================================================================
+    // Static Methods for Backwards Compatibility
+    // ===================================================================
+
     /**
      * Legacy debug logging method for backwards compatibility
+     * 
+     * @since 2.0.0
+     * @param mixed $message The message to log
+     * @return void
      */
     public static function logDebug($message): void
     {
@@ -315,6 +508,9 @@ class Options
 
     /**
      * Check if debug mode is enabled (delegated to LoggingSystem)
+     * 
+     * @since 2.0.0
+     * @return bool True if debug mode is enabled
      */
     public static function isDebugEnabled(): bool
     {
