@@ -187,19 +187,19 @@ class SettingsRenderer
         $apiKey = get_option('ctm_api_key');
         $apiSecret = get_option('ctm_api_secret');
         $accountInfo = null;
-        $connectionStatus = 'not_tested';
+        $apiStatus = 'not_tested';
         
         // Test API connection if credentials are available
         if ($apiKey && $apiSecret) {
             $apiService = new \CTM\Service\ApiService('https://api.calltrackingmetrics.com');
             $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
-            $connectionStatus = $accountInfo ? 'connected' : 'error';
+            $apiStatus = ($accountInfo && isset($accountInfo['account'])) ? 'connected' : 'not_connected';
         }
         
         ob_start();
         
         $this->renderView('api-tab', compact(
-            'apiKey', 'apiSecret', 'accountInfo', 'connectionStatus'
+            'apiKey', 'apiSecret', 'accountInfo', 'apiStatus'
         ));
         
         return ob_get_clean();
