@@ -587,12 +587,26 @@ function simulateApiRequest() {
 // Plugin Health Check
 function runHealthCheck() {
     const button = document.getElementById('health-check-btn');
-    const resultsDiv = document.getElementById('health-results');
+    
+    if (!button) {
+        showDebugMessage('Health check button not found', 'error');
+        return;
+    }
     
     button.disabled = true;
-    button.textContent = 'Running Checks...';
+    button.innerHTML = `
+        <svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        </svg>
+        Running Checks...
+    `;
     
-    resultsDiv.innerHTML = '<div class="text-center py-4"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div></div>';
+    // Reset all health indicators to loading state
+    const healthIndicators = document.querySelectorAll('.health-indicator');
+    healthIndicators.forEach(indicator => {
+        indicator.textContent = '⏳';
+        indicator.className = 'health-indicator text-blue-600';
+    });
     
     const formData = new FormData();
     formData.append('action', 'ctm_health_check');
@@ -606,26 +620,95 @@ function runHealthCheck() {
     .then(data => {
         if (data.success) {
             const checks = data.data.checks;
-            let html = '';
+            
+            // Update individual check indicators
+            const checkMapping = {
+                'API Key': 'check-api-key',
+                'API Connection': 'check-api-connection',
+                'Account Access': 'check-account-access',
+                'Contact Form 7': 'check-cf7',
+                'Gravity Forms': 'check-gf',
+                'Field Mappings': 'check-field-mappings',
+                'PHP Version': 'check-php-version',
+                'cURL Extension': 'check-curl',
+                'SSL Support': 'check-ssl',
+                'Memory Limit': 'check-memory',
+                'Plugin Version': 'check-plugin-version',
+                'Database Tables': 'check-database-tables',
+                'File Permissions': 'check-file-permissions',
+                'Debug Mode': 'check-debug-mode'
+            };
             
             checks.forEach(check => {
-                const statusColor = check.status === 'pass' ? 'text-green-600' : 
-                                  check.status === 'warning' ? 'text-yellow-600' : 'text-red-600';
-                const icon = check.status === 'pass' ? '✓' : 
-                           check.status === 'warning' ? '⚠' : '✗';
-                
-                html += `
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <span class="text-sm text-gray-700">${check.name}</span>
-                        <span class="${statusColor} font-medium">${icon} ${check.message}</span>
-                    </div>
-                `;
+                const elementId = checkMapping[check.name];
+                if (elementId) {
+                    const element = document.getElementById(elementId);
+                    if (element) {
+                        const icon = check.status === 'pass' ? '✓' : 
+                                   check.status === 'warning' ? '⚠' : '✗';
+                        const colorClass = check.status === 'pass' ? 'text-green-600' : 
+                                         check.status === 'warning' ? 'text-yellow-600' : 'text-red-600';
+                        
+                        element.textContent = icon;
+                        element.className = `health-indicator ${colorClass} cursor-help`;
+                        
+                        // Enhanced tooltip with status-specific information
+                        let tooltipText = check.message;
+                        if (check.status === 'fail') {
+                            tooltipText = `❌ FAILED: ${check.message}`;
+                        } else if (check.status === 'warning') {
+                            tooltipText = `⚠️ WARNING: ${check.message}`;
+                        } else if (check.status === 'pass') {
+                            tooltipText = `✅ PASSED: ${check.message}`;
+                        }
+                        
+                        element.title = tooltipText;
+                        
+                        // Add click handler for mobile/better UX
+                        element.onclick = function(e) {
+                            e.preventDefault();
+                            showDetailedCheckInfo(check.name, check.status, check.message);
+                        };
+                        
+                        // Add hover styling for better indication
+                        element.style.cursor = 'help';
+                    }
+                }
             });
             
-            resultsDiv.innerHTML = html;
+            // Update overall health score
+            const healthScore = document.getElementById('health-score');
+            if (healthScore) {
+                const passedChecks = checks.filter(c => c.status === 'pass').length;
+                const totalChecks = checks.length;
+                const score = Math.round((passedChecks / totalChecks) * 100);
+                
+                console.log(`Health Score Calculation: ${passedChecks}/${totalChecks} = ${score}%`);
+                
+                healthScore.textContent = score;
+                healthScore.className = score >= 80 ? 'text-3xl font-bold text-green-600' :
+                                       score >= 60 ? 'text-3xl font-bold text-yellow-600' :
+                                       'text-3xl font-bold text-red-600';
+            } else {
+                console.log('Health score element not found');
+            }
             
             const failedChecks = checks.filter(c => c.status === 'fail').length;
             const warningChecks = checks.filter(c => c.status === 'warning').length;
+            
+            // Enable/disable auto-fix button based on issues found
+            const autoFixButton = document.getElementById('fix-issues-btn');
+            if (autoFixButton) {
+                if (failedChecks > 0 || warningChecks > 0) {
+                    autoFixButton.disabled = false;
+                    autoFixButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                    autoFixButton.classList.add('hover:bg-blue-700');
+                } else {
+                    autoFixButton.disabled = true;
+                    autoFixButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    autoFixButton.classList.remove('hover:bg-blue-700');
+                }
+            }
             
             if (failedChecks === 0 && warningChecks === 0) {
                 showDebugMessage('All health checks passed!', 'success');
@@ -635,48 +718,55 @@ function runHealthCheck() {
                 showDebugMessage(`Health check completed with ${warningChecks} warnings`, 'warning');
             }
         } else {
-            resultsDiv.innerHTML = '<div class="text-center text-red-600 py-4">Health check failed</div>';
             showDebugMessage('Health check failed to run', 'error');
         }
     })
     .catch(error => {
-        resultsDiv.innerHTML = '<div class="text-center text-red-600 py-4">Network error</div>';
+        console.error('Health check error:', error);
         showDebugMessage('Network error during health check', 'error');
     })
     .finally(() => {
         button.disabled = false;
-        button.textContent = 'Run Health Check';
+        button.innerHTML = `
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Run Health Check
+        `;
     });
 }
 
-// Performance Monitor
-let pageLoadStart = performance.now();
-let autoRefreshInterval = null;
-let autoRefreshEnabled = false;
-
-function refreshPerformance() {
-    const button = document.getElementById('refresh-performance-btn');
-    const originalText = button ? button.innerHTML : '';
+// Auto-Fix Common Issues
+function fixCommonIssues() {
+    const button = document.getElementById('fix-issues-btn');
     
-    // Show loading state
-    if (button) {
-        button.innerHTML = '<svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Refreshing...';
-        button.disabled = true;
+    if (!button) {
+        showDebugMessage('Fix issues button not found', 'error');
+        return;
     }
     
-    const currentTime = performance.now();
-    const loadTime = Math.round(currentTime - pageLoadStart);
+    // Check if there are any failed health checks to fix
+    const failedIndicators = document.querySelectorAll('.health-indicator.text-red-600');
+    const warningIndicators = document.querySelectorAll('.health-indicator.text-yellow-600');
     
-    // Update page load time if element exists
-    const loadTimeElement = document.getElementById('page-load-time');
-    if (loadTimeElement) {
-        loadTimeElement.textContent = loadTime + 'ms';
+    if (failedIndicators.length === 0 && warningIndicators.length === 0) {
+        showDebugMessage('No issues detected to fix. Run health check first.', 'info');
+        return;
     }
     
-    // Fetch fresh performance data via AJAX
+    button.disabled = true;
+    button.innerHTML = `
+        <svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        </svg>
+        Fixing Issues...
+    `;
+    
+    showDebugMessage('Starting automatic issue resolution...', 'info');
+    
     const formData = new FormData();
-    formData.append('action', 'ctm_get_performance_metrics');
-    formData.append('nonce', '<?= wp_create_nonce('ctm_get_performance_metrics') ?>');
+    formData.append('action', 'ctm_auto_fix_issues');
+    formData.append('nonce', '<?= wp_create_nonce('ctm_auto_fix_issues') ?>');
     
     fetch('<?= admin_url('admin-ajax.php') ?>', {
         method: 'POST',
@@ -685,59 +775,297 @@ function refreshPerformance() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            const metrics = data.data;
+            const fixes = data.data.fixes;
+            const fixedCount = fixes.filter(f => f.status === 'fixed').length;
+            const skippedCount = fixes.filter(f => f.status === 'skipped').length;
+            const failedCount = fixes.filter(f => f.status === 'failed').length;
             
-            // Update all performance metrics if elements exist
-            const updates = {
-                'current-memory': metrics.current_memory,
-                'peak-memory': metrics.peak_memory,
-                'memory-percentage': metrics.memory_percentage,
-                'current-queries': metrics.current_queries,
-                'total-queries': metrics.total_queries,
-                'query-time': metrics.query_time,
-                'page-load-time': metrics.page_load_time,
-                'server-response': metrics.server_response,
-                'server-load': metrics.server_load,
-                'current-timestamp': metrics.current_timestamp,
-                'disk-space': metrics.disk_space
-            };
+            // Show detailed results
+            let resultMessage = `Auto-fix completed: ${fixedCount} fixed`;
+            if (skippedCount > 0) resultMessage += `, ${skippedCount} skipped`;
+            if (failedCount > 0) resultMessage += `, ${failedCount} failed`;
             
-            Object.entries(updates).forEach(([id, value]) => {
-                const element = document.getElementById(id);
-                if (element && value !== undefined) {
-                    element.textContent = value;
-                }
-            });
+            const messageType = failedCount > 0 ? 'warning' : fixedCount > 0 ? 'success' : 'info';
+            showDebugMessage(resultMessage, messageType);
             
-            // Update last updated time
-            const lastUpdated = document.getElementById('last-updated');
-            if (lastUpdated) {
-                lastUpdated.textContent = new Date().toLocaleTimeString();
+            // Show detailed fix results
+            if (fixes.length > 0) {
+                displayFixResults(fixes);
             }
             
-            if (!autoRefreshEnabled) {
-                showDebugMessage('Performance metrics refreshed successfully!', 'success');
+            // Re-run health check to update status
+            if (fixedCount > 0) {
+                setTimeout(() => {
+                    showDebugMessage('Re-running health check to verify fixes...', 'info');
+                    runHealthCheck();
+                }, 2000);
             }
         } else {
-            if (!autoRefreshEnabled) {
-                showDebugMessage('Failed to refresh performance metrics', 'error');
-            }
+            const errorMessage = data.data?.message || 'Auto-fix failed to run';
+            showDebugMessage(errorMessage, 'error');
         }
     })
     .catch(error => {
-        console.error('Error fetching performance metrics:', error);
-        if (!autoRefreshEnabled) {
-            showDebugMessage('Network error while refreshing performance metrics', 'error');
-        }
+        console.error('Auto-fix error:', error);
+        showDebugMessage('Network error during auto-fix', 'error');
     })
     .finally(() => {
-        // Reset button
-        if (button) {
-            button.innerHTML = originalText;
-            button.disabled = false;
-        }
+        button.disabled = false;
+        button.innerHTML = 'Auto-Fix Issues';
     });
 }
+
+function displayFixResults(fixes) {
+    // Create a results panel
+    const resultsDiv = document.createElement('div');
+    resultsDiv.className = 'mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg';
+    resultsDiv.innerHTML = `
+        <h5 class="font-semibold text-blue-800 mb-3">Auto-Fix Results</h5>
+        <div class="space-y-2">
+            ${fixes.map(fix => `
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-blue-700">${fix.issue}</span>
+                    <span class="px-2 py-1 rounded text-xs font-medium ${
+                        fix.status === 'fixed' ? 'bg-green-100 text-green-800' :
+                        fix.status === 'skipped' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                    }">
+                        ${fix.status.toUpperCase()}
+                    </span>
+                </div>
+                ${fix.message ? `<div class="text-xs text-blue-600 ml-4">${fix.message}</div>` : ''}
+            `).join('')}
+        </div>
+    `;
+    
+    // Insert after health check section
+    const healthCheckDiv = document.querySelector('.bg-white.rounded-xl.shadow-lg.border.border-gray-200.p-6');
+    if (healthCheckDiv && healthCheckDiv.parentNode) {
+        // Remove any existing results
+        const existingResults = healthCheckDiv.parentNode.querySelector('.mt-4.p-4.bg-blue-50');
+        if (existingResults) {
+            existingResults.remove();
+        }
+        
+        healthCheckDiv.parentNode.insertBefore(resultsDiv, healthCheckDiv.nextSibling);
+        
+        // Auto-remove after 10 seconds
+        setTimeout(() => {
+            if (resultsDiv.parentNode) {
+                resultsDiv.style.transition = 'opacity 0.5s ease';
+                resultsDiv.style.opacity = '0';
+                setTimeout(() => resultsDiv.remove(), 500);
+            }
+        }, 10000);
+    }
+}
+
+// Show detailed check information
+function showDetailedCheckInfo(checkName, status, message) {
+    // Create modal overlay
+    const modalOverlay = document.createElement('div');
+    modalOverlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    modalOverlay.style.zIndex = '9999';
+    
+    // Determine colors based on status
+    const statusColors = {
+        'pass': { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-800', icon: '✅' },
+        'warning': { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-800', icon: '⚠️' },
+        'fail': { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800', icon: '❌' }
+    };
+    
+    const colors = statusColors[status] || statusColors['fail'];
+    
+    // Create modal content
+    modalOverlay.innerHTML = `
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex items-center">
+                    <div class="text-2xl mr-3">${colors.icon}</div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">${checkName}</h3>
+                        <span class="inline-block px-2 py-1 text-xs font-medium rounded-full ${colors.bg} ${colors.text} ${colors.border} border">
+                            ${status.toUpperCase()}
+                        </span>
+                    </div>
+                </div>
+                <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="mb-6">
+                <h4 class="font-medium text-gray-900 mb-2">Details:</h4>
+                <p class="text-sm text-gray-700 leading-relaxed">${message}</p>
+            </div>
+            
+            ${status === 'fail' || status === 'warning' ? `
+                <div class="mb-6 p-4 ${colors.bg} ${colors.border} border rounded-lg">
+                    <h4 class="font-medium ${colors.text} mb-2">Recommended Actions:</h4>
+                    <div class="text-sm ${colors.text}">
+                        ${getRecommendedActions(checkName, status)}
+                    </div>
+                </div>
+            ` : ''}
+            
+            <div class="flex justify-end space-x-3">
+                ${status === 'fail' || status === 'warning' ? `
+                    <button onclick="fixSpecificIssue('${checkName}'); this.closest('.fixed').remove();" 
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        Try Auto-Fix
+                    </button>
+                ` : ''}
+                <button onclick="this.closest('.fixed').remove()" 
+                        class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    Close
+                </button>
+            </div>
+        </div>
+    `;
+    
+    // Close modal when clicking overlay
+    modalOverlay.addEventListener('click', function(e) {
+        if (e.target === modalOverlay) {
+            modalOverlay.remove();
+        }
+    });
+    
+    // Add to page
+    document.body.appendChild(modalOverlay);
+}
+
+// Get recommended actions for specific checks
+function getRecommendedActions(checkName, status) {
+    const recommendations = {
+        'API Key Configured': 'Go to the General tab and enter your CallTrackingMetrics API key and secret.',
+        'API Connection': 'Check your internet connection and verify your API credentials are correct.',
+        'Account Access': 'Ensure your API key has proper permissions in your CallTrackingMetrics account.',
+        'Contact Form 7': 'Install and activate the Contact Form 7 plugin, or disable CF7 integration in settings.',
+        'Gravity Forms': 'Install and activate Gravity Forms, or disable GF integration in settings.',
+        'Field Mappings': 'Configure field mappings in the Field Mapping tab to connect form fields to CTM.',
+        'PHP Version (7.4+)': 'Contact your hosting provider to upgrade PHP to version 7.4 or higher.',
+        'cURL Extension': 'Contact your hosting provider to enable the cURL PHP extension.',
+        'SSL Support': 'Ensure your server has SSL/TLS support enabled for secure API communications.',
+        'Memory Limit': 'Contact your hosting provider to increase PHP memory limit to 256MB or higher.',
+        'Plugin Version': 'Update the CallTrackingMetrics plugin to the latest version.',
+        'Database Tables': 'Deactivate and reactivate the plugin to recreate missing database tables.',
+        'File Permissions': 'Check that the WordPress uploads directory has proper write permissions.',
+        'Debug Mode': 'Enable debug mode in the Debug tab for better troubleshooting and logging.'
+    };
+    
+    return recommendations[checkName] || 'Please contact support for assistance with this issue.';
+}
+
+// Fix specific issue
+function fixSpecificIssue(checkName) {
+    showDebugMessage(`Attempting to fix: ${checkName}...`, 'info');
+    
+    // For now, trigger the general auto-fix
+    // In the future, this could be enhanced to fix specific issues
+    fixCommonIssues();
+}
+
+// Export Health Report
+function exportHealthReport() {
+    const button = event.target;
+    const originalText = button.textContent;
+    
+    button.disabled = true;
+    button.textContent = 'Generating...';
+    
+    // Collect current health check data
+    const healthData = {
+        timestamp: new Date().toISOString(),
+        overall_score: document.getElementById('health-score')?.textContent || 'N/A',
+        checks: []
+    };
+    
+    // Collect individual check results
+    const checkElements = document.querySelectorAll('.health-indicator');
+    checkElements.forEach(element => {
+        const checkName = element.parentElement?.querySelector('span')?.textContent || 'Unknown';
+        const status = element.textContent === '✓' ? 'pass' : 
+                     element.textContent === '⚠' ? 'warning' : 
+                     element.textContent === '✗' ? 'fail' : 'pending';
+        const message = element.title || '';
+        
+        healthData.checks.push({
+            name: checkName,
+            status: status,
+            message: message
+        });
+    });
+    
+    // Get system information from the correct elements
+    const getSystemInfo = () => {
+        // Get WordPress version from system info panel
+        const wpVersionElement = document.querySelector('[data-metric="wp_version"] .text-2xl');
+        const wpVersion = wpVersionElement?.textContent || 'N/A';
+        
+        // Get PHP version from system info panel
+        const phpVersionElement = document.querySelector('[data-metric="php_version"] .text-2xl');
+        const phpVersion = phpVersionElement?.textContent || 'N/A';
+        
+        // Get memory usage from system info panel
+        const memoryElement = document.querySelector('[data-metric="memory_usage"] .text-2xl');
+        const memoryUsage = memoryElement?.textContent || 'N/A';
+        
+        // Plugin version is hardcoded as 2.0 in the system
+        const pluginVersion = '2.0';
+        
+        return {
+            wordpress_version: wpVersion,
+            php_version: phpVersion,
+            plugin_version: pluginVersion,
+            memory_usage: memoryUsage
+        };
+    };
+    
+    const systemInfo = getSystemInfo();
+    
+    // Generate downloadable report
+    const reportContent = `
+Call Tracking Metrics - Health Report
+Generated: ${new Date().toLocaleString()}
+
+Overall Health Score: ${healthData.overall_score}/100
+
+Detailed Check Results:
+${healthData.checks.map(check => 
+    `${check.name}: ${check.status.toUpperCase()}${check.message ? ' - ' + check.message : ''}`
+).join('\n')}
+
+System Information:
+- WordPress Version: ${systemInfo.wordpress_version}
+- PHP Version: ${systemInfo.php_version}
+- Plugin Version: ${systemInfo.plugin_version}
+- Memory Usage: ${systemInfo.memory_usage}
+
+Report generated by Call Tracking Metrics Plugin
+    `.trim();
+    
+    // Create and download file
+    const blob = new Blob([reportContent], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ctm-health-report-${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    button.disabled = false;
+    button.textContent = originalText;
+    showDebugMessage('Health report exported successfully', 'success');
+}
+
+// Performance Monitor
+let pageLoadStart = performance.now();
+let autoRefreshInterval = null;
+let autoRefreshEnabled = false;
 
 function toggleAutoRefresh() {
     const button = document.getElementById('auto-refresh-btn');
@@ -1591,6 +1919,17 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Failed to load diagnostic history');
         }
     }
+    
+    // Auto-run health check on page load
+    setTimeout(() => {
+        const healthCheckButton = document.getElementById('health-check-btn');
+        if (healthCheckButton) {
+            console.log('Auto-running health check on page load...');
+            runHealthCheck();
+        } else {
+            console.log('Health check button not found - may not be on debug tab');
+        }
+    }, 2000); // Wait 2 seconds after page load to ensure everything is ready
 });
 
 function refreshSystemInfo() {
@@ -1728,6 +2067,234 @@ function updateDatabaseInfo(dbInfo) {
             }
         });
     }
+}
+
+// Performance measurement functionality
+let performanceData = {
+    navigationStart: 0,
+    domContentLoaded: 0,
+    loadComplete: 0,
+    scriptsLoaded: 0,
+    stylesLoaded: 0,
+    imagesLoaded: 0
+};
+
+// Capture navigation start time with modern API support
+if (window.performance) {
+    if (window.performance.timeOrigin) {
+        // Modern browsers - use timeOrigin
+        performanceData.navigationStart = window.performance.timeOrigin;
+    } else if (window.performance.timing) {
+        // Legacy browsers - use timing.navigationStart
+        performanceData.navigationStart = window.performance.timing.navigationStart;
+    } else {
+        // Ultimate fallback
+        performanceData.navigationStart = Date.now();
+    }
+} else {
+    // Fallback for browsers without Performance API
+    performanceData.navigationStart = Date.now();
+}
+
+// Measure DOM Content Loaded with multiple fallback methods
+document.addEventListener('DOMContentLoaded', function() {
+    // Method 1: Try modern PerformanceNavigationTiming API first
+    if (window.performance && window.performance.getEntriesByType) {
+        const navEntries = window.performance.getEntriesByType('navigation');
+        if (navEntries.length > 0 && navEntries[0].domContentLoadedEventEnd) {
+            performanceData.domContentLoaded = navEntries[0].domContentLoadedEventEnd;
+            console.log('DOM Ready (Navigation Timing 2):', performanceData.domContentLoaded + 'ms');
+        }
+    }
+    
+    // Method 2: Legacy Navigation Timing API
+    if (!performanceData.domContentLoaded && window.performance && window.performance.timing) {
+        setTimeout(() => {
+            let domTiming = 0;
+            
+            // Try domContentLoadedEventEnd first (most accurate)
+            if (window.performance.timing.domContentLoadedEventEnd > 0) {
+                domTiming = window.performance.timing.domContentLoadedEventEnd - window.performance.timing.navigationStart;
+            }
+            // Fallback to domContentLoadedEventStart
+            else if (window.performance.timing.domContentLoadedEventStart > 0) {
+                domTiming = window.performance.timing.domContentLoadedEventStart - window.performance.timing.navigationStart;
+            }
+            // Final fallback to current time
+            else {
+                domTiming = Date.now() - window.performance.timing.navigationStart;
+            }
+            
+            performanceData.domContentLoaded = domTiming > 0 ? domTiming : Date.now() - performanceData.navigationStart;
+            console.log('DOM Ready (Navigation Timing 1):', performanceData.domContentLoaded + 'ms');
+            storePerformanceMetrics();
+        }, 10); // Small delay to ensure timing data is available
+    }
+    
+    // Method 3: Fallback timing measurement
+    if (!performanceData.domContentLoaded) {
+        performanceData.domContentLoaded = Date.now() - performanceData.navigationStart;
+        console.log('DOM Ready (Fallback):', performanceData.domContentLoaded + 'ms');
+    }
+    
+    // Count loaded scripts
+    performanceData.scriptsLoaded = document.querySelectorAll('script').length;
+    
+    // Count loaded stylesheets
+    performanceData.stylesLoaded = document.querySelectorAll('link[rel="stylesheet"]').length;
+    
+    // Store initial performance data
+    storePerformanceMetrics();
+});
+
+// Measure window load complete
+window.addEventListener('load', function() {
+    if (window.performance && window.performance.timing) {
+        // Wait a bit for loadEventEnd to be available
+        setTimeout(() => {
+            const loadTiming = window.performance.timing.loadEventEnd - window.performance.timing.navigationStart;
+            performanceData.loadComplete = loadTiming > 0 ? loadTiming : Date.now() - performanceData.navigationStart;
+            storePerformanceMetrics();
+        }, 100);
+    } else {
+        // Fallback timing
+        performanceData.loadComplete = Date.now() - performanceData.navigationStart;
+    }
+    
+    // Count loaded images
+    const images = document.querySelectorAll('img');
+    let loadedImages = 0;
+    images.forEach(img => {
+        if (img.complete && img.naturalHeight !== 0) {
+            loadedImages++;
+        }
+    });
+    performanceData.imagesLoaded = loadedImages;
+    
+    // Store final performance data
+    storePerformanceMetrics();
+});
+
+// Store performance metrics in localStorage
+function storePerformanceMetrics() {
+    try {
+        localStorage.setItem('ctm_performance_metrics', JSON.stringify(performanceData));
+    } catch (e) {
+        console.log('Could not store performance metrics:', e);
+    }
+}
+
+// Get stored performance metrics
+function getStoredPerformanceMetrics() {
+    try {
+        const stored = localStorage.getItem('ctm_performance_metrics');
+        return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+        console.log('Could not retrieve performance metrics:', e);
+        return null;
+    }
+}
+
+// Helper function to update element content
+function updateElement(elementId, value) {
+    const element = document.getElementById(elementId);
+    if (element && value !== undefined) {
+        element.textContent = value;
+    }
+}
+
+// Enhanced refresh performance function
+function refreshPerformance() {
+    const button = document.getElementById('refresh-performance-btn');
+    if (button) {
+        button.disabled = true;
+        button.textContent = 'Refreshing...';
+    }
+
+    // Get stored client-side metrics
+    const clientMetrics = getStoredPerformanceMetrics();
+
+    const formData = new FormData();
+    formData.append('action', 'ctm_get_performance_metrics');
+    formData.append('nonce', '<?= wp_create_nonce('ctm_get_performance_metrics') ?>');
+    if (clientMetrics) {
+        formData.append('client_metrics', JSON.stringify(clientMetrics));
+    }
+
+    fetch('<?= admin_url('admin-ajax.php') ?>', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(response => {
+        if (response.success) {
+            const data = response.data;
+            
+            // Update top metrics cards
+            updateElement('memory-usage', data.memory_usage || '--');
+            updateElement('memory-percentage', data.memory_percentage || '--');
+            updateElement('page-load-time', data.page_load_time || '--');
+            updateElement('load-time-status', data.server_response || '--');
+            updateElement('db-queries', data.db_queries || '--');
+            updateElement('query-time', data.query_time || '--');
+            updateElement('api-calls', data.api_calls || '--');
+            updateElement('api-response-time', data.api_response_time || '--');
+            
+            // Memory & Processing
+            updateElement('current-memory', data.current_memory || '--');
+            updateElement('peak-memory', data.peak_memory || '--');
+            updateElement('memory-limit', data.memory_limit || '--');
+            updateElement('cpu-usage', data.cpu_usage || '--');
+            updateElement('execution-time', data.execution_time || '--');
+            updateElement('time-limit', data.time_limit || '--');
+            
+            // Database Performance
+            updateElement('total-queries', data.total_queries || '--');
+            updateElement('total-query-time', data.total_query_time || '--');
+            updateElement('slow-queries', data.slow_queries || '--');
+            updateElement('cache-hits', data.cache_hits || '--');
+            updateElement('cache-misses', data.cache_misses || '--');
+            updateElement('db-version', data.db_version || '--');
+            
+            // Page Load Performance (enhanced with client-side data)
+            updateElement('ttfb', data.ttfb || '--');
+            updateElement('dom-ready', data.dom_ready || '--');
+            updateElement('load-complete', data.load_complete || '--');
+            updateElement('scripts-loaded', data.scripts_loaded || '--');
+            updateElement('styles-loaded', data.styles_loaded || '--');
+            updateElement('images-loaded', data.images_loaded || '--');
+            
+            // WordPress Performance
+            updateElement('active-plugins', data.active_plugins || '--');
+            updateElement('theme-load-time', data.theme_load_time || '--');
+            updateElement('plugin-load-time', data.plugin_load_time || '--');
+            updateElement('admin-queries', data.admin_queries || '--');
+            updateElement('frontend-queries', data.frontend_queries || '--');
+            updateElement('cron-jobs', data.cron_jobs || '--');
+            
+            // Real-time Metrics
+            updateElement('server-load', data.server_load || '--');
+            updateElement('disk-usage', data.disk_usage || '--');
+            updateElement('network-io', data.network_io || '--');
+            updateElement('active-sessions', data.active_sessions || '--');
+            updateElement('error-rate', data.error_rate || '--');
+            updateElement('last-updated', data.last_updated || '--');
+            
+            showDebugMessage('Performance metrics updated successfully!', 'success');
+        } else {
+            showDebugMessage('Failed to refresh performance metrics: ' + (response.data?.message || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Performance refresh error:', error);
+        showDebugMessage('Failed to refresh performance metrics. Please try again.', 'error');
+    })
+    .finally(() => {
+        if (button) {
+            button.disabled = false;
+            button.textContent = 'Refresh';
+        }
+    });
 }
 
 </script> 

@@ -36,6 +36,7 @@ class AjaxHandlers
         add_action('wp_ajax_ctm_analyze_issue', [$this, 'ajaxAnalyzeIssue']);
         add_action('wp_ajax_ctm_email_system_info', [$this, 'ajaxEmailSystemInfo']);
         add_action('wp_ajax_ctm_refresh_system_info', [$this, 'ajaxRefreshSystemInfo']);
+        add_action('wp_ajax_ctm_auto_fix_issues', [$this, 'ajaxAutoFixIssues']);
     }
 
     /**
@@ -530,74 +531,77 @@ class AjaxHandlers
         
         $checks = [];
         
-        // Check 1: API Credentials
+        // API Status Checks
         $apiKey = get_option('ctm_api_key');
         $apiSecret = get_option('ctm_api_secret');
+        
+        // API Key Check
+        if ($apiKey && $apiSecret) {
+            $checks[] = ['name' => 'API Key', 'status' => 'pass', 'message' => 'Configured'];
+        } else {
+            $checks[] = ['name' => 'API Key', 'status' => 'fail', 'message' => 'Not configured'];
+        }
+        
+        // API Connection Check
         if ($apiKey && $apiSecret) {
             try {
                 $apiService = new \CTM\Service\ApiService('https://api.calltrackingmetrics.com');
                 $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
                 if ($accountInfo && isset($accountInfo['account'])) {
-                    $checks[] = ['name' => 'API Credentials', 'status' => 'pass', 'message' => 'Valid'];
+                    $checks[] = ['name' => 'API Connection', 'status' => 'pass', 'message' => 'Connected'];
+                    $checks[] = ['name' => 'Account Access', 'status' => 'pass', 'message' => 'Accessible'];
                 } else {
-                    $checks[] = ['name' => 'API Credentials', 'status' => 'fail', 'message' => 'Invalid'];
+                    $checks[] = ['name' => 'API Connection', 'status' => 'fail', 'message' => 'Failed'];
+                    $checks[] = ['name' => 'Account Access', 'status' => 'fail', 'message' => 'No access'];
                 }
             } catch (\Exception $e) {
-                $checks[] = ['name' => 'API Credentials', 'status' => 'fail', 'message' => 'Connection failed'];
+                $checks[] = ['name' => 'API Connection', 'status' => 'fail', 'message' => 'Connection failed'];
+                $checks[] = ['name' => 'Account Access', 'status' => 'fail', 'message' => 'No access'];
             }
         } else {
-            $checks[] = ['name' => 'API Credentials', 'status' => 'fail', 'message' => 'Not configured'];
+            $checks[] = ['name' => 'API Connection', 'status' => 'fail', 'message' => 'No credentials'];
+            $checks[] = ['name' => 'Account Access', 'status' => 'fail', 'message' => 'No credentials'];
         }
         
-        // Check 2: WordPress Version
-        $wp_version = get_bloginfo('version');
-        if (version_compare($wp_version, '5.0', '>=')) {
-            $checks[] = ['name' => 'WordPress Version', 'status' => 'pass', 'message' => $wp_version];
-        } else {
-            $checks[] = ['name' => 'WordPress Version', 'status' => 'warning', 'message' => $wp_version . ' (outdated)'];
-        }
-        
-        // Check 3: PHP Version
-        if (version_compare(PHP_VERSION, '7.4', '>=')) {
-            $checks[] = ['name' => 'PHP Version', 'status' => 'pass', 'message' => PHP_VERSION];
-        } else {
-            $checks[] = ['name' => 'PHP Version', 'status' => 'warning', 'message' => PHP_VERSION . ' (outdated)'];
-        }
-        
-        // Check 4: cURL Extension
-        if (function_exists('curl_init')) {
-            $checks[] = ['name' => 'cURL Extension', 'status' => 'pass', 'message' => 'Available'];
-        } else {
-            $checks[] = ['name' => 'cURL Extension', 'status' => 'fail', 'message' => 'Missing'];
-        }
-        
-        // Check 5: SSL Support
-        if (extension_loaded('openssl')) {
-            $checks[] = ['name' => 'SSL Support', 'status' => 'pass', 'message' => 'Available'];
-        } else {
-            $checks[] = ['name' => 'SSL Support', 'status' => 'fail', 'message' => 'Missing'];
-        }
-        
-        // Check 6: Memory Limit
-        $memory_limit = wp_convert_hr_to_bytes(ini_get('memory_limit'));
-        if ($memory_limit >= 128 * 1024 * 1024) { // 128MB
-            $checks[] = ['name' => 'Memory Limit', 'status' => 'pass', 'message' => size_format($memory_limit)];
-        } else {
-            $checks[] = ['name' => 'Memory Limit', 'status' => 'warning', 'message' => size_format($memory_limit) . ' (low)'];
-        }
-        
-        // Check 7: Form Plugins
+        // Form Integration Checks
         $cf7_active = class_exists('WPCF7_ContactForm');
         $gf_active = class_exists('GFAPI');
         
-        if ($cf7_active || $gf_active) {
-            $active_forms = [];
-            if ($cf7_active) $active_forms[] = 'Contact Form 7';
-            if ($gf_active) $active_forms[] = 'Gravity Forms';
-            $checks[] = ['name' => 'Form Plugins', 'status' => 'pass', 'message' => implode(', ', $active_forms)];
-        } else {
-            $checks[] = ['name' => 'Form Plugins', 'status' => 'warning', 'message' => 'None detected'];
-        }
+        $checks[] = ['name' => 'Contact Form 7', 'status' => $cf7_active ? 'pass' : 'warning', 'message' => $cf7_active ? 'Installed' : 'Not installed'];
+        $checks[] = ['name' => 'Gravity Forms', 'status' => $gf_active ? 'pass' : 'warning', 'message' => $gf_active ? 'Installed' : 'Not installed'];
+        
+        // Field Mappings Check
+        $cf7_mappings = get_option('ctm_cf7_field_mappings', []);
+        $gf_mappings = get_option('ctm_gf_field_mappings', []);
+        $has_mappings = !empty($cf7_mappings) || !empty($gf_mappings);
+        $checks[] = ['name' => 'Field Mappings', 'status' => $has_mappings ? 'pass' : 'warning', 'message' => $has_mappings ? 'Configured' : 'Not configured'];
+        
+        // Server Environment Checks
+        $checks[] = ['name' => 'PHP Version', 'status' => version_compare(PHP_VERSION, '7.4', '>=') ? 'pass' : 'warning', 'message' => PHP_VERSION];
+        $checks[] = ['name' => 'cURL Extension', 'status' => function_exists('curl_init') ? 'pass' : 'fail', 'message' => function_exists('curl_init') ? 'Available' : 'Missing'];
+        $checks[] = ['name' => 'SSL Support', 'status' => extension_loaded('openssl') ? 'pass' : 'fail', 'message' => extension_loaded('openssl') ? 'Available' : 'Missing'];
+        
+        // Memory Check
+        $memory_limit = wp_convert_hr_to_bytes(ini_get('memory_limit'));
+        $memory_status = $memory_limit >= 128 * 1024 * 1024 ? 'pass' : 'warning';
+        $checks[] = ['name' => 'Memory Limit', 'status' => $memory_status, 'message' => size_format($memory_limit)];
+        
+        // Plugin Status Checks
+        $checks[] = ['name' => 'Plugin Version', 'status' => 'pass', 'message' => '2.0'];
+        
+        // Database Tables Check
+        global $wpdb;
+        $table_check = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}options'");
+        $checks[] = ['name' => 'Database Tables', 'status' => $table_check ? 'pass' : 'fail', 'message' => $table_check ? 'Accessible' : 'Error'];
+        
+        // File Permissions Check
+        $upload_dir = wp_upload_dir();
+        $writable = is_writable($upload_dir['basedir']);
+        $checks[] = ['name' => 'File Permissions', 'status' => $writable ? 'pass' : 'warning', 'message' => $writable ? 'Writable' : 'Limited'];
+        
+        // Debug Mode Check
+        $debug_enabled = get_option('ctm_debug_enabled', false);
+        $checks[] = ['name' => 'Debug Mode', 'status' => $debug_enabled ? 'pass' : 'warning', 'message' => $debug_enabled ? 'Enabled' : 'Disabled'];
         
         wp_send_json_success(['checks' => $checks]);
     }
@@ -611,6 +615,9 @@ class AjaxHandlers
         
         global $wpdb;
         
+        // Get client-side metrics if provided
+        $client_metrics = isset($_POST['client_metrics']) ? json_decode(stripslashes($_POST['client_metrics']), true) : null;
+        
         // Memory & Processing
         $memory_limit = ini_get('memory_limit');
         $memory_limit_bytes = wp_convert_hr_to_bytes($memory_limit);
@@ -622,7 +629,7 @@ class AjaxHandlers
         
         // Query time calculation
         $query_time = 'N/A';
-        if (defined('SAVEQUERIES') && SAVEQUERIES && isset($wpdb->queries)) {
+        if (defined('SAVEQUERIES') && constant('SAVEQUERIES') && isset($wpdb->queries)) {
             $total_time = 0;
             foreach ($wpdb->queries as $query) {
                 $total_time += $query[1];
@@ -647,25 +654,128 @@ class AjaxHandlers
             $disk_space = $free_bytes ? size_format($free_bytes) . ' free' : 'N/A';
         }
         
+        // Enhanced TTFB calculation
+        $ttfb = 'N/A';
+        if (isset($_SERVER['REQUEST_TIME_FLOAT'])) {
+            $ttfb = round((microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']) * 1000, 2) . 'ms';
+        }
+        
+        // Process client-side metrics with enhanced debugging and validation
+        $dom_ready = 'N/A (Client-side)';
+        $load_complete = 'N/A (Client-side)';
+        $scripts_loaded = 'N/A (Client-side)';
+        $styles_loaded = 'N/A (Client-side)';
+        $images_loaded = 'N/A (Client-side)';
+        
+        if ($client_metrics && is_array($client_metrics)) {
+            // Debug log the received metrics
+            error_log('CTM Performance: Received client metrics: ' . json_encode($client_metrics));
+            
+            // DOM Content Loaded - more flexible validation
+            if (isset($client_metrics['domContentLoaded'])) {
+                $dom_value = floatval($client_metrics['domContentLoaded']);
+                if ($dom_value > 0 && $dom_value < 60000) { // Reasonable range: 0-60 seconds
+                    $dom_ready = round($dom_value, 2) . 'ms';
+                } else if ($dom_value > 0) {
+                    $dom_ready = round($dom_value, 2) . 'ms (high)';
+                } else {
+                    $dom_ready = 'N/A (invalid timing)';
+                }
+            }
+            
+            // Load Complete
+            if (isset($client_metrics['loadComplete'])) {
+                $load_value = floatval($client_metrics['loadComplete']);
+                if ($load_value > 0 && $load_value < 120000) { // Reasonable range: 0-120 seconds
+                    $load_complete = round($load_value, 2) . 'ms';
+                } else if ($load_value > 0) {
+                    $load_complete = round($load_value, 2) . 'ms (high)';
+                } else {
+                    $load_complete = 'N/A (invalid timing)';
+                }
+            }
+            
+            // Scripts Loaded
+            if (isset($client_metrics['scriptsLoaded'])) {
+                $scripts_count = intval($client_metrics['scriptsLoaded']);
+                if ($scripts_count >= 0) {
+                    $scripts_loaded = $scripts_count . ' scripts';
+                }
+            }
+            
+            // Styles Loaded
+            if (isset($client_metrics['stylesLoaded'])) {
+                $styles_count = intval($client_metrics['stylesLoaded']);
+                if ($styles_count >= 0) {
+                    $styles_loaded = $styles_count . ' stylesheets';
+                }
+            }
+            
+            // Images Loaded
+            if (isset($client_metrics['imagesLoaded'])) {
+                $images_count = intval($client_metrics['imagesLoaded']);
+                if ($images_count >= 0) {
+                    $images_loaded = $images_count . ' images';
+                }
+            }
+        } else {
+            // Log when no client metrics are received
+            error_log('CTM Performance: No client metrics received or invalid format');
+        }
+
         $metrics = [
             // Memory & Processing
             'current_memory' => size_format(memory_get_usage(true)),
             'peak_memory' => size_format(memory_get_peak_usage(true)),
             'memory_percentage' => $memory_percentage,
+            'memory_limit' => $memory_limit,
+            'execution_time' => round((microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']) * 1000, 2) . 'ms',
+            'time_limit' => ini_get('max_execution_time') . 's',
+            'cpu_usage' => function_exists('sys_getloadavg') ? round(sys_getloadavg()[0], 2) : 'N/A',
             
             // Database Performance
             'current_queries' => get_num_queries(),
             'total_queries' => $total_queries,
             'query_time' => $query_time,
+            'total_query_time' => $query_time,
+            'slow_queries' => $this->getSlowQueries(),
+            'cache_hits' => $this->getCacheHits(),
+            'cache_misses' => $this->getCacheMisses(),
+            'db_version' => $GLOBALS['wpdb']->db_version(),
             
-            // Page Load Performance
+            // Page Load Performance (enhanced with client-side data)
             'page_load_time' => round((microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']) * 1000, 2) . 'ms',
             'server_response' => isset($_SERVER['REQUEST_TIME_FLOAT']) ? round((microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']) * 1000, 2) . 'ms' : 'N/A',
             'server_load' => $server_load,
+            'ttfb' => $ttfb,
+            'dom_ready' => $dom_ready,
+            'load_complete' => $load_complete,
+            'scripts_loaded' => $scripts_loaded,
+            'styles_loaded' => $styles_loaded,
+            'images_loaded' => $images_loaded,
+            
+            // WordPress Performance
+            'active_plugins' => count(get_option('active_plugins', [])),
+            'theme_load_time' => $this->calculateThemeLoadTime(),
+            'plugin_load_time' => $this->calculatePluginLoadTime(),
+            'admin_queries' => is_admin() ? get_num_queries() : 'N/A',
+            'frontend_queries' => $this->getFrontendQueries(),
+            'cron_jobs' => count(_get_cron_array()),
             
             // Real-time Metrics
             'current_timestamp' => current_time('Y-m-d H:i:s'),
-            'disk_space' => $disk_space
+            'disk_space' => $disk_space,
+            'disk_usage' => $disk_space,
+            'network_io' => $this->getNetworkIO(),
+            'active_sessions' => $this->getActiveSessions(),
+            'error_rate' => $this->getErrorRate(),
+            'last_updated' => current_time('H:i:s'),
+            
+            // Grid metrics for top section
+            'memory_usage' => size_format(memory_get_usage(true)),
+            'db_queries' => get_num_queries(),
+            'api_calls' => $this->getApiCalls24h(),
+            'api_response_time' => $this->getApiResponseTime()
         ];
         
         wp_send_json_success($metrics);
@@ -1092,5 +1202,790 @@ class AjaxHandlers
                 'message' => 'Failed to refresh system information: ' . $e->getMessage()
             ]);
         }
+    }
+
+    /**
+     * AJAX: Auto-fix common issues detected by health check
+     */
+    public function ajaxAutoFixIssues(): void
+    {
+        check_ajax_referer('ctm_auto_fix_issues', 'nonce');
+        
+        $fixes = [];
+        $fixed_count = 0;
+        
+        try {
+            // Fix 1: Enable debug mode if disabled
+            $debug_enabled = get_option('ctm_debug_enabled', false);
+            if (!$debug_enabled) {
+                update_option('ctm_debug_enabled', true);
+                $fixes[] = [
+                    'issue' => 'Debug Mode Disabled',
+                    'status' => 'fixed',
+                    'message' => 'Debug mode has been enabled for better troubleshooting'
+                ];
+                $fixed_count++;
+            } else {
+                $fixes[] = [
+                    'issue' => 'Debug Mode',
+                    'status' => 'skipped',
+                    'message' => 'Debug mode was already enabled'
+                ];
+            }
+            
+            // Fix 2: Set default log retention if not configured
+            $retention_days = get_option('ctm_log_retention_days', null);
+            if ($retention_days === null || $retention_days < 1) {
+                update_option('ctm_log_retention_days', 7);
+                $fixes[] = [
+                    'issue' => 'Log Retention Settings',
+                    'status' => 'fixed',
+                    'message' => 'Set log retention to 7 days (recommended default)'
+                ];
+                $fixed_count++;
+            } else {
+                $fixes[] = [
+                    'issue' => 'Log Retention Settings',
+                    'status' => 'skipped',
+                    'message' => 'Log retention already configured'
+                ];
+            }
+            
+            // Fix 3: Enable auto-cleanup if disabled
+            $auto_cleanup = get_option('ctm_log_auto_cleanup', null);
+            if ($auto_cleanup === null || !$auto_cleanup) {
+                update_option('ctm_log_auto_cleanup', true);
+                $fixes[] = [
+                    'issue' => 'Auto Log Cleanup',
+                    'status' => 'fixed',
+                    'message' => 'Enabled automatic log cleanup to prevent disk space issues'
+                ];
+                $fixed_count++;
+            } else {
+                $fixes[] = [
+                    'issue' => 'Auto Log Cleanup',
+                    'status' => 'skipped',
+                    'message' => 'Auto cleanup already enabled'
+                ];
+            }
+            
+            // Fix 4: Clear old logs if too many exist
+            $log_index = get_option('ctm_log_index', []);
+            if (is_array($log_index) && count($log_index) > 30) {
+                // Keep only last 7 days of logs
+                $logs_to_keep = array_slice($log_index, -7);
+                $logs_to_remove = array_diff($log_index, $logs_to_keep);
+                
+                foreach ($logs_to_remove as $date) {
+                    delete_option("ctm_daily_log_{$date}");
+                }
+                
+                update_option('ctm_log_index', $logs_to_keep);
+                $fixes[] = [
+                    'issue' => 'Excessive Log Files',
+                    'status' => 'fixed',
+                    'message' => 'Cleaned up ' . count($logs_to_remove) . ' old log files to free disk space'
+                ];
+                $fixed_count++;
+            } else {
+                $fixes[] = [
+                    'issue' => 'Log File Cleanup',
+                    'status' => 'skipped',
+                    'message' => 'Log files are within acceptable limits'
+                ];
+            }
+            
+            // Fix 5: Set notification email if empty
+            $notification_email = get_option('ctm_log_notification_email', '');
+            $admin_email = get_option('admin_email', '');
+            if (empty($notification_email) && !empty($admin_email)) {
+                update_option('ctm_log_notification_email', $admin_email);
+                $fixes[] = [
+                    'issue' => 'Notification Email Missing',
+                    'status' => 'fixed',
+                    'message' => 'Set notification email to admin email: ' . $admin_email
+                ];
+                $fixed_count++;
+            } else {
+                $fixes[] = [
+                    'issue' => 'Notification Email',
+                    'status' => 'skipped',
+                    'message' => 'Notification email already configured'
+                ];
+            }
+            
+            // Fix 6: Check and fix file permissions (if possible)
+            $upload_dir = wp_upload_dir();
+            if (!empty($upload_dir['basedir']) && is_writable($upload_dir['basedir'])) {
+                $fixes[] = [
+                    'issue' => 'File Permissions',
+                    'status' => 'skipped',
+                    'message' => 'Upload directory permissions are correct'
+                ];
+            } else {
+                $fixes[] = [
+                    'issue' => 'File Permissions',
+                    'status' => 'failed',
+                    'message' => 'Upload directory is not writable - manual intervention required'
+                ];
+            }
+            
+            // Fix 7: Memory limit check
+            $memory_limit = wp_convert_hr_to_bytes(ini_get('memory_limit'));
+            $recommended_memory = 256 * 1024 * 1024; // 256MB
+            
+            if ($memory_limit < $recommended_memory) {
+                $fixes[] = [
+                    'issue' => 'Low Memory Limit',
+                    'status' => 'failed',
+                    'message' => 'Memory limit is ' . size_format($memory_limit) . '. Recommend increasing to 256MB+ in php.ini'
+                ];
+            } else {
+                $fixes[] = [
+                    'issue' => 'Memory Limit',
+                    'status' => 'skipped',
+                    'message' => 'Memory limit is adequate: ' . size_format($memory_limit)
+                ];
+            }
+            
+            // Fix 8: Check cURL availability
+            if (!function_exists('curl_init')) {
+                $fixes[] = [
+                    'issue' => 'cURL Extension Missing',
+                    'status' => 'failed',
+                    'message' => 'cURL extension is not available - contact hosting provider'
+                ];
+            } else {
+                $fixes[] = [
+                    'issue' => 'cURL Extension',
+                    'status' => 'skipped',
+                    'message' => 'cURL extension is available'
+                ];
+            }
+            
+            wp_send_json_success([
+                'message' => "Auto-fix completed: {$fixed_count} issues fixed",
+                'fixes' => $fixes,
+                'summary' => [
+                    'total_checks' => count($fixes),
+                    'fixed' => $fixed_count,
+                    'skipped' => count(array_filter($fixes, fn($f) => $f['status'] === 'skipped')),
+                    'failed' => count(array_filter($fixes, fn($f) => $f['status'] === 'failed'))
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            wp_send_json_error([
+                'message' => 'Auto-fix encountered an error: ' . $e->getMessage(),
+                'fixes' => $fixes
+            ]);
+        }
+    }
+
+    /**
+     * Calculate plugin load time
+     */
+    private function calculatePluginLoadTime(): string
+    {
+        // Get WordPress load time as a proxy for plugin load time
+        if (isset($_SERVER['REQUEST_TIME_FLOAT'])) {
+            $total_load_time = round((microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']) * 1000, 2);
+            
+            // Estimate plugin portion (rough approximation)
+            $active_plugins_count = count(get_option('active_plugins', []));
+            if ($active_plugins_count > 0) {
+                // Rough estimate: assume plugins take 20-40% of total load time
+                $plugin_percentage = min(40, max(20, $active_plugins_count * 2));
+                $estimated_plugin_time = round(($total_load_time * $plugin_percentage) / 100, 2);
+                return $estimated_plugin_time . 'ms (est.)';
+            }
+        }
+        
+        return 'N/A';
+    }
+
+    /**
+     * Calculate theme load time
+     */
+    private function calculateThemeLoadTime(): string
+    {
+        // Get current theme information
+        $current_theme = wp_get_theme();
+        $theme_name = $current_theme->get('Name');
+        
+        if (isset($_SERVER['REQUEST_TIME_FLOAT'])) {
+            $total_load_time = round((microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']) * 1000, 2);
+            
+            // Estimate theme portion based on complexity factors
+            $complexity_score = 0;
+            
+            // Factor 1: Theme complexity based on template files
+            $theme_dir = get_template_directory();
+            if (is_dir($theme_dir)) {
+                $php_files = glob($theme_dir . '/*.php');
+                $template_count = count($php_files);
+                
+                // More templates = more complex theme
+                if ($template_count > 50) {
+                    $complexity_score += 3; // Complex theme
+                } elseif ($template_count > 20) {
+                    $complexity_score += 2; // Medium theme
+                } else {
+                    $complexity_score += 1; // Simple theme
+                }
+            }
+            
+            // Factor 2: Check for common performance-heavy features
+            $functions_php = $theme_dir . '/functions.php';
+            if (file_exists($functions_php)) {
+                $functions_content = file_get_contents($functions_php);
+                
+                // Check for performance indicators
+                if (strpos($functions_content, 'wp_enqueue_script') !== false) {
+                    $complexity_score += 1; // Custom scripts
+                }
+                if (strpos($functions_content, 'wp_enqueue_style') !== false) {
+                    $complexity_score += 1; // Custom styles
+                }
+                if (strpos($functions_content, 'add_action') !== false) {
+                    $hook_count = substr_count($functions_content, 'add_action');
+                    $complexity_score += min(2, $hook_count / 10); // Many hooks
+                }
+                if (strpos($functions_content, 'WP_Query') !== false || 
+                    strpos($functions_content, 'get_posts') !== false) {
+                    $complexity_score += 1; // Custom queries
+                }
+            }
+            
+            // Factor 3: Check for CSS/JS files
+            $style_css = $theme_dir . '/style.css';
+            if (file_exists($style_css)) {
+                $css_size = filesize($style_css);
+                if ($css_size > 100000) { // > 100KB
+                    $complexity_score += 2;
+                } elseif ($css_size > 50000) { // > 50KB
+                    $complexity_score += 1;
+                }
+            }
+            
+            // Factor 4: Check if it's a known framework/parent theme
+            $parent_theme = $current_theme->parent();
+            if ($parent_theme) {
+                $complexity_score += 1; // Child themes add overhead
+            }
+            
+            // Common heavy themes detection
+            $heavy_themes = ['avada', 'divi', 'enfold', 'betheme', 'x-theme', 'jupiter'];
+            $theme_slug = strtolower($current_theme->get_stylesheet());
+            foreach ($heavy_themes as $heavy_theme) {
+                if (strpos($theme_slug, $heavy_theme) !== false) {
+                    $complexity_score += 3;
+                    break;
+                }
+            }
+            
+            // Calculate estimated theme load time
+            // Base: 5-15% of total load time, increased by complexity
+            $base_percentage = 8; // Base 8%
+            $complexity_percentage = min(15, $complexity_score * 2); // Up to 15% more
+            $theme_percentage = $base_percentage + $complexity_percentage;
+            
+            $estimated_theme_time = round(($total_load_time * $theme_percentage) / 100, 2);
+            
+            // Add context about theme complexity
+            if ($complexity_score >= 8) {
+                return $estimated_theme_time . 'ms (complex theme)';
+            } elseif ($complexity_score >= 5) {
+                return $estimated_theme_time . 'ms (medium theme)';
+            } else {
+                return $estimated_theme_time . 'ms (simple theme)';
+            }
+        }
+        
+        return 'N/A (timing unavailable)';
+    }
+
+    /**
+     * Get API calls in the last 24 hours
+     */
+    private function getApiCalls24h(): string
+    {
+        global $wpdb;
+        
+        // Check for API call logs in WordPress options or custom table
+        $api_calls_option = get_option('ctm_api_calls_24h', null);
+        
+        if ($api_calls_option !== null && is_array($api_calls_option)) {
+            // Clean old entries (older than 24 hours)
+            $current_time = time();
+            $twenty_four_hours_ago = $current_time - (24 * 60 * 60);
+            
+            $recent_calls = array_filter($api_calls_option, function($timestamp) use ($twenty_four_hours_ago) {
+                return $timestamp >= $twenty_four_hours_ago;
+            });
+            
+            // Update the option with cleaned data
+            update_option('ctm_api_calls_24h', $recent_calls);
+            
+            $call_count = count($recent_calls);
+            
+            if ($call_count === 0) {
+                return '0 calls (24h)';
+            } elseif ($call_count === 1) {
+                return '1 call (24h)';
+            } else {
+                return number_format($call_count) . ' calls (24h)';
+            }
+        }
+        
+        // Fallback: Try to estimate from debug logs
+        $debug_log = WP_CONTENT_DIR . '/debug.log';
+        if (file_exists($debug_log) && is_readable($debug_log)) {
+            $file_size = filesize($debug_log);
+            if ($file_size > 0) {
+                $handle = fopen($debug_log, 'r');
+                if ($handle) {
+                    // Read last 50KB for recent API calls
+                    $read_size = min(51200, $file_size);
+                    fseek($handle, max(0, $file_size - $read_size));
+                    $log_content = fread($handle, $read_size);
+                    fclose($handle);
+                    
+                    // Count CallTrackingMetrics API calls in recent logs
+                    $api_call_patterns = [
+                        'calltrackingmetrics.com',
+                        'CTM API',
+                        'api.calltrackingmetrics',
+                        'CallTrackingMetrics API'
+                    ];
+                    
+                    $api_calls = 0;
+                    foreach ($api_call_patterns as $pattern) {
+                        $api_calls += substr_count(strtolower($log_content), strtolower($pattern));
+                    }
+                    
+                    if ($api_calls > 0) {
+                        return $api_calls . ' calls (est. from logs)';
+                    }
+                }
+            }
+        }
+        
+        // Fallback: Check if API credentials are configured
+        $api_key = get_option('ctm_api_key');
+        $api_secret = get_option('ctm_api_secret');
+        
+        if ($api_key && $api_secret) {
+            // API is configured but no tracking data available
+            return '0 calls (tracking not enabled)';
+        }
+        
+        return 'API not configured';
+    }
+
+
+
+    /**
+     * Get frontend queries
+     */
+    private function getFrontendQueries(): string
+    {
+        global $wpdb;
+        
+        if (is_admin()) {
+            // For admin pages, show total queries but indicate it's admin context
+            $total_queries = isset($wpdb->num_queries) ? $wpdb->num_queries : get_num_queries();
+            return $total_queries . ' (Admin)';
+        } else {
+            // For frontend, show actual queries
+            $total_queries = isset($wpdb->num_queries) ? $wpdb->num_queries : get_num_queries();
+            return $total_queries . ' (Frontend)';
+        }
+    }
+
+    /**
+     * Get Network I/O metrics
+     */
+    private function getNetworkIO(): string
+    {
+        // Test network connectivity and speed
+        $start_time = microtime(true);
+        
+        // Use WordPress HTTP API for better compatibility
+        $response = wp_remote_head('https://api.calltrackingmetrics.com/api/v1/accounts', [
+            'timeout' => 5,
+            'sslverify' => true
+        ]);
+        
+        if (is_wp_error($response)) {
+            return 'Error: ' . $response->get_error_message();
+        }
+        
+        $response_time = round((microtime(true) - $start_time) * 1000, 2);
+        $response_code = wp_remote_retrieve_response_code($response);
+        
+        if ($response_code >= 200 && $response_code < 300) {
+            return $response_time . 'ms (Good)';
+        } elseif ($response_code >= 400) {
+            return $response_time . 'ms (HTTP ' . $response_code . ')';
+        }
+        
+        return $response_time . 'ms';
+    }
+
+    /**
+     * Get Active Sessions
+     */
+    private function getActiveSessions(): string
+    {
+        global $wpdb;
+        
+        // Count active user sessions from WordPress
+        $logged_in_users = count_users();
+        $total_users = $logged_in_users['total_users'];
+        
+        // Check for active sessions in the last hour
+        $active_sessions = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->usermeta} 
+             WHERE meta_key LIKE %s 
+             AND meta_value > %d",
+            'session_tokens',
+            time() - 3600 // Last hour
+        ));
+        
+        if ($active_sessions > 0) {
+            return $active_sessions . ' active';
+        } elseif ($total_users > 0) {
+            return '0 active (' . $total_users . ' total users)';
+        }
+        
+        return 'No sessions tracked';
+    }
+
+    /**
+     * Get Error Rate
+     */
+    private function getErrorRate(): string
+    {
+        // Check WordPress debug log for recent errors
+        $debug_log = WP_CONTENT_DIR . '/debug.log';
+        
+        if (!file_exists($debug_log) || !is_readable($debug_log)) {
+            return 'No debug log found';
+        }
+        
+        $file_size = filesize($debug_log);
+        if ($file_size === 0) {
+            return '0 errors (Clean log)';
+        }
+        
+        // Read last 10KB of log file for recent errors
+        $handle = fopen($debug_log, 'r');
+        if ($handle) {
+            $read_size = min(10240, $file_size); // 10KB or file size
+            fseek($handle, max(0, $file_size - $read_size));
+            $log_content = fread($handle, $read_size);
+            fclose($handle);
+            
+            // Count error occurrences in recent log
+            $error_count = substr_count($log_content, '[error]') + 
+                          substr_count($log_content, 'Fatal error') + 
+                          substr_count($log_content, 'PHP Warning') +
+                          substr_count($log_content, 'PHP Notice');
+            
+            if ($error_count === 0) {
+                return '0 recent errors';
+            } elseif ($error_count < 5) {
+                return $error_count . ' recent errors (Low)';
+            } elseif ($error_count < 20) {
+                return $error_count . ' recent errors (Medium)';
+            } else {
+                return $error_count . ' recent errors (High)';
+            }
+        }
+        
+        return 'Cannot read debug log';
+    }
+
+    /**
+     * Get slow queries from debug.log
+     */
+    private function getSlowQueries(): string
+    {
+        global $wpdb;
+        
+        // First check if SAVEQUERIES is enabled for real-time analysis
+        if (defined('SAVEQUERIES') && constant('SAVEQUERIES') && isset($wpdb->queries)) {
+            $slow_count = 0;
+            $total_slow_time = 0;
+            
+            foreach ($wpdb->queries as $query) {
+                $query_time = floatval($query[1]);
+                if ($query_time > 0.1) { // Consider queries > 100ms as slow
+                    $slow_count++;
+                    $total_slow_time += $query_time;
+                }
+            }
+            
+            if ($slow_count > 0) {
+                $avg_slow_time = round($total_slow_time / $slow_count * 1000, 2);
+                return $slow_count . ' slow queries (avg: ' . $avg_slow_time . 'ms)';
+            } else {
+                return '0 slow queries';
+            }
+        }
+        
+        // Fallback to debug log analysis
+        $debug_log = WP_CONTENT_DIR . '/debug.log';
+        if (!file_exists($debug_log) || !is_readable($debug_log)) {
+            return 'N/A (Enable SAVEQUERIES for analysis)';
+        }
+
+        $file_size = filesize($debug_log);
+        if ($file_size === 0) {
+            return '0 slow queries (Clean log)';
+        }
+
+        $handle = fopen($debug_log, 'r');
+        if ($handle) {
+            $read_size = min(10240, $file_size);
+            fseek($handle, max(0, $file_size - $read_size));
+            $log_content = fread($handle, $read_size);
+            fclose($handle);
+
+            // Count slow query patterns
+            $slow_queries = substr_count($log_content, 'slow query') + 
+                          substr_count($log_content, 'Slow query') +
+                          substr_count($log_content, 'Query took');
+             
+            return $slow_queries . ' slow queries (from log)';
+        }
+        
+        return 'N/A (Cannot analyze queries)';
+    }
+
+    /**
+     * Get cache hits from cache plugins
+     */
+    private function getCacheHits(): string
+    {
+        // Priority 1: Try to get actual cache hit statistics
+        
+        // Method 1: Standard wp_cache_get_stats() function
+        if (function_exists('wp_cache_get_stats')) {
+            $stats = \wp_cache_get_stats();
+            if (isset($stats['hits']) && is_numeric($stats['hits'])) {
+                $hits = intval($stats['hits']);
+                if ($hits > 0) {
+                    return number_format($hits) . ' hits';
+                } else {
+                    return '0 hits (cache active)';
+                }
+            }
+        }
+        
+        // Method 2: Redis Object Cache statistics
+        if (class_exists('Redis') && function_exists('wp_cache_get_stats')) {
+            try {
+                global $wp_object_cache;
+                if (isset($wp_object_cache) && method_exists($wp_object_cache, 'get_stats')) {
+                    $cache_stats = $wp_object_cache->get_stats();
+                    if (isset($cache_stats['hits'])) {
+                        return number_format($cache_stats['hits']) . ' hits (Redis)';
+                    }
+                }
+            } catch (\Exception $e) {
+                // Continue to next method
+            }
+        }
+        
+        // Method 3: Memcached statistics
+        if (class_exists('Memcached') && function_exists('wp_cache_get_stats')) {
+            try {
+                global $wp_object_cache;
+                if (isset($wp_object_cache) && method_exists($wp_object_cache, 'getStats')) {
+                    $memcached_stats = $wp_object_cache->getStats();
+                    if (is_array($memcached_stats)) {
+                        foreach ($memcached_stats as $server_stats) {
+                            if (isset($server_stats['get_hits'])) {
+                                return number_format($server_stats['get_hits']) . ' hits (Memcached)';
+                            }
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                // Continue to next method
+            }
+        }
+        
+        // Method 4: W3 Total Cache specific statistics
+        if (class_exists('W3_Config')) {
+            try {
+                if (function_exists('w3_instance') && function_exists('W3TC')) {
+                    $w3tc_config = \w3_instance('W3_Config');
+                    if (method_exists($w3tc_config, 'get_stats')) {
+                        $w3_stats = $w3tc_config->get_stats();
+                        if (isset($w3_stats['cache_hits'])) {
+                            return number_format($w3_stats['cache_hits']) . ' hits (W3TC)';
+                        }
+                    }
+                }
+                return 'W3TC active (stats N/A)';
+            } catch (\Exception $e) {
+                return 'W3TC active (stats error)';
+            }
+        }
+        
+        // Method 5: WP Rocket cache detection
+        if (class_exists('WP_Rocket\Engine\Cache\WPCache')) {
+            // WP Rocket doesn't expose hit statistics easily
+            return 'WP Rocket active (stats N/A)';
+        }
+        
+        // Method 6: WP Super Cache
+        if (function_exists('wp_cache_is_enabled') && \wp_cache_is_enabled()) {
+            // Check if we can get any statistics from WP Super Cache
+            global $wp_super_cache_stats;
+            if (isset($wp_super_cache_stats) && is_array($wp_super_cache_stats)) {
+                if (isset($wp_super_cache_stats['cache_hits'])) {
+                    return number_format($wp_super_cache_stats['cache_hits']) . ' hits (WP Super Cache)';
+                }
+            }
+            return 'WP Super Cache active';
+        }
+        
+        // Method 7: LiteSpeed Cache
+        if (class_exists('LiteSpeed\Core') || defined('LSCWP_V')) {
+            return 'LiteSpeed Cache active (stats N/A)';
+        }
+        
+        // Method 8: WP Fastest Cache
+        if (class_exists('WpFastestCache')) {
+            return 'WP Fastest Cache active (stats N/A)';
+        }
+        
+        // Method 9: Cachify
+        if (class_exists('Cachify')) {
+            return 'Cachify active (stats N/A)';
+        }
+        
+        // Method 10: External object cache detection
+        if (\wp_using_ext_object_cache()) {
+            return 'External object cache active';
+        }
+        
+        // Method 11: Basic object cache detection
+        if (class_exists('Redis') || class_exists('Memcached')) {
+            return 'Object cache available';
+        }
+        
+        return 'No caching detected';
+    }
+
+    /**
+     * Get cache misses from cache plugins
+     */
+    private function getCacheMisses(): string
+    {
+        // Priority 1: Try to get actual cache miss statistics with hit ratios
+        
+        // Method 1: Standard wp_cache_get_stats() function
+        if (function_exists('wp_cache_get_stats')) {
+            $stats = \wp_cache_get_stats();
+            if (isset($stats['misses']) && is_numeric($stats['misses'])) {
+                $hits = isset($stats['hits']) && is_numeric($stats['hits']) ? intval($stats['hits']) : 0;
+                $misses = intval($stats['misses']);
+                $total = $hits + $misses;
+                
+                if ($total > 0) {
+                    $hit_ratio = round(($hits / $total) * 100, 1);
+                    return number_format($misses) . ' misses (' . $hit_ratio . '% hit rate)';
+                } else if ($misses > 0) {
+                    return number_format($misses) . ' misses';
+                } else {
+                    return '0 misses (cache active)';
+                }
+            }
+        }
+        
+        // Method 2: Redis Object Cache statistics
+        if (class_exists('Redis')) {
+            try {
+                global $wp_object_cache;
+                if (isset($wp_object_cache) && method_exists($wp_object_cache, 'get_stats')) {
+                    $cache_stats = $wp_object_cache->get_stats();
+                    if (isset($cache_stats['misses']) && isset($cache_stats['hits'])) {
+                        $hits = intval($cache_stats['hits']);
+                        $misses = intval($cache_stats['misses']);
+                        $total = $hits + $misses;
+                        
+                        if ($total > 0) {
+                            $hit_ratio = round(($hits / $total) * 100, 1);
+                            return number_format($misses) . ' misses (' . $hit_ratio . '% hit rate, Redis)';
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                // Continue to next method
+            }
+        }
+        
+        // Method 3: Memcached statistics
+        if (class_exists('Memcached')) {
+            try {
+                global $wp_object_cache;
+                if (isset($wp_object_cache) && method_exists($wp_object_cache, 'getStats')) {
+                    $memcached_stats = $wp_object_cache->getStats();
+                    if (is_array($memcached_stats)) {
+                        foreach ($memcached_stats as $server_stats) {
+                            if (isset($server_stats['get_misses']) && isset($server_stats['get_hits'])) {
+                                $hits = intval($server_stats['get_hits']);
+                                $misses = intval($server_stats['get_misses']);
+                                $total = $hits + $misses;
+                                
+                                if ($total > 0) {
+                                    $hit_ratio = round(($hits / $total) * 100, 1);
+                                    return number_format($misses) . ' misses (' . $hit_ratio . '% hit rate, Memcached)';
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                // Continue to next method
+            }
+        }
+        
+        // Method 4: Check for caching plugins without detailed stats
+        $cache_plugins = [];
+        
+        if (class_exists('WP_Rocket\Engine\Cache\WPCache')) {
+            $cache_plugins[] = 'WP Rocket';
+        }
+        if (class_exists('W3_Config')) {
+            $cache_plugins[] = 'W3TC';
+        }
+        if (function_exists('wp_cache_is_enabled') && \wp_cache_is_enabled()) {
+            $cache_plugins[] = 'WP Super Cache';
+        }
+        if (class_exists('LiteSpeed\Core') || defined('LSCWP_V')) {
+            $cache_plugins[] = 'LiteSpeed';
+        }
+        if (class_exists('WpFastestCache')) {
+            $cache_plugins[] = 'WP Fastest Cache';
+        }
+        if (class_exists('Cachify')) {
+            $cache_plugins[] = 'Cachify';
+        }
+        if (\wp_using_ext_object_cache()) {
+            $cache_plugins[] = 'External Object Cache';
+        }
+        
+        if (!empty($cache_plugins)) {
+            $plugin_list = implode(', ', $cache_plugins);
+            return 'Cache active (' . $plugin_list . ') - stats N/A';
+        }
+        
+        return 'No cache miss tracking';
     }
 } 

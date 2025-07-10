@@ -308,6 +308,9 @@ class ApiService
             throw new \Exception('Invalid JSON response: ' . json_last_error_msg());
         }
 
+        // Track successful API call for performance monitoring
+        $this->trackApiCall();
+
         return $decodedResponse;
     }
 
@@ -393,5 +396,44 @@ class ApiService
     public function getTimeout(): int
     {
         return $this->timeout;
+    }
+
+    /**
+     * Track API call for performance monitoring
+     * 
+     * Records the timestamp of successful API calls for 24-hour tracking.
+     * This data is used by the performance monitor to show API usage.
+     * 
+     * @since 2.0.0
+     * @return void
+     */
+    private function trackApiCall(): void
+    {
+        try {
+            $current_calls = get_option('ctm_api_calls_24h', []);
+            
+            if (!is_array($current_calls)) {
+                $current_calls = [];
+            }
+            
+            // Add current timestamp
+            $current_calls[] = time();
+            
+            // Clean old entries (older than 24 hours)
+            $twenty_four_hours_ago = time() - (24 * 60 * 60);
+            $current_calls = array_filter($current_calls, function($timestamp) use ($twenty_four_hours_ago) {
+                return $timestamp >= $twenty_four_hours_ago;
+            });
+            
+            // Limit to prevent excessive data storage (keep last 1000 calls max)
+            if (count($current_calls) > 1000) {
+                $current_calls = array_slice($current_calls, -1000);
+            }
+            
+            update_option('ctm_api_calls_24h', $current_calls);
+        } catch (\Exception $e) {
+            // Silently fail to avoid disrupting API calls
+            error_log('CTM API Call Tracking Error: ' . $e->getMessage());
+        }
     }
 } 

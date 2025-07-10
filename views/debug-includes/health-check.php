@@ -143,7 +143,7 @@
                 </svg>
                 Run Health Check
             </button>
-            <button onclick="fixCommonIssues()" id="fix-issues-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition duration-200" disabled>
+            <button onclick="fixCommonIssues()" id="fix-issues-btn" class="bg-blue-600 text-white font-medium px-4 py-2 rounded-lg transition duration-200 opacity-50 cursor-not-allowed" disabled>
                 Auto-Fix Issues
             </button>
             <button onclick="exportHealthReport()" class="bg-gray-600 hover:bg-gray-700 text-white font-medium px-4 py-2 rounded-lg transition duration-200">

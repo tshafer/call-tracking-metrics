@@ -12,7 +12,7 @@ $log_stats = $log_stats ?? ['total_days' => 0, 'total_entries' => 0, 'total_size
 <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg p-8 mb-8 text-white">
     <div class="flex items-center justify-between">
         <div>
-            <h2 class="text-3xl font-bold mb-2">Debug Center</h2>
+            <h2 class="text-3xl text-white font-bold mb-2">Debug Center</h2>
             <p class="text-blue-100 mb-4">Advanced debugging tools and system diagnostics</p>
             
             <?php if ($debugEnabled): ?>
