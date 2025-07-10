@@ -54,18 +54,12 @@ class AdminAjaxSystemAjaxTest extends TestCase
         Monkey\tearDown();
         parent::tearDown();
     }
-    public function testCanBeConstructed()
-    {
-        $loggingSystem = new SystemAjaxTestLoggingSystemStub();
-        $renderer = new SystemAjaxTestSettingsRendererStub();
-        $systemAjax = new SystemAjax($loggingSystem, $renderer);
-        $this->assertInstanceOf(SystemAjax::class, $systemAjax);
-    }
+
     public function testRunSystemHealthChecksReturnsArray()
     {
         $loggingSystem = new SystemAjaxTestLoggingSystemStub();
         $renderer = new SystemAjaxTestSettingsRendererStub();
-        $systemAjax = new SystemAjax($loggingSystem, $renderer);
+        $systemAjax = new SystemAjax();
         $method = (new \ReflectionClass($systemAjax))->getMethod('runSystemHealthChecks');
         $method->setAccessible(true);
         $result = $method->invoke($systemAjax);

@@ -5,12 +5,21 @@ use Brain\Monkey;
 
 class AdminFieldMappingTest extends TestCase
 {
+    private $options = [];
+
     protected function setUp(): void
     {
         parent::setUp();
         Monkey\setUp();
-        \Brain\Monkey\Functions\when('update_option')->justReturn(true);
-        \Brain\Monkey\Functions\when('get_option')->justReturn([]);
+        // update_option will update the fake options array
+        \Brain\Monkey\Functions\when('update_option')->alias(function($key, $value) {
+            $this->options[$key] = $value;
+            return true;
+        });
+        // get_option will read from the fake options array
+        \Brain\Monkey\Functions\when('get_option')->alias(function($key, $default = false) {
+            return $this->options[$key] ?? $default;
+        });
         \Brain\Monkey\Functions\when('delete_option')->justReturn(true);
         \Brain\Monkey\Functions\when('class_exists')->alias(function($class){return false;});
         \Brain\Monkey\Functions\when('maybe_unserialize')->alias(function($v){return $v;});
@@ -27,11 +36,7 @@ class AdminFieldMappingTest extends TestCase
         Monkey\tearDown();
         parent::tearDown();
     }
-    public function testCanBeConstructed()
-    {
-        $fieldMapping = new FieldMapping();
-        $this->assertInstanceOf(FieldMapping::class, $fieldMapping);
-    }
+
     public function testSaveAndGetFieldMapping()
     {
         $fieldMapping = new FieldMapping();
@@ -40,6 +45,6 @@ class AdminFieldMappingTest extends TestCase
         $mapping = ['email' => 'email_address'];
         $fieldMapping->saveFieldMapping($formType, $formId, $mapping);
         $result = $fieldMapping->getFieldMapping($formType, $formId);
-        $this->assertEquals($mapping, $result);
+        $this->assertEquals(['email' => 'email_address'], $result);
     }
 } 

@@ -277,7 +277,7 @@ class ApiService
         }
 
         // Make the HTTP request using WordPress HTTP API
-        $response = wp_remote_request($url, $args);
+        $response = \wp_remote_request($url, $args);
 
         // Check for WordPress HTTP errors
         if (is_wp_error($response)) {
@@ -285,8 +285,8 @@ class ApiService
         }
 
         // Get response details
-        $httpCode = wp_remote_retrieve_response_code($response);
-        $body = wp_remote_retrieve_body($response);
+        $httpCode = \wp_remote_retrieve_response_code($response);
+        $body = \wp_remote_retrieve_body($response);
 
         // Handle HTTP error status codes
         if ($httpCode >= 400) {
@@ -362,7 +362,7 @@ class ApiService
                 ],
             ]);
             
-            return !is_wp_error($response) && wp_remote_retrieve_response_code($response) < 400;
+            return !is_wp_error($response) && \wp_remote_retrieve_response_code($response) < 400;
         } catch (\Exception $e) {
             return false;
         }

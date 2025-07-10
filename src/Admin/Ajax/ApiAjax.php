@@ -4,6 +4,12 @@ namespace CTM\Admin\Ajax;
 use CTM\Service\ApiService;
 
 class ApiAjax {
+    private $apiService;
+
+    public function __construct($apiService = null) {
+        $this->apiService = $apiService ?: new ApiService('https://api.calltrackingmetrics.com');
+    }
+
     public function registerHandlers() {
         add_action('wp_ajax_ctm_test_api_connection', [$this, 'ajaxTestApiConnection']);
         add_action('wp_ajax_ctm_simulate_api_request', [$this, 'ajaxSimulateApiRequest']);
@@ -52,7 +58,7 @@ class ApiAjax {
             return;
         }
         try {
-            $apiService = new ApiService('https://api.calltrackingmetrics.com');
+            $apiService = $this->apiService;
             $api_start_time = microtime(true);
             $accountInfo = $apiService->getAccountInfo($api_key, $api_secret);
             $api_response_time = round((microtime(true) - $api_start_time) * 1000, 2);
@@ -135,7 +141,7 @@ class ApiAjax {
                 $error_details[] = 'Contact support if problem persists';
             }
             wp_send_json_error([
-                'message' => 'API Connection failed: ' . $e->getMessage(),
+                'message' => 'Failed to connect to CTM API: ' . $e->getMessage(),
                 'details' => $error_details,
                 'metadata' => $response_data,
                 'exception' => [
@@ -185,7 +191,7 @@ class ApiAjax {
             return;
         }
         try {
-            $apiService = new ApiService('https://api.calltrackingmetrics.com');
+            $apiService = $this->apiService;
             switch ($endpoint) {
                 case '/api/v1/accounts/':
                     $result = $apiService->getAccountInfo($apiKey, $apiSecret);

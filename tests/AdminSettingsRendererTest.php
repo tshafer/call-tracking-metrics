@@ -34,11 +34,6 @@ class AdminSettingsRendererTest extends TestCase
         Monkey\tearDown();
         parent::tearDown();
     }
-    public function testCanBeConstructed()
-    {
-        $renderer = new SettingsRenderer();
-        $this->assertInstanceOf(SettingsRenderer::class, $renderer);
-    }
     public function testGetGeneralTabContentReturnsString()
     {
         $renderer = new SettingsRenderer();

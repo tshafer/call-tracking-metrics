@@ -5,13 +5,7 @@ use CTM\Admin\LoggingSystem;
 use CTM\Admin\SettingsRenderer;
 
 class SystemAjax {
-    private LoggingSystem $loggingSystem;
-    private SettingsRenderer $renderer;
 
-    public function __construct(LoggingSystem $loggingSystem, SettingsRenderer $renderer) {
-        $this->loggingSystem = $loggingSystem;
-        $this->renderer = $renderer;
-    }
 
     public function registerHandlers() {
         add_action('wp_ajax_ctm_health_check', [$this, 'ajaxHealthCheck']);
@@ -1195,8 +1189,8 @@ class SystemAjax {
                     $solutions[] = 'Check your server\'s internet connection';
                     $solutions[] = 'Verify firewall settings allow HTTPS connections';
                     $solutions[] = 'Contact your hosting provider if connection issues persist';
-                } elseif (wp_remote_retrieve_response_code($response) >= 400) {
-                    $issues[] = 'CallTrackingMetrics API returned error: ' . wp_remote_retrieve_response_code($response);
+                } elseif (\wp_remote_retrieve_response_code($response) >= 400) {
+                    $issues[] = 'CallTrackingMetrics API returned error: ' . \wp_remote_retrieve_response_code($response);
                     $solutions[] = 'Check CallTrackingMetrics service status';
                     $solutions[] = 'Verify your API credentials are correct and have access';
                     $solutions[] = 'Try again later if this is a temporary issue';
@@ -1297,7 +1291,7 @@ class SystemAjax {
                     $solutions[] = 'Contact CallTrackingMetrics support if credentials should be valid';
                 }
             } catch (\Exception $e) {
-                $issues[] = 'API connection failed: ' . $e->getMessage();
+                $issues[] = 'Failed to connect to CTM API: ' . $e->getMessage();
                 $solutions[] = 'Check your internet connection';
                 $solutions[] = 'Verify CallTrackingMetrics API service is available';
                 $solutions[] = 'Check if your server can make HTTPS requests';
@@ -1841,7 +1835,7 @@ class SystemAjax {
             $response_time = round((microtime(true) - $start_time) * 1000, 2);
             
             if (!is_wp_error($response)) {
-                $http_code = wp_remote_retrieve_response_code($response);
+                $http_code = \wp_remote_retrieve_response_code($response);
                 
                 if ($http_code >= 200 && $http_code < 400) {
                     // Store this response time for future reference
@@ -1964,7 +1958,7 @@ class SystemAjax {
         }
         
         $response_time = round((microtime(true) - $start_time) * 1000, 2);
-        $response_code = wp_remote_retrieve_response_code($response);
+        $response_code = \wp_remote_retrieve_response_code($response);
         
         if ($response_code >= 200 && $response_code < 300) {
             return $response_time . 'ms (Good)';

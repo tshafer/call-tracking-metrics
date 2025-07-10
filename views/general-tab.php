@@ -384,7 +384,7 @@ function dismissNotice(type) {
                  progressBar.classList.remove('bg-blue-600');
                  progressBar.classList.add('bg-red-600');
                  
-                 appendLog('error', '✗ API Connection Failed');
+                 appendLog('error', '✗ Failed to connect to CTM API: ' + data.message);
                  appendLog('error', `Total test duration: ${totalTime}ms`);
                  
                  if (data.message) appendLog('error', `Error: ${data.message}`);
