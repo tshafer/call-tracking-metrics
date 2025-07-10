@@ -1,0 +1,26 @@
+{
+  "redefinable-internals": [
+    "class_exists",
+    "str_repeat",
+    "is_writable",
+    "tempnam",
+    "sys_get_temp_dir",
+    "extension_loaded",
+    "is_array",
+    "memory_get_usage",
+    "fopen",
+    "version_compare",
+    "count",
+    "array_values",
+    "memory_get_peak_usage",
+    "fputcsv",
+    "array_sum",
+    "number_format",
+    "defined",
+    "fclose",
+    "method_exists",
+    "unlink",
+    "error_log",
+    "str_replace"
+  ]
+} 

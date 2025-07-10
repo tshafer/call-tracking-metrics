@@ -86,6 +86,24 @@ class SettingsRenderer
         // Check plugin availability
         $cf7_installed = class_exists('WPCF7_ContactForm');
         $gf_installed = class_exists('GFAPI');
+
+        // --- FIX: Determine API connection status for the general tab ---
+        $apiStatus = 'not_tested';
+        if ($apiKey && $apiSecret) {
+            try {
+                $apiService = new \CTM\Service\ApiService('https://api.calltrackingmetrics.com');
+                $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
+                $apiStatus = ($accountInfo && isset($accountInfo['account'])) ? 'connected' : 'not_connected';
+            } catch (\Exception $e) {
+                $apiStatus = 'not_connected';
+            }
+        } else {
+            $apiStatus = 'not_connected';
+        }
+        // --- END FIX ---
+        
+        // Get debug mode status for the general tab
+        $debugEnabled = \CTM\Admin\LoggingSystem::isDebugEnabled();
         
         // Start output buffering
         ob_start();
@@ -94,7 +112,7 @@ class SettingsRenderer
         $this->renderView('general-tab', compact(
             'apiKey', 'apiSecret', 'accountId', 'trackingEnabled',
             'cf7Enabled', 'gfEnabled', 'dashboardEnabled', 'trackingScript',
-            'cf7_installed', 'gf_installed'
+            'cf7_installed', 'gf_installed', 'apiStatus', 'debugEnabled'
         ));
         
         return ob_get_clean();
@@ -243,19 +261,16 @@ class SettingsRenderer
         
         // Get log statistics
         $logStats = null;
-        $dailyLogs = [];
-        
         if ($debugEnabled) {
             $loggingSystem = new LoggingSystem();
             $logStats = $loggingSystem->getLogStatistics();
-            $dailyLogs = method_exists($loggingSystem, 'getDailyLogs') ? $loggingSystem->getDailyLogs() : [];
         }
         
         ob_start();
         
         $this->renderView('debug-tab', compact(
             'debugEnabled', 'retentionDays', 'autoCleanup', 
-            'emailNotifications', 'notificationEmail', 'logStats', 'dailyLogs'
+            'emailNotifications', 'notificationEmail', 'logStats'
         ));
         
         return ob_get_clean();
