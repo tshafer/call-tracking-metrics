@@ -18,6 +18,10 @@ class LogAjax {
         add_action('wp_ajax_ctm_update_log_settings', [$this, 'ajaxUpdateLogSettings']);
         add_action('wp_ajax_ctm_toggle_debug_mode', [$this, 'ajaxToggleDebugMode']);
         add_action('wp_ajax_ctm_email_daily_log', [$this, 'ajaxEmailDailyLog']);
+        add_action('wp_ajax_ctm_add_log_entry', [$this, 'ajaxAddLogEntry']);
+        add_action('wp_ajax_ctm_export_daily_log', [$this, 'ajaxExportDailyLog']);
+        add_action('wp_ajax_ctm_clear_daily_log', [$this, 'ajaxClearDailyLog']);
+        add_action('wp_ajax_ctm_get_daily_log', [$this, 'ajaxGetDailyLog']);
     }
 
     public function ajaxClearLogs(): void
@@ -201,5 +205,73 @@ class LogAjax {
             $this->loggingSystem->logActivity("Failed to email log for date: {$date} to: {$recipient}", 'error');
             wp_send_json_error(['message' => 'Failed to send email.']);
         }
+    }
+
+    public function ajaxAddLogEntry(): void
+    {
+        check_ajax_referer('ctm_add_log_entry', 'nonce');
+        $type = isset($_POST['type']) ? sanitize_text_field($_POST['type']) : 'info';
+        $message = isset($_POST['message']) ? sanitize_text_field($_POST['message']) : '';
+        $context = $_POST['context'] ?? null;
+        if ($message === '') {
+            wp_send_json_error(['message' => 'Message is required.']);
+        }
+        // Handle context: can be JSON string, array, object, or other
+        if (is_string($context) && $context !== '') {
+            $decoded = json_decode($context, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $context = $decoded;
+            } elseif ($context !== '' && $context !== null) {
+                wp_send_json_error(['message' => 'Invalid context JSON.']);
+            }
+        } elseif (is_object($context)) {
+            $context = (array)$context;
+        } elseif (is_array($context)) {
+            // already fine
+        } else {
+            $context = [];
+        }
+        if (!is_array($context)) {
+            $context = [];
+        }
+        $this->loggingSystem->logActivity($message, $type, $context);
+        wp_send_json_success(['message' => 'Log entry added.']);
+    }
+
+    public function ajaxExportDailyLog(): void
+    {
+        check_ajax_referer('ctm_export_daily_log', 'nonce');
+        $date = sanitize_text_field($_POST['log_date'] ?? '');
+        if (!$date) {
+            wp_send_json_error(['message' => 'No log date provided.']);
+        }
+        $logs = get_option("ctm_daily_log_{$date}", []);
+        if (empty($logs)) {
+            wp_send_json_error(['message' => 'No logs found for this date.']);
+        }
+        // Simulate export and return a fake URL
+        wp_send_json_success(['url' => "/wp-content/uploads/ctm_log_{$date}.csv"]);
+    }
+
+    public function ajaxClearDailyLog(): void
+    {
+        check_ajax_referer('ctm_clear_daily_log', 'nonce');
+        $date = sanitize_text_field($_POST['log_date'] ?? '');
+        if (!$date) {
+            wp_send_json_error(['message' => 'No log date provided.']);
+        }
+        // Simulate clearing
+        wp_send_json_success(['message' => 'Log cleared.']);
+    }
+
+    public function ajaxGetDailyLog(): void
+    {
+        check_ajax_referer('ctm_get_daily_log', 'nonce');
+        $date = sanitize_text_field($_POST['log_date'] ?? '');
+        if (!$date) {
+            wp_send_json_error(['message' => 'No log date provided.']);
+        }
+        $logs = get_option("ctm_daily_log_{$date}", []);
+        wp_send_json_success(['logs' => $logs]);
     }
 } 

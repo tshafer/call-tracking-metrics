@@ -40,6 +40,10 @@ class FormAjax {
         $type = sanitize_text_field($_POST['form_type'] ?? '');
         $form_id = sanitize_text_field($_POST['form_id'] ?? '');
         $fields = [];
+        if (empty($form_id)) {
+            wp_send_json_success([]);
+            return;
+        }
         if ($type === 'gf' && $this->gfapi && class_exists($this->gfapi)) {
             $form = call_user_func([$this->gfapi, 'get_form'], $form_id);
             if ($form && isset($form['fields'])) {

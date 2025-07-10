@@ -2,17 +2,17 @@
 use PHPUnit\Framework\TestCase;
 use CTM\Admin\Ajax\FormAjax;
 use Brain\Monkey;
-
+use CTM\Tests\Traits\MonkeyTrait;
 class AdminAjaxFormAjaxTest extends TestCase
 {
+    use MonkeyTrait;
     protected function setUp(): void
     {
         parent::setUp();
         Monkey\setUp();
+        $this->initalMonkey();
         // Remove global justReturn mocks for functions with expectations
-        \Brain\Monkey\Functions\when('check_ajax_referer')->justReturn(true);
-        \Brain\Monkey\Functions\when('sanitize_text_field')->alias(function($v){return $v;});
-        \Brain\Monkey\Functions\when('get_option')->justReturn('test');
+
         if (!class_exists('GFAPI')) {
             eval('class GFAPI {
                 public static function get_forms() { return [["id"=>1,"title"=>"Test Form","fields"=>[["id"=>1,"label"=>"Field 1","type"=>"text"]],"is_active"=>true]]; }

@@ -21,6 +21,9 @@
     "method_exists",
     "unlink",
     "error_log",
-    "str_replace"
+    "str_replace",
+    "headers_list",
+    "file_exists",
+    "fileperms"
   ]
 } 

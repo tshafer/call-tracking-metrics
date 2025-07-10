@@ -6,6 +6,14 @@ use CTM\Admin\SettingsRenderer;
 
 class SystemAjax {
 
+    private $loggingSystem;
+    private $renderer;
+
+    public function __construct(LoggingSystem $loggingSystem, SettingsRenderer $renderer)
+    {
+        $this->loggingSystem = $loggingSystem;
+        $this->renderer = $renderer;
+    }
 
     public function registerHandlers() {
         add_action('wp_ajax_ctm_health_check', [$this, 'ajaxHealthCheck']);
@@ -26,7 +34,7 @@ class SystemAjax {
      */
     public function ajaxSecurityScan(): void
     {
-        check_ajax_referer('ctm_security_scan', 'nonce');
+        \check_ajax_referer('ctm_security_scan', 'nonce');
         $score = 100;
         $vulnerabilities = [];
         $recommendations = [];
@@ -43,7 +51,7 @@ class SystemAjax {
         ];
         $missing_headers = [];
         foreach ($headers as $header) {
-            if (!array_key_exists($header, headers_list())) {
+            if (!array_key_exists($header, \headers_list())) {
                 $missing_headers[] = $header;
             }
         }
@@ -61,8 +69,8 @@ class SystemAjax {
         // 2. File Permissions (wp-config.php, .htaccess, uploads)
         $wp_config = ABSPATH . 'wp-config.php';
         $htaccess = ABSPATH . '.htaccess';
-        $uploads = wp_get_upload_dir()['basedir'];
-        if (file_exists($wp_config) && substr(sprintf('%o', fileperms($wp_config)), -3) > 644) {
+        $uploads = \wp_get_upload_dir()['basedir'];
+        if (\file_exists($wp_config) && substr(sprintf('%o', \fileperms($wp_config)), -3) > 644) {
             $score -= 10;
             $vulnerabilities[] = [
                 'title' => 'wp-config.php permissions are too loose',
@@ -71,7 +79,7 @@ class SystemAjax {
             ];
             $recommendations[] = 'Set wp-config.php permissions to 640 or 600.';
         }
-        if (file_exists($htaccess) && substr(sprintf('%o', fileperms($htaccess)), -3) > 644) {
+        if (\file_exists($htaccess) && substr(sprintf('%o', \fileperms($htaccess)), -3) > 644) {
             $score -= 5;
             $vulnerabilities[] = [
                 'title' => '.htaccess permissions are too loose',
@@ -80,7 +88,7 @@ class SystemAjax {
             ];
             $recommendations[] = 'Set .htaccess permissions to 644.';
         }
-        if (is_dir($uploads) && substr(sprintf('%o', fileperms($uploads)), -3) > 755) {
+        if (\is_dir($uploads) && substr(sprintf('%o', \fileperms($uploads)), -3) > 755) {
             $score -= 5;
             $vulnerabilities[] = [
                 'title' => 'Uploads directory permissions are too loose',
@@ -90,8 +98,7 @@ class SystemAjax {
             $recommendations[] = 'Set uploads directory permissions to 755.';
         }
 
-        // 3. wp-config.php Security
-        $wp_config_content = file_exists($wp_config) ? file_get_contents($wp_config) : '';
+        $wp_config_content = \file_exists($wp_config) ? \file_get_contents($wp_config) : '';
         if ($wp_config_content && strpos($wp_config_content, 'DISALLOW_FILE_EDIT') === false) {
             $score -= 5;
             $vulnerabilities[] = [
@@ -111,8 +118,7 @@ class SystemAjax {
             $recommendations[] = 'Add define(\'FORCE_SSL_ADMIN\', true); to wp-config.php.';
         }
 
-        // 4. Plugin Vulnerability Check (WordPress.org API, basic)
-        $plugins = get_plugins();
+        $plugins = \get_plugins();
         foreach ($plugins as $plugin_file => $plugin_data) {
             // Check for known vulnerable plugins (example: hardcoded, real implementation would use an API)
             $vuln_plugins = [
@@ -132,7 +138,7 @@ class SystemAjax {
         // Clamp score
         $score = max(0, min(100, $score));
 
-        wp_send_json_success([
+        \wp_send_json_success([
             'results' => [
                 'security_score' => $score,
                 'vulnerabilities' => $vulnerabilities,
@@ -148,7 +154,7 @@ class SystemAjax {
      */
     public function ajaxPerformanceAnalysis(): void
     {
-        check_ajax_referer('ctm_performance_analysis', 'nonce');
+        \check_ajax_referer('ctm_performance_analysis', 'nonce');
         global $wpdb;
         $metrics = [];
         $optimizations = [];
@@ -162,14 +168,14 @@ class SystemAjax {
         }
 
         // 2. Database Queries
-        $metrics['db_queries'] = isset($wpdb->num_queries) ? $wpdb->num_queries : get_num_queries();
+        $metrics['db_queries'] = isset($wpdb->num_queries) ? $wpdb->num_queries : \get_num_queries();
         if ($metrics['db_queries'] > 100) {
             $score -= 10;
             $optimizations[] = 'Reduce the number of database queries.';
         }
 
         // 3. Memory Usage
-        $metrics['memory_usage'] = round(memory_get_usage(true) / 1024 / 1024, 2); // MB
+        $metrics['memory_usage'] = round(\memory_get_usage(true) / 1024 / 1024, 2); // MB
         if ($metrics['memory_usage'] > 128) {
             $score -= 10;
             $optimizations[] = 'Optimize memory usage (keep under 128MB if possible).';
@@ -177,15 +183,15 @@ class SystemAjax {
 
         // 4. Cache Hit Rate (basic, if available)
         $cache_hit_rate = null;
-        if (function_exists('wp_cache_get_stats')) {
-            $stats = wp_cache_get_stats();
+        if (\function_exists('wp_cache_get_stats')) {
+            $stats = \wp_cache_get_stats();
             if (isset($stats['hits']) && isset($stats['misses'])) {
                 $total = $stats['hits'] + $stats['misses'];
                 $cache_hit_rate = $total > 0 ? round($stats['hits'] / $total * 100, 1) : null;
             }
         }
         $metrics['cache_hit_rate'] = ($cache_hit_rate !== null) ? $cache_hit_rate : 'N/A';
-        if (is_numeric($cache_hit_rate) && $cache_hit_rate < 80) {
+        if (\is_numeric($cache_hit_rate) && $cache_hit_rate < 80) {
             $score -= 10;
             $optimizations[] = 'Improve cache hit rate (target 80%+).';
         }
@@ -663,9 +669,9 @@ class SystemAjax {
         
         try {
             // Fix 1: Enable debug mode if disabled
-            $debug_enabled = get_option('ctm_debug_enabled', false);
+            $debug_enabled = \get_option('ctm_debug_enabled', false);
             if (!$debug_enabled) {
-                update_option('ctm_debug_enabled', true);
+                \update_option('ctm_debug_enabled', true);
                 $fixes[] = [
                     'issue' => 'Debug Mode Disabled',
                     'status' => 'fixed',
@@ -681,9 +687,9 @@ class SystemAjax {
             }
             
             // Fix 2: Set default log retention if not configured
-            $retention_days = get_option('ctm_log_retention_days', null);
+            $retention_days = \get_option('ctm_log_retention_days', null);
             if ($retention_days === null || $retention_days < 1) {
-                update_option('ctm_log_retention_days', 7);
+                \update_option('ctm_log_retention_days', 7);
                 $fixes[] = [
                     'issue' => 'Log Retention Settings',
                     'status' => 'fixed',
@@ -699,9 +705,9 @@ class SystemAjax {
             }
             
             // Fix 3: Enable auto-cleanup if disabled
-            $auto_cleanup = get_option('ctm_log_auto_cleanup', null);
+            $auto_cleanup = \get_option('ctm_log_auto_cleanup', null);
             if ($auto_cleanup === null || !$auto_cleanup) {
-                update_option('ctm_log_auto_cleanup', true);
+                \update_option('ctm_log_auto_cleanup', true);
                 $fixes[] = [
                     'issue' => 'Auto Log Cleanup',
                     'status' => 'fixed',
@@ -717,17 +723,17 @@ class SystemAjax {
             }
             
             // Fix 4: Clear old logs if too many exist
-            $log_index = get_option('ctm_log_index', []);
+            $log_index = \get_option('ctm_log_index', []);
             if (is_array($log_index) && count($log_index) > 30) {
                 // Keep only last 7 days of logs
                 $logs_to_keep = array_slice($log_index, -7);
                 $logs_to_remove = array_diff($log_index, $logs_to_keep);
                 
                 foreach ($logs_to_remove as $date) {
-                    delete_option("ctm_daily_log_{$date}");
+                    \delete_option("ctm_daily_log_{$date}");
                 }
                 
-                update_option('ctm_log_index', $logs_to_keep);
+                \update_option('ctm_log_index', $logs_to_keep);
                 $fixes[] = [
                     'issue' => 'Excessive Log Files',
                     'status' => 'fixed',
@@ -743,10 +749,10 @@ class SystemAjax {
             }
             
             // Fix 5: Set notification email if empty
-            $notification_email = get_option('ctm_log_notification_email', '');
-            $admin_email = get_option('admin_email', '');
+            $notification_email = \get_option('ctm_log_notification_email', '');
+            $admin_email = \get_option('admin_email', '');
             if (empty($notification_email) && !empty($admin_email)) {
-                update_option('ctm_log_notification_email', $admin_email);
+                \update_option('ctm_log_notification_email', $admin_email);
                 $fixes[] = [
                     'issue' => 'Notification Email Missing',
                     'status' => 'fixed',
@@ -762,7 +768,7 @@ class SystemAjax {
             }
             
             // Fix 6: Check and fix file permissions (if possible)
-            $upload_dir = wp_upload_dir();
+            $upload_dir = \wp_upload_dir();
             if (!empty($upload_dir['basedir']) && is_writable($upload_dir['basedir'])) {
                 $fixes[] = [
                     'issue' => 'File Permissions',
@@ -778,7 +784,7 @@ class SystemAjax {
             }
             
             // Fix 7: Memory limit check
-            $memory_limit = wp_convert_hr_to_bytes(ini_get('memory_limit'));
+            $memory_limit = \wp_convert_hr_to_bytes(\ini_get('memory_limit'));
             $recommended_memory = 256 * 1024 * 1024; // 256MB
             
             if ($memory_limit < $recommended_memory) {
@@ -849,7 +855,7 @@ class SystemAjax {
                     'debug_mode' => WP_DEBUG ? 'Enabled' : 'Disabled',
                     'memory_limit' => WP_MEMORY_LIMIT,
                     'multisite' => is_multisite() ? 'Yes' : 'No',
-                    'timezone' => get_option('timezone_string') ?: 'UTC'
+                    'timezone' => \get_option('timezone_string') ?: 'UTC'
                 ],
                 'server_env' => [
                     'php_version' => PHP_VERSION,
@@ -898,7 +904,7 @@ class SystemAjax {
         }
         
         if (!$subject) {
-            $subject = 'System Information Report - ' . get_bloginfo('name');
+            $subject = 'System Information Report - ' . \get_bloginfo('name');
         }
         
         // Generate comprehensive system information (HTML)
@@ -923,7 +929,7 @@ class SystemAjax {
         // Send email as HTML
         $headers = [
             'Content-Type: text/html; charset=UTF-8',
-            'From: ' . get_bloginfo('name') . ' <' . get_option('admin_email') . '>'
+            'From: ' . \get_bloginfo('name') . ' <' . \get_option('admin_email') . '>'
         ];
         
         $sent = wp_mail($email_to, $subject, $email_body, $headers);
@@ -943,7 +949,7 @@ class SystemAjax {
      * Generate comprehensive system information report
      * @param bool $as_html If true, returns HTML. Otherwise, returns plain text.
      */
-    private function generateSystemInfoReport($as_html = false): string
+    public function generateSystemInfoReport($as_html = false): string
     {
         $nl = $as_html ? '<br>' : "\n";
         $section_title = function($title) use ($as_html) {
@@ -1018,17 +1024,17 @@ class SystemAjax {
         // CallTrackingMetrics Plugin
         if ($as_html) $report .= '</table>' . $section_title('CallTrackingMetrics Plugin') . '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
         $report .= $row('Plugin Version', '2.0');
-        $report .= $row('Debug Mode', get_option('ctm_debug_enabled') ? 'Enabled' : 'Disabled');
-        $report .= $row('API Key Configured', get_option('ctm_api_key') ? 'Yes' : 'No');
-        $report .= $row('CF7 Integration', get_option('ctm_api_cf7_enabled') ? 'Enabled' : 'Disabled');
-        $report .= $row('GF Integration', get_option('ctm_api_gf_enabled') ? 'Enabled' : 'Disabled');
+        $report .= $row('Debug Mode', \get_option('ctm_debug_enabled') ? 'Enabled' : 'Disabled');
+        $report .= $row('API Key Configured', \get_option('ctm_api_key') ? 'Yes' : 'No');
+        $report .= $row('CF7 Integration', \get_option('ctm_api_cf7_enabled') ? 'Enabled' : 'Disabled');
+        $report .= $row('GF Integration', \get_option('ctm_api_gf_enabled') ? 'Enabled' : 'Disabled');
         if (!$as_html) $report .= $nl;
 
         // Theme & Plugins
         if ($as_html) $report .= '</table>' . $section_title('Theme & Plugins') . '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
-        $report .= $row('Active Theme', wp_get_theme()->get('Name'));
-        $report .= $row('Theme Version', wp_get_theme()->get('Version'));
-        $report .= $row('Active Plugins', count(get_option('active_plugins', [])));
+        $report .= $row('Active Theme', \wp_get_theme()->get('Name'));
+        $report .= $row('Theme Version', \wp_get_theme()->get('Version'));
+        $report .= $row('Active Plugins', count(\get_option('active_plugins', [])));
         $report .= $row('Contact Form 7', class_exists('WPCF7_ContactForm') ? 'Installed' : 'Not Installed');
         $report .= $row('Gravity Forms', class_exists('GFAPI') ? 'Installed' : 'Not Installed');
         if (!$as_html) $report .= $nl;
@@ -1037,9 +1043,9 @@ class SystemAjax {
         if ($as_html) $report .= '</table>' . $section_title('Current Performance') . '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
         $report .= $row('Memory Usage', size_format(memory_get_usage(true)));
         $report .= $row('Peak Memory', size_format(memory_get_peak_usage(true)));
-        $report .= $row('Database Queries', get_num_queries());
-        $report .= $row('Admin Email', get_option('admin_email'));
-        $report .= $row('Timezone', get_option('timezone_string') ?: 'UTC');
+        $report .= $row('Database Queries', \get_num_queries());
+        $report .= $row('Admin Email', \get_option('admin_email'));
+        $report .= $row('Timezone', \get_option('timezone_string') ?: 'UTC');
         if ($as_html) $report .= '</table>';
         if (!$as_html) $report .= $nl;
 
@@ -1073,7 +1079,7 @@ class SystemAjax {
         $solutions = [];
         
         // Check for common conflicting plugins
-        $active_plugins = get_option('active_plugins', []);
+        $active_plugins = \get_option('active_plugins', []);
         $potential_conflicts = [
             'wp-rocket/wp-rocket.php' => 'WP Rocket (caching)',
             'w3-total-cache/w3-total-cache.php' => 'W3 Total Cache',
@@ -1125,7 +1131,7 @@ class SystemAjax {
     /**
      * Analyze specific issue types
      */
-    private function analyzeIssueType(string $issueType): array
+    public function analyzeIssueType(string $issueType): array
     {
         switch ($issueType) {
             case 'api_credentials':
@@ -1168,8 +1174,8 @@ class SystemAjax {
         }
         
         // Test actual API connectivity using /api/v1/accounts (requires authentication)
-        $apiKey = get_option('ctm_api_key');
-        $apiSecret = get_option('ctm_api_secret');
+        $apiKey = \get_option('ctm_api_key');
+        $apiSecret = \get_option('ctm_api_secret');
         if (!$apiKey || !$apiSecret) {
             $issues[] = 'API credentials are not configured';
             $solutions[] = 'Enter your API key and secret in the General tab';
@@ -1227,8 +1233,8 @@ class SystemAjax {
             $solutions[] = 'Install Contact Form 7 or Gravity Forms';
             $solutions[] = 'Activate the form plugin after installation';
         } else {
-            $cf7_enabled = get_option('ctm_api_cf7_enabled');
-            $gf_enabled = get_option('ctm_api_gf_enabled');
+            $cf7_enabled = \get_option('ctm_api_cf7_enabled');
+            $gf_enabled = \get_option('ctm_api_gf_enabled');
             
             if ($cf7_active && !$cf7_enabled) {
                 $issues[] = 'Contact Form 7 is installed but CTM integration is disabled';
@@ -1245,7 +1251,7 @@ class SystemAjax {
                 $cf7_forms = \WPCF7_ContactForm::find();
                 $mapped_forms = 0;
                 foreach ($cf7_forms as $form) {
-                    $mapping = get_option("ctm_mapping_cf7_{$form->id()}", []);
+                    $mapping = \get_option("ctm_mapping_cf7_{$form->id()}", []);
                     if (!empty($mapping)) {
                         $mapped_forms++;
                     }
@@ -1268,10 +1274,10 @@ class SystemAjax {
         ];
     }
 
-    private function analyzeApiCredentials(): array
+    public function analyzeApiCredentials(): array
     {
-        $apiKey = get_option('ctm_api_key');
-        $apiSecret = get_option('ctm_api_secret');
+        $apiKey = \get_option('ctm_api_key');
+        $apiSecret = \get_option('ctm_api_secret');
         $issues = [];
         $solutions = [];
         
@@ -1320,8 +1326,8 @@ class SystemAjax {
         $checks = [];
         
         // API Status Checks
-        $apiKey = get_option('ctm_api_key');
-        $apiSecret = get_option('ctm_api_secret');
+        $apiKey = \get_option('ctm_api_key');
+        $apiSecret = \get_option('ctm_api_secret');
         
         // API Key Check
         if ($apiKey && $apiSecret) {
@@ -1359,8 +1365,8 @@ class SystemAjax {
         $checks[] = ['name' => 'Gravity Forms', 'status' => $gf_active ? 'pass' : 'warning', 'message' => $gf_active ? 'Installed' : 'Not installed'];
         
         // Field Mappings Check
-        $cf7_mappings = get_option('ctm_cf7_field_mappings', []);
-        $gf_mappings = get_option('ctm_gf_field_mappings', []);
+        $cf7_mappings = \get_option('ctm_cf7_field_mappings', []);
+        $gf_mappings = \get_option('ctm_gf_field_mappings', []);
         $has_mappings = !empty($cf7_mappings) || !empty($gf_mappings);
         $checks[] = ['name' => 'Field Mappings', 'status' => $has_mappings ? 'pass' : 'warning', 'message' => $has_mappings ? 'Configured' : 'Not configured'];
         
@@ -1370,7 +1376,7 @@ class SystemAjax {
         $checks[] = ['name' => 'SSL Support', 'status' => extension_loaded('openssl') ? 'pass' : 'fail', 'message' => extension_loaded('openssl') ? 'Available' : 'Missing'];
         
         // Memory Check
-        $memory_limit = wp_convert_hr_to_bytes(ini_get('memory_limit'));
+        $memory_limit = \wp_convert_hr_to_bytes(\ini_get('memory_limit'));
         $memory_status = $memory_limit >= 128 * 1024 * 1024 ? 'pass' : 'warning';
         $checks[] = ['name' => 'Memory Limit', 'status' => $memory_status, 'message' => size_format($memory_limit)];
         
@@ -1383,15 +1389,15 @@ class SystemAjax {
         $checks[] = ['name' => 'Database Tables', 'status' => $table_check ? 'pass' : 'fail', 'message' => $table_check ? 'Accessible' : 'Error'];
         
         // File Permissions Check
-        $upload_dir = wp_upload_dir();
+        $upload_dir = \wp_upload_dir();
         $writable = is_writable($upload_dir['basedir']);
         $checks[] = ['name' => 'File Permissions', 'status' => $writable ? 'pass' : 'warning', 'message' => $writable ? 'Writable' : 'Limited'];
         
         // Debug Mode Check
-        $debug_enabled = get_option('ctm_debug_enabled', false);
+        $debug_enabled = \get_option('ctm_debug_enabled', false);
         $checks[] = ['name' => 'Debug Mode', 'status' => $debug_enabled ? 'pass' : 'warning', 'message' => $debug_enabled ? 'Enabled' : 'Disabled'];
         
-        wp_send_json_success(['checks' => $checks]);
+        \wp_send_json_success(['checks' => $checks]);
     }
 
       /**
@@ -1407,13 +1413,13 @@ class SystemAjax {
         $client_metrics = isset($_POST['client_metrics']) ? json_decode(stripslashes($_POST['client_metrics']), true) : null;
         
         // Memory & Processing
-        $memory_limit = ini_get('memory_limit');
-        $memory_limit_bytes = wp_convert_hr_to_bytes($memory_limit);
+        $memory_limit = \ini_get('memory_limit');
+        $memory_limit_bytes = \wp_convert_hr_to_bytes($memory_limit);
         $current_usage = memory_get_usage(true);
         $memory_percentage = $memory_limit_bytes > 0 ? round(($current_usage / $memory_limit_bytes) * 100, 1) . '%' : 'N/A';
         
         // Database Performance
-        $total_queries = isset($wpdb->num_queries) ? $wpdb->num_queries : get_num_queries();
+        $total_queries = isset($wpdb->num_queries) ? $wpdb->num_queries : \get_num_queries();
         
         // Query time calculation
         $query_time = 'N/A';
@@ -1436,7 +1442,7 @@ class SystemAjax {
         
         // Disk space
         $disk_space = 'N/A';
-        $upload_dir = wp_upload_dir();
+        $upload_dir = \wp_upload_dir();
         if (function_exists('disk_free_space') && isset($upload_dir['basedir'])) {
             $free_bytes = disk_free_space($upload_dir['basedir']);
             $disk_space = $free_bytes ? size_format($free_bytes) . ' free' : 'N/A';
@@ -1522,7 +1528,7 @@ class SystemAjax {
             'cpu_usage' => function_exists('sys_getloadavg') ? round(sys_getloadavg()[0], 2) : 'N/A',
             
             // Database Performance
-            'current_queries' => get_num_queries(),
+            'current_queries' => \get_num_queries(),
             'total_queries' => $total_queries,
             'query_time' => $query_time,
             'total_query_time' => $query_time,
@@ -1543,12 +1549,12 @@ class SystemAjax {
             'images_loaded' => $images_loaded,
             
             // WordPress Performance
-            'active_plugins' => count(get_option('active_plugins', [])),
+            'active_plugins' => count(\get_option('active_plugins', [])),
             'theme_load_time' => $this->calculateThemeLoadTime(),
             'plugin_load_time' => $this->calculatePluginLoadTime(),
-            'admin_queries' => is_admin() ? get_num_queries() : 'N/A',
+            'admin_queries' => is_admin() ? \get_num_queries() : 'N/A',
             'frontend_queries' => $this->getFrontendQueries(),
-            'cron_jobs' => count(_get_cron_array()),
+            'cron_jobs' => count(\_get_cron_array()),
             
             // Real-time Metrics
             'current_timestamp' => current_time('Y-m-d H:i:s'),
@@ -1752,7 +1758,7 @@ class SystemAjax {
     private function storeApiResponseTime(float $responseTime): void
     {
         try {
-            $response_times = get_option('ctm_api_response_times', []);
+            $response_times = \get_option('ctm_api_response_times', []);
             
             if (!is_array($response_times)) {
                 $response_times = [];
@@ -1786,7 +1792,7 @@ class SystemAjax {
     private function getApiResponseTime(): string
     {
         // Check for stored API response times from recent calls
-        $response_times = get_option('ctm_api_response_times', []);
+        $response_times = \get_option('ctm_api_response_times', []);
         
         if (!empty($response_times) && is_array($response_times)) {
             // Clean old entries (older than 24 hours)
@@ -1817,8 +1823,8 @@ class SystemAjax {
         }
         
         // Fallback: Test API response time now
-        $api_key = get_option('ctm_api_key');
-        $api_secret = get_option('ctm_api_secret');
+        $api_key = \get_option('ctm_api_key');
+        $api_secret = \get_option('ctm_api_secret');
         
         if ($api_key && $api_secret) {
             $start_time = microtime(true);
@@ -1979,7 +1985,7 @@ class SystemAjax {
         global $wpdb;
         
         // Check for API call logs in WordPress options or custom table
-        $api_calls_option = get_option('ctm_api_calls_24h', null);
+        $api_calls_option = \get_option('ctm_api_calls_24h', null);
         
         if ($api_calls_option !== null && is_array($api_calls_option)) {
             // Clean old entries (older than 24 hours)
@@ -2038,8 +2044,8 @@ class SystemAjax {
         }
         
         // Fallback: Check if API credentials are configured
-        $api_key = get_option('ctm_api_key');
-        $api_secret = get_option('ctm_api_secret');
+        $api_key = \get_option('ctm_api_key');
+        $api_secret = \get_option('ctm_api_secret');
         
         if ($api_key && $api_secret) {
             // API is configured but no tracking data available
@@ -2077,7 +2083,7 @@ class SystemAjax {
             $total_load_time = round((microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']) * 1000, 2);
             
             // Estimate plugin portion (rough approximation)
-            $active_plugins_count = count(get_option('active_plugins', []));
+            $active_plugins_count = count(\get_option('active_plugins', []));
             if ($active_plugins_count > 0) {
                 // Rough estimate: assume plugins take 20-40% of total load time
                 $plugin_percentage = min(40, max(20, $active_plugins_count * 2));
@@ -2095,7 +2101,7 @@ class SystemAjax {
     private function calculateThemeLoadTime(): string
     {
         // Get current theme information
-        $current_theme = wp_get_theme();
+        $current_theme = \wp_get_theme();
         $theme_name = $current_theme->get('Name');
         
         if (isset($_SERVER['REQUEST_TIME_FLOAT'])) {
@@ -2105,7 +2111,7 @@ class SystemAjax {
             $complexity_score = 0;
             
             // Factor 1: Theme complexity based on template files
-            $theme_dir = get_template_directory();
+            $theme_dir = \get_template_directory();
             if (is_dir($theme_dir)) {
                 $php_files = glob($theme_dir . '/*.php');
                 $template_count = count($php_files);
@@ -2123,7 +2129,7 @@ class SystemAjax {
             // Factor 2: Check for common performance-heavy features
             $functions_php = $theme_dir . '/functions.php';
             if (file_exists($functions_php)) {
-                $functions_content = file_get_contents($functions_php);
+                $functions_content = \file_get_contents($functions_php);
                 
                 // Check for performance indicators
                 if (strpos($functions_content, 'wp_enqueue_script') !== false) {
@@ -2133,7 +2139,7 @@ class SystemAjax {
                     $complexity_score += 1; // Custom styles
                 }
                 if (strpos($functions_content, 'add_action') !== false) {
-                    $hook_count = substr_count($functions_content, 'add_action');
+                    $hook_count = \substr_count($functions_content, 'add_action');
                     $complexity_score += min(2, $hook_count / 10); // Many hooks
                 }
                 if (strpos($functions_content, 'WP_Query') !== false || 
@@ -2145,7 +2151,7 @@ class SystemAjax {
             // Factor 3: Check for CSS/JS files
             $style_css = $theme_dir . '/style.css';
             if (file_exists($style_css)) {
-                $css_size = filesize($style_css);
+                $css_size = \filesize($style_css);
                 if ($css_size > 100000) { // > 100KB
                     $complexity_score += 2;
                 } elseif ($css_size > 50000) { // > 50KB

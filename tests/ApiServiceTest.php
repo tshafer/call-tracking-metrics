@@ -241,22 +241,22 @@ class ApiServiceTest extends TestCase
 
     public function testValidateCredentialsReturnsTrueForValid()
     {
-        $mock = $this->getMockBuilder(ApiService::class)
-            ->setConstructorArgs(['https://dummy-ctm-api.test'])
-            ->onlyMethods(['getAccountInfo'])
-            ->getMock();
-        $mock->method('getAccountInfo')->willReturn(['account' => ['id' => 1]]);
-        $this->assertTrue($mock->validateCredentials('valid', 'valid'));
+        $apiService = new ApiService('https://dummy-ctm-api.test');
+        \Brain\Monkey\Functions\when('wp_remote_request')->justReturn([
+            'response' => ['code' => 200],
+            'body' => json_encode(['accounts' => [['id' => 1]]])
+        ]);
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_body')->justReturn(json_encode(['accounts' => [['id' => 1]]]));
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_response_code')->justReturn(200);
+        $this->assertTrue($apiService->validateCredentials('valid', 'valid'));
     }
-
     public function testValidateCredentialsReturnsFalseOnException()
     {
-        $mock = $this->getMockBuilder(ApiService::class)
-            ->setConstructorArgs(['https://dummy-ctm-api.test'])
-            ->onlyMethods(['getAccountInfo'])
-            ->getMock();
-        $mock->method('getAccountInfo')->will($this->throwException(new \Exception('Simulated error')));
-        $this->assertFalse($mock->validateCredentials('invalid', 'invalid'));
+        $apiService = new ApiService('https://dummy-ctm-api.test');
+        \Brain\Monkey\Functions\when('wp_remote_request')->alias(function() {
+            throw new \Exception('Simulated error');
+        });
+        $this->assertFalse($apiService->validateCredentials('invalid', 'invalid'));
     }
 
     public function testCheckApiHealthReturnsTrueIfApiUp()

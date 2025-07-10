@@ -18,14 +18,20 @@ class AjaxHandlers
     private ApiAjax $apiAjax;
     private SystemAjax $systemAjax;
 
-    public function __construct()
-    {
-        $this->loggingSystem = new LoggingSystem();
-        $this->renderer = new SettingsRenderer();
-        $this->formAjax = new FormAjax();
-        $this->logAjax = new LogAjax($this->loggingSystem, $this->renderer);
-        $this->apiAjax = new ApiAjax();
-        $this->systemAjax = new SystemAjax($this->loggingSystem, $this->renderer);
+    public function __construct(
+        $loggingSystem = null,
+        $renderer = null,
+        $formAjax = null,
+        $logAjax = null,
+        $apiAjax = null,
+        $systemAjax = null
+    ) {
+        $this->loggingSystem = $loggingSystem ?: new LoggingSystem();
+        $this->renderer = $renderer ?: new SettingsRenderer();
+        $this->formAjax = $formAjax ?: new FormAjax();
+        $this->logAjax = $logAjax ?: new LogAjax($this->loggingSystem, $this->renderer);
+        $this->apiAjax = $apiAjax ?: new ApiAjax();
+        $this->systemAjax = $systemAjax ?: new SystemAjax($this->loggingSystem, $this->renderer);
     }
 
     /**

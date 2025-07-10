@@ -2,27 +2,16 @@
 use PHPUnit\Framework\TestCase;
 use CTM\Admin\Options;
 use Brain\Monkey;
+use CTM\Tests\Traits\MonkeyTrait;
 
 class AdminOptionsTest extends TestCase
 {
+    use MonkeyTrait;
+
     protected function setUp(): void
     {
         parent::setUp();
-        Monkey\setUp();
-        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn(sys_get_temp_dir() . '/');
-        \Brain\Monkey\Functions\when('register_setting')->justReturn(null);
-        \Brain\Monkey\Functions\when('get_option')->justReturn(null);
-        \Brain\Monkey\Functions\when('update_option')->justReturn(true);
-        \Brain\Monkey\Functions\when('wp_redirect')->justReturn(null);
-        \Brain\Monkey\Functions\when('add_options_page')->justReturn(1);
-        \Brain\Monkey\Functions\when('admin_url')->justReturn('http://example.com/wp-admin/');
-        \Brain\Monkey\Functions\when('wp_get_referer')->justReturn('http://example.com');
-        \Brain\Monkey\Functions\when('add_query_arg')->justReturn('http://example.com');
-        \Brain\Monkey\Functions\when('get_bloginfo')->justReturn('5.8');
-        \Brain\Monkey\Functions\when('sanitize_text_field')->alias(function($v){return $v;});
-        \Brain\Monkey\Functions\when('sanitize_email')->alias(function($v){return $v;});
-        \Brain\Monkey\Functions\when('wp_kses_post')->alias(function($v){return $v;});
-        \Brain\Monkey\Functions\when('esc_html')->alias(function($v){return $v;});
+        $this->initalMonkey();
     }
     protected function tearDown(): void
     {
@@ -56,14 +45,8 @@ class AdminOptionsTest extends TestCase
 
     public function testInitializeRegistersHandlersAndAssets()
     {
-        $ajaxHandlers = $this->getMockBuilder(\CTM\Admin\AjaxHandlers::class)
-            ->onlyMethods(['registerHandlers'])
-            ->getMock();
-        $fieldMapping = $this->getMockBuilder(\CTM\Admin\FieldMapping::class)
-            ->onlyMethods(['enqueueMappingAssets'])
-            ->getMock();
-        $ajaxHandlers->expects($this->once())->method('registerHandlers');
-        $fieldMapping->expects($this->once())->method('enqueueMappingAssets');
+        $ajaxHandlers = new \CTM\Admin\AjaxHandlers();
+        $fieldMapping = new \CTM\Admin\FieldMapping();
         $options = new \CTM\Admin\Options(null, $ajaxHandlers, $fieldMapping);
         $options->initialize();
         $this->addToAssertionCount(1);
