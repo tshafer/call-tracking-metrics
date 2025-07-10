@@ -39,6 +39,7 @@ class AjaxHandlers
         add_action('wp_ajax_ctm_auto_fix_issues', [$this, 'ajaxAutoFixIssues']);
         add_action('wp_ajax_ctm_full_diagnostic', [$this, 'ajaxFullDiagnostic']);
         add_action('wp_ajax_ctm_security_scan', [$this, 'ajaxSecurityScan']);
+        add_action('wp_ajax_ctm_performance_analysis', [$this, 'ajaxPerformanceAnalysis']);
     }
 
     /**
@@ -2485,6 +2486,79 @@ class AjaxHandlers
                 'vulnerabilities' => $vulnerabilities,
                 'recommendations' => $recommendations,
                 'details' => $details
+            ]
+        ]);
+    }
+
+    /**
+     * AJAX: Performance Analysis
+     */
+    public function ajaxPerformanceAnalysis(): void
+    {
+        check_ajax_referer('ctm_performance_analysis', 'nonce');
+        global $wpdb;
+        $metrics = [];
+        $optimizations = [];
+        $score = 100;
+
+        // 1. Page Load Time (approximate)
+        $metrics['load_time'] = isset($_SERVER['REQUEST_TIME_FLOAT']) ? round((microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']) * 1000, 2) : null;
+        if ($metrics['load_time'] > 2000) {
+            $score -= 20;
+            $optimizations[] = 'Optimize page load time (reduce to under 2s).';
+        }
+
+        // 2. Database Queries
+        $metrics['db_queries'] = isset($wpdb->num_queries) ? $wpdb->num_queries : get_num_queries();
+        if ($metrics['db_queries'] > 100) {
+            $score -= 10;
+            $optimizations[] = 'Reduce the number of database queries.';
+        }
+
+        // 3. Memory Usage
+        $metrics['memory_usage'] = round(memory_get_usage(true) / 1024 / 1024, 2); // MB
+        if ($metrics['memory_usage'] > 128) {
+            $score -= 10;
+            $optimizations[] = 'Optimize memory usage (keep under 128MB if possible).';
+        }
+
+        // 4. Cache Hit Rate (basic, if available)
+        $cache_hit_rate = null;
+        if (function_exists('wp_cache_get_stats')) {
+            $stats = wp_cache_get_stats();
+            if (isset($stats['hits']) && isset($stats['misses'])) {
+                $total = $stats['hits'] + $stats['misses'];
+                $cache_hit_rate = $total > 0 ? round($stats['hits'] / $total * 100, 1) : null;
+            }
+        }
+        $metrics['cache_hit_rate'] = ($cache_hit_rate !== null) ? $cache_hit_rate : 'N/A';
+        if (is_numeric($cache_hit_rate) && $cache_hit_rate < 80) {
+            $score -= 10;
+            $optimizations[] = 'Improve cache hit rate (target 80%+).';
+        }
+
+        // 5. Plugin Load Time
+        $metrics['plugin_load_time'] = method_exists($this, 'calculatePluginLoadTime') ? $this->calculatePluginLoadTime() : 'N/A';
+        if (is_numeric($metrics['plugin_load_time']) && $metrics['plugin_load_time'] > 500) {
+            $score -= 10;
+            $optimizations[] = 'Reduce plugin load time.';
+        }
+
+        // 6. Theme Load Time
+        $metrics['theme_load_time'] = method_exists($this, 'calculateThemeLoadTime') ? $this->calculateThemeLoadTime() : 'N/A';
+        if (is_numeric($metrics['theme_load_time']) && $metrics['theme_load_time'] > 500) {
+            $score -= 10;
+            $optimizations[] = 'Reduce theme load time.';
+        }
+
+        // Clamp score
+        $score = max(0, min(100, $score));
+
+        wp_send_json_success([
+            'results' => [
+                'performance_score' => $score,
+                'metrics' => $metrics,
+                'optimizations' => $optimizations
             ]
         ]);
     }

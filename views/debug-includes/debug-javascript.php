@@ -1555,6 +1555,8 @@ function displayPerformanceAnalysisResults(results) {
     `;
     
     if (results.metrics) {
+        const cacheHitRate = results.metrics.cache_hit_rate;
+        const cacheHitRateDisplay = (typeof cacheHitRate === 'number' && !isNaN(cacheHitRate)) ? `${cacheHitRate}%` : 'N/A';
         html += `
             <div class="grid grid-cols-2 gap-4 mb-6">
                 <div class="p-3 bg-blue-50 border border-blue-200 rounded">
@@ -1571,7 +1573,7 @@ function displayPerformanceAnalysisResults(results) {
                 </div>
                 <div class="p-3 bg-orange-50 border border-orange-200 rounded">
                     <div class="text-sm text-orange-600">Cache Hit Rate</div>
-                    <div class="text-lg font-semibold text-orange-800">${results.metrics.cache_hit_rate}%</div>
+                    <div class="text-lg font-semibold text-orange-800">${cacheHitRateDisplay}</div>
                 </div>
             </div>
         `;
