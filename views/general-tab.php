@@ -4,228 +4,342 @@
 <form method="post" action="options.php" class="space-y-6">
     <?php settings_fields('call-tracking-metrics'); ?>
     <?php do_settings_sections('call-tracking-metrics'); ?>
-    <div class="mb-8">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2">
-            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded flex items-center gap-4">
-                <span class="font-semibold">API Connection:</span>
-                <?php if ($apiStatus === 'connected'): ?>
+    
+    <?php if ($apiStatus !== 'connected'): ?>
+        <!-- API Connection Only View (Not Connected) -->
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white p-8 rounded-lg shadow-lg border border-gray-200">
+                <div class="text-center mb-6">
+                    <div class="flex items-center justify-center mb-4">
+                        <div class="bg-blue-100 p-3 rounded-full">
+                            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Connect to Call Tracking Metrics</h2>
+                    <p class="text-gray-600">Enter your API credentials to get started with CTM integration</p>
+                </div>
+                
+                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded mb-6 flex items-center gap-4">
+                    <span class="font-semibold">API Connection Status:</span>
+                    <?php if ($apiStatus === 'not_connected'): ?>
+                        <span class="bg-red-100 text-red-700 px-3 py-1 rounded">Not Connected</span>
+                    <?php else: ?>
+                        <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded">Not Tested</span>
+                    <?php endif; ?>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block mb-2 text-gray-700 font-medium">API Key</label>
+                        <div class="relative">
+                            <input type="password" id="ctm_api_key" name="ctm_api_key" value="<?= esc_attr($apiKey) ?>" class="block w-full rounded border-gray-300 focus:ring-blue-500 focus:border-blue-500 pr-10" placeholder="Enter your API key" />
+                            <button type="button" tabindex="-1" onclick="let f=document.getElementById('ctm_api_key');f.type=f.type==='password'?'text':'password';this.innerHTML=f.type==='password'?'<svg class=\'w-5 h-5\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M15 12a3 3 0 11-6 0 3 3 0 016 0z\'/><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z\'/></svg>':'<svg class=\'w-5 h-5\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.956 9.956 0 012.223-3.592m3.31-2.687A9.956 9.956 0 0112 5c4.477 0 8.268 2.943 9.542 7a9.956 9.956 0 01-4.043 5.306M15 12a3 3 0 11-6 0 3 3 0 016 0z\'/><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M3 3l18 18\'/></svg>';" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 focus:outline-none">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block mb-2 text-gray-700 font-medium">API Secret</label>
+                        <div class="relative">
+                            <input type="password" id="ctm_api_secret" name="ctm_api_secret" value="<?= esc_attr($apiSecret) ?>" class="block w-full rounded border-gray-300 focus:ring-blue-500 focus:border-blue-500 pr-10" placeholder="Enter your API secret" />
+                            <button type="button" tabindex="-1" onclick="let f=document.getElementById('ctm_api_secret');f.type=f.type==='password'?'text':'password';this.innerHTML=f.type==='password'?'<svg class=\'w-5 h-5\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M15 12a3 3 0 11-6 0 3 3 0 016 0z\'/><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z\'/></svg>':'<svg class=\'w-5 h-5\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.956 9.956 0 012.223-3.592m3.31-2.687A9.956 9.956 0 0112 5c4.477 0 8.268 2.943 9.542 7a9.956 9.956 0 01-4.043 5.306M15 12a3 3 0 11-6 0 3 3 0 016 0z\'/><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M3 3l18 18\'/></svg>';" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 focus:outline-none">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mb-6">
+                    <!-- Test API Connection Button -->
+                    <button type="button" id="test-api-btn" onclick="testApiConnection()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-lg shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span id="test-btn-text">Test API Connection</span>
+                        <span id="test-btn-spinner" class="hidden ml-2">
+                            <svg class="animate-spin h-4 w-4 inline" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </span>
+                    </button>
+                </div>
+                
+                <!-- Real-time API Test Logs -->
+                <div id="api-test-logs" class="hidden mt-6 p-6 bg-gray-50 border border-gray-200 rounded-lg max-h-96 overflow-y-auto">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="font-semibold text-gray-700 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            API Test Results
+                        </h4>
+                        <div class="flex gap-2">
+                            <span id="test-duration" class="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded hidden"></span>
+                            <button type="button" onclick="clearTestLogs()" class="text-xs text-gray-500 hover:text-gray-700 bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded transition">Clear</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div id="test-progress" class="mb-4 hidden">
+                        <div class="flex justify-between text-xs text-gray-600 mb-1">
+                            <span>Testing Progress</span>
+                            <span id="progress-text">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="api-log-content" class="text-sm space-y-2"></div>
+                    
+                    <!-- Account Summary (shown after successful connection) -->
+                    <div id="account-summary" class="hidden mt-4 p-3 bg-green-50 border border-green-200 rounded">
+                        <h5 class="font-semibold text-green-800 mb-2 flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            Account Summary
+                        </h5>
+                        <div id="account-details" class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs"></div>
+                    </div>
+                    
+                    <!-- Technical Details (collapsible) -->
+                    <div id="technical-details" class="hidden mt-4">
+                        <button type="button" onclick="toggleTechnicalDetails()" class="flex items-center gap-2 text-xs text-gray-600 hover:text-gray-800 transition">
+                            <svg id="tech-details-icon" class="w-3 h-3 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                            View Technical Details
+                        </button>
+                        <div id="tech-details-content" class="hidden mt-2 p-3 bg-gray-100 rounded text-xs font-mono overflow-x-auto"></div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 text-center">
+                    <button type="submit" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded shadow font-semibold transition">Save API Credentials</button>
+                </div>
+            </div>
+        </div>
+        
+    <?php else: ?>
+        <!-- Full Settings View (Connected) -->
+        <div class="mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2">
+                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded flex items-center gap-4">
+                    <span class="font-semibold">API Connection:</span>
                     <span class="bg-green-100 text-green-700 px-2 py-1 rounded">Connected</span>
-                <?php elseif ($apiStatus === 'not_connected'): ?>
-                    <span class="bg-red-100 text-red-700 px-2 py-1 rounded">Not Connected</span>
-                <?php else: ?>
-                    <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded">Not Tested</span>
-                <?php endif; ?>
+                </div>
+                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded flex items-center gap-4">
+                    <span class="font-semibold">Integrations:</span>
+                    <?php if ($cf7Enabled): ?><span class="bg-green-100 text-green-700 px-2 py-1 rounded">CF7</span><?php else: ?><span class="bg-gray-100 text-gray-700 px-2 py-1 rounded">CF7</span><?php endif; ?>
+                    <?php if ($gfEnabled): ?><span class="bg-green-100 text-green-700 px-2 py-1 rounded ml-2">GF</span><?php else: ?><span class="bg-gray-100 text-gray-700 px-2 py-1 rounded ml-2">GF</span><?php endif; ?>
+                </div>
+                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded flex items-center gap-4">
+                    <span class="font-semibold">Dashboard Widget:</span>
+                    <?php if ($dashboardEnabled): ?><span class="bg-green-100 text-green-700 px-2 py-1 rounded">Enabled</span><?php else: ?><span class="bg-gray-100 text-gray-700 px-2 py-1 rounded">Disabled</span><?php endif; ?>
+                </div>
+                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded flex items-center gap-4">
+                    <span class="font-semibold">Debug Mode:</span>
+                    <?php if ($debugEnabled): ?><span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Enabled</span><?php else: ?><span class="bg-gray-100 text-gray-700 px-2 py-1 rounded">Disabled</span><?php endif; ?>
+                </div>
             </div>
-            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded flex items-center gap-4">
-                <span class="font-semibold">Integrations:</span>
-                <?php if ($cf7Enabled): ?><span class="bg-green-100 text-green-700 px-2 py-1 rounded">CF7</span><?php else: ?><span class="bg-gray-100 text-gray-700 px-2 py-1 rounded">CF7</span><?php endif; ?>
-                <?php if ($gfEnabled): ?><span class="bg-green-100 text-green-700 px-2 py-1 rounded ml-2">GF</span><?php else: ?><span class="bg-gray-100 text-gray-700 px-2 py-1 rounded ml-2">GF</span><?php endif; ?>
-            </div>
-            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded flex items-center gap-4">
-                <span class="font-semibold">Dashboard Widget:</span>
-                <?php if ($dashboardEnabled): ?><span class="bg-green-100 text-green-700 px-2 py-1 rounded">Enabled</span><?php else: ?><span class="bg-gray-100 text-gray-700 px-2 py-1 rounded">Disabled</span><?php endif; ?>
-            </div>
-            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded flex items-center gap-4">
-                <span class="font-semibold">Debug Mode:</span>
-                <?php if ($debugEnabled): ?><span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Enabled</span><?php else: ?><span class="bg-gray-100 text-gray-700 px-2 py-1 rounded">Disabled</span><?php endif; ?>
-            </div>
+            <?php if ($accountInfo && isset($accountInfo['account'])): ?>
+                <?php $acct = $accountInfo['account']; ?>
+                <div class="bg-white border border-blue-200 rounded p-4 mt-2">
+                    <div class="flex items-center gap-4 mb-2">
+                        <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        <span class="font-semibold text-blue-800">CTM Account:</span>
+                        <span class="ml-2"><?= esc_html($acct['name'] ?? 'N/A') ?></span>
+                        <span class="ml-4 text-gray-500">ID: <span class="font-mono"><?= esc_html($acct['id'] ?? 'N/A') ?></span></span>
+                        <?php if (!empty($acct['email'])): ?><span class="ml-4 text-gray-500">Email: <span class="font-mono"><?= esc_html($acct['email']) ?></span></span><?php endif; ?>
+                    </div>
+                    <?php if (isset($acctDetails['account'])): ?>
+                        <?php $details = $acctDetails['account']; ?>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 text-sm">
+                            <?php if (!empty($details['timezone'])): ?><div><span class="font-semibold">Timezone:</span> <?= esc_html($details['timezone']) ?></div><?php endif; ?>
+                            <?php if (!empty($details['created_at'])): ?><div><span class="font-semibold">Created:</span> <?= esc_html($details['created_at']) ?></div><?php endif; ?>
+                            <?php if (!empty($details['status'])): ?><div><span class="font-semibold">Status:</span> <?= esc_html($details['status']) ?></div><?php endif; ?>
+                            <?php if (!empty($details['phone'])): ?><div><span class="font-semibold">Phone:</span> <?= esc_html($details['phone']) ?></div><?php endif; ?>
+                            <?php if (!empty($details['website'])): ?><div><span class="font-semibold">Website:</span> <a href="<?= esc_url($details['website']) ?>" class="text-blue-600 underline" target="_blank"><?= esc_html($details['website']) ?></a></div><?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php elseif ($apiKey && $apiSecret): ?>
+                <div class="bg-yellow-50 text-yellow-800 p-2 rounded mt-2">Unable to load account info. Please check your API keys.</div>
+            <?php endif; ?>
         </div>
-        <?php if ($apiStatus === 'connected' && $accountInfo && isset($accountInfo['account'])): ?>
-            <?php $acct = $accountInfo['account']; ?>
-            <div class="bg-white border border-blue-200 rounded p-4 mt-2">
-                <div class="flex items-center gap-4 mb-2">
-                    <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                    <span class="font-semibold text-blue-800">CTM Account:</span>
-                    <span class="ml-2"><?= esc_html($acct['name'] ?? 'N/A') ?></span>
-                    <span class="ml-4 text-gray-500">ID: <span class="font-mono"><?= esc_html($acct['id'] ?? 'N/A') ?></span></span>
-                    <?php if (!empty($acct['email'])): ?><span class="ml-4 text-gray-500">Email: <span class="font-mono"><?= esc_html($acct['email']) ?></span></span><?php endif; ?>
-                </div>
-                <?php if (isset($acctDetails['account'])): ?>
-                    <?php $details = $acctDetails['account']; ?>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 text-sm">
-                        <?php if (!empty($details['timezone'])): ?><div><span class="font-semibold">Timezone:</span> <?= esc_html($details['timezone']) ?></div><?php endif; ?>
-                        <?php if (!empty($details['created_at'])): ?><div><span class="font-semibold">Created:</span> <?= esc_html($details['created_at']) ?></div><?php endif; ?>
-                        <?php if (!empty($details['status'])): ?><div><span class="font-semibold">Status:</span> <?= esc_html($details['status']) ?></div><?php endif; ?>
-                        <?php if (!empty($details['phone'])): ?><div><span class="font-semibold">Phone:</span> <?= esc_html($details['phone']) ?></div><?php endif; ?>
-                        <?php if (!empty($details['website'])): ?><div><span class="font-semibold">Website:</span> <a href="<?= esc_url($details['website']) ?>" class="text-blue-600 underline" target="_blank"><?= esc_html($details['website']) ?></a></div><?php endif; ?>
-                    </div>
-                <?php endif; ?>
-            </div>
-        <?php elseif ($apiStatus === 'not_connected' && $apiKey && $apiSecret): ?>
-            <div class="bg-yellow-50 text-yellow-800 p-2 rounded mt-2">Unable to load account info. Please check your API keys.</div>
-        <?php endif; ?>
-    </div>
-    <!-- Settings Form Fields -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
-            <h2 class="text-xl font-semibold mb-4 text-gray-700">Account</h2>
-            <label class="block mb-2 text-gray-600 font-medium">API Key</label>
-            <div class="relative mb-4">
-                <input type="password" id="ctm_api_key" name="ctm_api_key" value="<?= esc_attr($apiKey) ?>" class="block w-full rounded border-gray-300 focus:ring-blue-500 focus:border-blue-500 pr-10" />
-                <button type="button" tabindex="-1" onclick="let f=document.getElementById('ctm_api_key');f.type=f.type==='password'?'text':'password';this.innerHTML=f.type==='password'?'<svg class=\'w-5 h-5\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M15 12a3 3 0 11-6 0 3 3 0 016 0z\'/><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z\'/></svg>':'<svg class=\'w-5 h-5\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.956 9.956 0 012.223-3.592m3.31-2.687A9.956 9.956 0 0112 5c4.477 0 8.268 2.943 9.542 7a9.956 9.956 0 01-4.043 5.306M15 12a3 3 0 11-6 0 3 3 0 016 0z\'/><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M3 3l18 18\'/></svg>';" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 focus:outline-none">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                </button>
-            </div>
-            <label class="block mb-2 text-gray-600 font-medium">API Secret</label>
-            <div class="relative mb-4">
-                <input type="password" id="ctm_api_secret" name="ctm_api_secret" value="<?= esc_attr($apiSecret) ?>" class="block w-full rounded border-gray-300 focus:ring-blue-500 focus:border-blue-500 pr-10" />
-                <button type="button" tabindex="-1" onclick="let f=document.getElementById('ctm_api_secret');f.type=f.type==='password'?'text':'password';this.innerHTML=f.type==='password'?'<svg class=\'w-5 h-5\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M15 12a3 3 0 11-6 0 3 3 0 016 0z\'/><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z\'/></svg>':'<svg class=\'w-5 h-5\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.956 9.956 0 012.223-3.592m3.31-2.687A9.956 9.956 0 0112 5c4.477 0 8.268 2.943 9.542 7a9.956 9.956 0 01-4.043 5.306M15 12a3 3 0 11-6 0 3 3 0 016 0z\'/><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M3 3l18 18\'/></svg>';" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 focus:outline-none">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                </button>
-            </div>
-            <!-- Test API Connection Button -->
-            <button type="button" id="test-api-btn" onclick="testApiConnection()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded shadow transition mb-4 disabled:opacity-50 disabled:cursor-not-allowed">
-                <span id="test-btn-text">Test API Connection</span>
-                <span id="test-btn-spinner" class="hidden ml-2">
-                    <svg class="animate-spin h-4 w-4 inline" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                </span>
-            </button>
-            
-            <!-- Real-time API Test Logs -->
-            <div id="api-test-logs" class="hidden mt-4 p-4 bg-gray-50 border border-gray-200 rounded max-h-96 overflow-y-auto">
-                <div class="flex items-center justify-between mb-3">
-                    <h4 class="font-semibold text-gray-700 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        API Test Results
-                    </h4>
-                    <div class="flex gap-2">
-                        <span id="test-duration" class="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded hidden"></span>
-                        <button type="button" onclick="clearTestLogs()" class="text-xs text-gray-500 hover:text-gray-700 bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded transition">Clear</button>
-                    </div>
-                </div>
-                
-                <!-- Progress Bar -->
-                <div id="test-progress" class="mb-4 hidden">
-                    <div class="flex justify-between text-xs text-gray-600 mb-1">
-                        <span>Testing Progress</span>
-                        <span id="progress-text">0%</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
-                    </div>
-                </div>
-                
-                <div id="api-log-content" class="text-sm space-y-2"></div>
-                
-                <!-- Account Summary (shown after successful connection) -->
-                <div id="account-summary" class="hidden mt-4 p-3 bg-green-50 border border-green-200 rounded">
-                    <h5 class="font-semibold text-green-800 mb-2 flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                        </svg>
-                        Account Summary
-                    </h5>
-                    <div id="account-details" class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs"></div>
-                </div>
-                
-                <!-- Technical Details (collapsible) -->
-                <div id="technical-details" class="hidden mt-4">
-                    <button type="button" onclick="toggleTechnicalDetails()" class="flex items-center gap-2 text-xs text-gray-600 hover:text-gray-800 transition">
-                        <svg id="tech-details-icon" class="w-3 h-3 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                        View Technical Details
+        <!-- Settings Form Fields -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Account</h2>
+                <label class="block mb-2 text-gray-600 font-medium">API Key</label>
+                <div class="relative mb-4">
+                    <input type="password" id="ctm_api_key" name="ctm_api_key" value="<?= esc_attr($apiKey) ?>" class="block w-full rounded border-gray-300 focus:ring-blue-500 focus:border-blue-500 pr-10" />
+                    <button type="button" tabindex="-1" onclick="let f=document.getElementById('ctm_api_key');f.type=f.type==='password'?'text':'password';this.innerHTML=f.type==='password'?'<svg class=\'w-5 h-5\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M15 12a3 3 0 11-6 0 3 3 0 016 0z\'/><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z\'/></svg>':'<svg class=\'w-5 h-5\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.956 9.956 0 012.223-3.592m3.31-2.687A9.956 9.956 0 0112 5c4.477 0 8.268 2.943 9.542 7a9.956 9.956 0 01-4.043 5.306M15 12a3 3 0 11-6 0 3 3 0 016 0z\'/><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M3 3l18 18\'/></svg>';" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 focus:outline-none">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                     </button>
-                    <div id="tech-details-content" class="hidden mt-2 p-3 bg-gray-100 rounded text-xs font-mono overflow-x-auto"></div>
                 </div>
+                <label class="block mb-2 text-gray-600 font-medium">API Secret</label>
+                <div class="relative mb-4">
+                    <input type="password" id="ctm_api_secret" name="ctm_api_secret" value="<?= esc_attr($apiSecret) ?>" class="block w-full rounded border-gray-300 focus:ring-blue-500 focus:border-blue-500 pr-10" />
+                    <button type="button" tabindex="-1" onclick="let f=document.getElementById('ctm_api_secret');f.type=f.type==='password'?'text':'password';this.innerHTML=f.type==='password'?'<svg class=\'w-5 h-5\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M15 12a3 3 0 11-6 0 3 3 0 016 0z\'/><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z\'/></svg>':'<svg class=\'w-5 h-5\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.956 9.956 0 012.223-3.592m3.31-2.687A9.956 9.956 0 0112 5c4.477 0 8.268 2.943 9.542 7a9.956 9.956 0 01-4.043 5.306M15 12a3 3 0 11-6 0 3 3 0 016 0z\'/><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M3 3l18 18\'/></svg>';" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 focus:outline-none">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    </button>
+                </div>
+                <!-- Test API Connection Button -->
+                <button type="button" id="test-api-btn" onclick="testApiConnection()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded shadow transition mb-4 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span id="test-btn-text">Test API Connection</span>
+                    <span id="test-btn-spinner" class="hidden ml-2">
+                        <svg class="animate-spin h-4 w-4 inline" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </span>
+                </button>
+                
+                <!-- Real-time API Test Logs -->
+                <div id="api-test-logs" class="hidden mt-4 p-4 bg-gray-50 border border-gray-200 rounded max-h-96 overflow-y-auto">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-semibold text-gray-700 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            API Test Results
+                        </h4>
+                        <div class="flex gap-2">
+                            <span id="test-duration" class="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded hidden"></span>
+                            <button type="button" onclick="clearTestLogs()" class="text-xs text-gray-500 hover:text-gray-700 bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded transition">Clear</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div id="test-progress" class="mb-4 hidden">
+                        <div class="flex justify-between text-xs text-gray-600 mb-1">
+                            <span>Testing Progress</span>
+                            <span id="progress-text">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="api-log-content" class="text-sm space-y-2"></div>
+                    
+                    <!-- Account Summary (shown after successful connection) -->
+                    <div id="account-summary" class="hidden mt-4 p-3 bg-green-50 border border-green-200 rounded">
+                        <h5 class="font-semibold text-green-800 mb-2 flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            Account Summary
+                        </h5>
+                        <div id="account-details" class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs"></div>
+                    </div>
+                    
+                    <!-- Technical Details (collapsible) -->
+                    <div id="technical-details" class="hidden mt-4">
+                        <button type="button" onclick="toggleTechnicalDetails()" class="flex items-center gap-2 text-xs text-gray-600 hover:text-gray-800 transition">
+                            <svg id="tech-details-icon" class="w-3 h-3 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                            View Technical Details
+                        </button>
+                        <div id="tech-details-content" class="hidden mt-2 p-3 bg-gray-100 rounded text-xs font-mono overflow-x-auto"></div>
+                    </div>
+                </div>
+                
+                <div class="text-sm text-gray-500">Account ID: <span class="font-mono"><?= esc_html($accountId) ?></span></div>
             </div>
-            
-            <div class="text-sm text-gray-500">Account ID: <span class="font-mono"><?= esc_html($accountId) ?></span></div>
-        </div>
-        <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
-            <h2 class="text-xl font-semibold mb-4 text-gray-700">Tracking</h2>
-            <label class="flex items-center mb-4"><input type="checkbox" name="ctm_api_tracking_enabled" value="1"<?= checked($trackingEnabled, 1, false) ?> class="mr-2 rounded border-gray-300 focus:ring-blue-500" />Enable Tracking</label>
-            <label class="block mb-2 text-gray-600 font-medium">Tracking Script</label>
-            <textarea name="call_track_account_script" rows="3" class="block w-full rounded border-gray-300 focus:ring-blue-500 focus:border-blue-500 mb-4"><?= esc_textarea(get_option('call_track_account_script')) ?></textarea>
-        </div>
-        <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
-            <h2 class="text-xl font-semibold mb-4 text-gray-700">Integrations</h2>
-            
-            <!-- Contact Form 7 Integration -->
-            <label class="flex items-center mb-2 <?= !class_exists('WPCF7_ContactForm') ? 'opacity-50 cursor-not-allowed' : '' ?>">
-                <input type="checkbox" 
-                       name="ctm_api_cf7_enabled" 
-                       value="1"
-                       <?= checked($cf7Enabled, 1, false) ?> 
-                       <?= !class_exists('WPCF7_ContactForm') ? 'disabled' : '' ?>
-                       class="mr-2 rounded border-gray-300 focus:ring-blue-500 <?= !class_exists('WPCF7_ContactForm') ? 'opacity-50 cursor-not-allowed' : '' ?>" />
-                <span class="<?= !class_exists('WPCF7_ContactForm') ? 'text-gray-400' : '' ?>">Enable Contact Form 7 Integration</span>
+            <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Tracking</h2>
+                <label class="flex items-center mb-4"><input type="checkbox" name="ctm_api_tracking_enabled" value="1"<?= checked($trackingEnabled, 1, false) ?> class="mr-2 rounded border-gray-300 focus:ring-blue-500" />Enable Tracking</label>
+                <label class="block mb-2 text-gray-600 font-medium">Tracking Script</label>
+                <textarea name="call_track_account_script" rows="3" class="block w-full rounded border-gray-300 focus:ring-blue-500 focus:border-blue-500 mb-4"><?= esc_textarea(get_option('call_track_account_script')) ?></textarea>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Integrations</h2>
+                
+                <!-- Contact Form 7 Integration -->
+                <label class="flex items-center mb-2 <?= !class_exists('WPCF7_ContactForm') ? 'opacity-50 cursor-not-allowed' : '' ?>">
+                    <input type="checkbox" 
+                           name="ctm_api_cf7_enabled" 
+                           value="1"
+                           <?= checked($cf7Enabled, 1, false) ?> 
+                           <?= !class_exists('WPCF7_ContactForm') ? 'disabled' : '' ?>
+                           class="mr-2 rounded border-gray-300 focus:ring-blue-500 <?= !class_exists('WPCF7_ContactForm') ? 'opacity-50 cursor-not-allowed' : '' ?>" />
+                    <span class="<?= !class_exists('WPCF7_ContactForm') ? 'text-gray-400' : '' ?>">Enable Contact Form 7 Integration</span>
+                    <?php if (!class_exists('WPCF7_ContactForm')): ?>
+                        <span class="ml-2 text-xs text-red-600 font-medium">(Plugin required)</span>
+                    <?php endif; ?>
+                </label>
+                
+                <!-- Always show install link -->
                 <?php if (!class_exists('WPCF7_ContactForm')): ?>
-                    <span class="ml-2 text-xs text-red-600 font-medium">(Plugin required)</span>
-                <?php endif; ?>
-            </label>
-            
-            <!-- Always show install link -->
-            <?php if (!class_exists('WPCF7_ContactForm')): ?>
-                <div class="mb-3">
-                    <a href="<?= esc_url(admin_url('plugin-install.php?s=contact+form+7&tab=search&type=term')) ?>" class="text-blue-600 hover:text-blue-800 text-sm underline transition">Install Contact Form 7 →</a>
-                </div>
-            <?php endif; ?>
-            
-            <!-- Dismissible warning banner -->
-            <?php if (!class_exists('WPCF7_ContactForm') && !get_option('ctm_cf7_notice_dismissed', false)): ?>
-                <div id="cf7-notice" class="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-2 rounded flex items-center justify-between gap-2 mb-4 mt-2 text-sm">
-                    <div class="flex items-center gap-2">
-                        <span class="font-semibold">Contact Form 7 is not installed or activated.</span>
-                        <a href="<?= esc_url(admin_url('plugin-install.php?s=contact+form+7&tab=search&type=term')) ?>" class="ml-2 bg-blue-600 hover:bg-blue-700 hover:text-white! text-white px-4 py-2 rounded shadow transition text-sm font-medium">Install Contact Form 7</a>
+                    <div class="mb-3">
+                        <a href="<?= esc_url(admin_url('plugin-install.php?s=contact+form+7&tab=search&type=term')) ?>" class="text-blue-600 hover:text-blue-800 text-sm underline transition">Install Contact Form 7 →</a>
                     </div>
-                    <button type="button" onclick="dismissNotice('cf7')" class="text-yellow-600 hover:text-yellow-800 ml-2 p-1 rounded hover:bg-yellow-100 transition" title="I don't use this plugin">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-            <?php endif; ?>
-            
-            <!-- Gravity Forms Integration -->
-            <label class="flex items-center mb-2 <?= !class_exists('GFAPI') ? 'opacity-50 cursor-not-allowed' : '' ?>">
-                <input type="checkbox" 
-                       name="ctm_api_gf_enabled" 
-                       value="1"
-                       <?= checked($gfEnabled, 1, false) ?> 
-                       <?= !class_exists('GFAPI') ? 'disabled' : '' ?>
-                       class="mr-2 rounded border-gray-300 focus:ring-blue-500 <?= !class_exists('GFAPI') ? 'opacity-50 cursor-not-allowed' : '' ?>" />
-                <span class="<?= !class_exists('GFAPI') ? 'text-gray-400' : '' ?>">Enable Gravity Forms Integration</span>
+                <?php endif; ?>
+                
+                <!-- Dismissible warning banner -->
+                <?php if (!class_exists('WPCF7_ContactForm') && !get_option('ctm_cf7_notice_dismissed', false)): ?>
+                    <div id="cf7-notice" class="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-2 rounded flex items-center justify-between gap-2 mb-4 mt-2 text-sm">
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold">Contact Form 7 is not installed or activated.</span>
+                            <a href="<?= esc_url(admin_url('plugin-install.php?s=contact+form+7&tab=search&type=term')) ?>" class="ml-2 bg-blue-600 hover:bg-blue-700 hover:text-white! text-white px-4 py-2 rounded shadow transition text-sm font-medium">Install Contact Form 7</a>
+                        </div>
+                        <button type="button" onclick="dismissNotice('cf7')" class="text-yellow-600 hover:text-yellow-800 ml-2 p-1 rounded hover:bg-yellow-100 transition" title="I don't use this plugin">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                <?php endif; ?>
+                
+                <!-- Gravity Forms Integration -->
+                <label class="flex items-center mb-2 <?= !class_exists('GFAPI') ? 'opacity-50 cursor-not-allowed' : '' ?>">
+                    <input type="checkbox" 
+                           name="ctm_api_gf_enabled" 
+                           value="1"
+                           <?= checked($gfEnabled, 1, false) ?> 
+                           <?= !class_exists('GFAPI') ? 'disabled' : '' ?>
+                           class="mr-2 rounded border-gray-300 focus:ring-blue-500 <?= !class_exists('GFAPI') ? 'opacity-50 cursor-not-allowed' : '' ?>" />
+                    <span class="<?= !class_exists('GFAPI') ? 'text-gray-400' : '' ?>">Enable Gravity Forms Integration</span>
+                    <?php if (!class_exists('GFAPI')): ?>
+                        <span class="ml-2 text-xs text-red-600 font-medium">(Plugin required)</span>
+                    <?php endif; ?>
+                </label>
+                
+                <!-- Always show install link -->
                 <?php if (!class_exists('GFAPI')): ?>
-                    <span class="ml-2 text-xs text-red-600 font-medium">(Plugin required)</span>
-                <?php endif; ?>
-            </label>
-            
-            <!-- Always show install link -->
-            <?php if (!class_exists('GFAPI')): ?>
-                <div class="mb-3">
-                    <a href="https://www.gravityforms.com/" target="_blank" rel="noopener" class="text-blue-600 hover:text-blue-800 text-sm underline transition">Get Gravity Forms →</a>
-                </div>
-            <?php endif; ?>
-            
-            <!-- Dismissible warning banner -->
-            <?php if (!class_exists('GFAPI') && !get_option('ctm_gf_notice_dismissed', false)): ?>
-                <div id="gf-notice" class="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-2 rounded flex items-center justify-between gap-2 mb-2 mt-2 text-sm">
-                    <div class="flex items-center gap-2">
-                        <span class="font-semibold">Gravity Forms is not installed or activated.</span>
-                        <a href="https://www.gravityforms.com/" target="_blank" rel="noopener" class="ml-2 bg-blue-600 hover:bg-blue-700 hover:text-white! text-white px-4 py-2 rounded shadow transition text-sm font-medium">Get Gravity Forms</a>
+                    <div class="mb-3">
+                        <a href="https://www.gravityforms.com/" target="_blank" rel="noopener" class="text-blue-600 hover:text-blue-800 text-sm underline transition">Get Gravity Forms →</a>
                     </div>
-                    <button type="button" onclick="dismissNotice('gf')" class="text-yellow-600 hover:text-yellow-800 ml-2 p-1 rounded hover:bg-yellow-100 transition" title="I don't use this plugin">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-            <?php endif; ?>
+                <?php endif; ?>
+                
+                <!-- Dismissible warning banner -->
+                <?php if (!class_exists('GFAPI') && !get_option('ctm_gf_notice_dismissed', false)): ?>
+                    <div id="gf-notice" class="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-2 rounded flex items-center justify-between gap-2 mb-2 mt-2 text-sm">
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold">Gravity Forms is not installed or activated.</span>
+                            <a href="https://www.gravityforms.com/" target="_blank" rel="noopener" class="ml-2 bg-blue-600 hover:bg-blue-700 hover:text-white! text-white px-4 py-2 rounded shadow transition text-sm font-medium">Get Gravity Forms</a>
+                        </div>
+                        <button type="button" onclick="dismissNotice('gf')" class="text-yellow-600 hover:text-yellow-800 ml-2 p-1 rounded hover:bg-yellow-100 transition" title="I don't use this plugin">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                <?php endif; ?>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Dashboard</h2>
+                <label class="flex items-center mb-2"><input type="checkbox" name="ctm_api_dashboard_enabled" value="1"<?= checked($dashboardEnabled, 1, false) ?> class="mr-2 rounded border-gray-300 focus:ring-blue-500" />Enable Dashboard Widget</label>
+            </div>
         </div>
-        <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
-            <h2 class="text-xl font-semibold mb-4 text-gray-700">Dashboard</h2>
-            <label class="flex items-center mb-2"><input type="checkbox" name="ctm_api_dashboard_enabled" value="1"<?= checked($dashboardEnabled, 1, false) ?> class="mr-2 rounded border-gray-300 focus:ring-blue-500" />Enable Dashboard Widget</label>
+        <div class="mt-8">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded shadow font-semibold transition">Save Settings</button>
         </div>
-    </div>
-    <div class="mt-8">
-        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded shadow font-semibold transition">Save Settings</button>
-    </div>
+    <?php endif; ?>
 </form>
 
 <script>

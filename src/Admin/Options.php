@@ -1,8 +1,6 @@
 <?php
 namespace CTM\Admin;
 
-use Illuminate\Http\Client\Factory as HttpClient;
-
 /**
  * Handles admin options and settings for CallTrackingMetrics.
  */
@@ -51,6 +49,16 @@ class Options
             wp_die(__('You do not have sufficient permissions to access this page.'));
         }
         
+        // Check API connection status for tab visibility
+        $apiKey = get_option('ctm_api_key');
+        $apiSecret = get_option('ctm_api_secret');
+        $apiStatus = 'not_tested';
+        
+        if ($apiKey && $apiSecret) {
+            $apiService = new \CTM\Service\ApiService('https://api.calltrackingmetrics.com');
+            $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
+            $apiStatus = ($accountInfo && isset($accountInfo['account'])) ? 'connected' : 'not_connected';
+        }
         
         $notices = [];
         $cf7_installed = class_exists('WPCF7_ContactForm');
@@ -76,6 +84,9 @@ class Options
             case 'mapping':
                 $tab_content = $this->getMappingTabContent();
                 break;
+            case 'api':
+                $tab_content = $this->getApiTabContent();
+                break;
             case 'documentation':
                 $tab_content = $this->getDocumentationTabContent();
                 break;
@@ -88,7 +99,7 @@ class Options
                 break;
         }
         error_log('About to render settings-page view');
-        $this->renderView('settings-page', compact('notices', 'active_tab', 'tab_content'));
+        $this->renderView('settings-page', compact('notices', 'active_tab', 'tab_content', 'apiStatus'));
         error_log('Finished rendering settings-page view');
     }
 
@@ -121,7 +132,7 @@ class Options
         $acctDetails = null;
         if ($apiKey && $apiSecret) {
             error_log('About to create ApiService');
-            $apiService = new \CTM\Service\ApiService('https://api.calltrackingmetrics.com', new HttpClient());
+            $apiService = new \CTM\Service\ApiService('https://api.calltrackingmetrics.com');
             error_log('ApiService created');
             if (isset($_POST['ctm_test_api'])) {
                 error_log('Testing API connection');
@@ -173,6 +184,13 @@ class Options
     {
         ob_start();
         $this->renderView('mapping-tab');
+        return ob_get_clean();
+    }
+
+    private function getApiTabContent(): string
+    {
+        ob_start();
+        $this->renderView('api-tab');
         return ob_get_clean();
     }
 
@@ -414,7 +432,7 @@ class Options
         
         try {
             // Create API service instance
-            $apiService = new \CTM\Service\ApiService('https://api.calltrackingmetrics.com', new HttpClient());
+            $apiService = new \CTM\Service\ApiService('https://api.calltrackingmetrics.com');
             
             $api_start_time = microtime(true);
             
@@ -423,7 +441,7 @@ class Options
             $api_response_time = round((microtime(true) - $api_start_time) * 1000, 2);
             
             $response_data['api_response_time'] = $api_response_time;
-            $response_data['account_endpoint'] = '/api/v1/accounts/current.json';
+            $response_data['account_endpoint'] = '/api/v1/accounts/';
             
             if (!$accountInfo || !isset($accountInfo['account'])) {
                 $error_details = [

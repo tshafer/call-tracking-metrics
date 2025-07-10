@@ -1,9 +1,6 @@
 <?php
 namespace CTM\Service;
 
-use Illuminate\Http\Client\Factory as HttpClient;
-use Illuminate\Http\Client\RequestException;
-
 /**
  * Handles API communication and account management for CallTrackingMetrics.
  */
@@ -11,13 +8,10 @@ class ApiService
 {
     /** @var string */
     private $apiHost;
-    /** @var HttpClient */
-    private $http;
 
-    public function __construct(string $apiHost, ?HttpClient $http = null)
+    public function __construct(string $apiHost)
     {
         $this->apiHost = $apiHost;
-        $this->http = $http ?: new HttpClient();
     }
 
     /**
@@ -32,16 +26,28 @@ class ApiService
         if (empty($apiKey) || empty($apiSecret)) {
             return null;
         }
+        
         try {
-            $response = $this->http->withHeaders([
-                'Authorization' => 'Basic ' . base64_encode($apiKey . ':' . $apiSecret),
-                'Content-Type' => 'application/json',
-            ])->timeout(30)->get($this->apiHost . '/api/v1/accounts/current.json');
-            $data = $response->json();
+            $response = wp_remote_get($this->apiHost . '/api/v1/accounts/current.json', [
+                'timeout' => 30,
+                'headers' => [
+                    'Authorization' => 'Basic ' . base64_encode($apiKey . ':' . $apiSecret),
+                    'Content-Type' => 'application/json',
+                ]
+            ]);
+            
+            if (is_wp_error($response)) {
+                if (function_exists('error_log')) error_log('CTM API error: ' . $response->get_error_message());
+                return null;
+            }
+            
+            $body = wp_remote_retrieve_body($response);
+            $data = json_decode($body, true);
+            
             if ($data && isset($data['account'])) {
                 return $data['account'];
             }
-        } catch (RequestException $e) {
+        } catch (\Exception $e) {
             if (function_exists('error_log')) error_log('CTM API error: ' . $e->getMessage());
         }
         return null;
@@ -58,18 +64,32 @@ class ApiService
     public function submitFormReactor(array $payload, string $apiKey, string $apiSecret): ?array
     {
         $url = $this->apiHost . '/api/v1/formreactor/submit';
+        
         try {
-            $response = $this->http->withHeaders([
-                'Authorization' => 'Basic ' . base64_encode($apiKey . ':' . $apiSecret),
-                'Content-Type' => 'application/json',
-            ])->timeout(30)->post($url, $payload);
-            $data = $response->json();
+            $response = wp_remote_post($url, [
+                'timeout' => 30,
+                'headers' => [
+                    'Authorization' => 'Basic ' . base64_encode($apiKey . ':' . $apiSecret),
+                    'Content-Type' => 'application/json',
+                ],
+                'body' => json_encode($payload)
+            ]);
+            
+            if (is_wp_error($response)) {
+                if (function_exists('error_log')) error_log('CTM API error: ' . $response->get_error_message());
+                return null;
+            }
+            
+            $body = wp_remote_retrieve_body($response);
+            $data = json_decode($body, true);
+            
             if (json_last_error() !== JSON_ERROR_NONE) {
                 if (function_exists('error_log')) error_log('CTM API response JSON error: ' . json_last_error_msg());
                 return null;
             }
+            
             return $data;
-        } catch (RequestException $e) {
+        } catch (\Exception $e) {
             if (function_exists('error_log')) error_log('CTM API error: ' . $e->getMessage());
             return null;
         }
@@ -86,24 +106,37 @@ class ApiService
     {
         $url = $this->apiHost . '/api/v1/accounts/current.json';
         error_log('ApiService::getAccountInfo called');
+        
         try {
             error_log('ApiService::getAccountInfo making HTTP request to ' . $url);
-            $response = $this->http->withHeaders([
-                'Authorization' => 'Basic ' . base64_encode($apiKey . ':' . $apiSecret),
-                'Content-Type' => 'application/json',
-            ])->timeout(30)->get($url);
+            
+            $response = wp_remote_get($url, [
+                'timeout' => 30,
+                'headers' => [
+                    'Authorization' => 'Basic ' . base64_encode($apiKey . ':' . $apiSecret),
+                    'Content-Type' => 'application/json',
+                ]
+            ]);
+            
             error_log('ApiService::getAccountInfo HTTP request complete');
-            $data = $response->json();
+            
+            if (is_wp_error($response)) {
+                if (function_exists('error_log')) error_log('CTM API error: ' . $response->get_error_message());
+                return null;
+            }
+            
+            $body = wp_remote_retrieve_body($response);
+            $data = json_decode($body, true);
+            
             error_log('ApiService::getAccountInfo response: ' . var_export($data, true));
+            
             if (json_last_error() !== JSON_ERROR_NONE) {
                 if (function_exists('error_log')) error_log('CTM API response JSON error: ' . json_last_error_msg());
                 return null;
             }
+            
             return $data;
-        } catch (RequestException $e) {
-            if (function_exists('error_log')) error_log('CTM API error: ' . $e->getMessage());
-            return null;
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             error_log('CTM API fatal error: ' . $e->getMessage());
             return null;
         }
@@ -120,18 +153,31 @@ class ApiService
     public function getAccountById($accountId, string $apiKey, string $apiSecret): ?array
     {
         $url = $this->apiHost . '/api/v1/accounts/' . urlencode($accountId);
+        
         try {
-            $response = $this->http->withHeaders([
-                'Authorization' => 'Basic ' . base64_encode($apiKey . ':' . $apiSecret),
-                'Content-Type' => 'application/json',
-            ])->timeout(30)->get($url);
-            $data = $response->json();
+            $response = wp_remote_get($url, [
+                'timeout' => 30,
+                'headers' => [
+                    'Authorization' => 'Basic ' . base64_encode($apiKey . ':' . $apiSecret),
+                    'Content-Type' => 'application/json',
+                ]
+            ]);
+            
+            if (is_wp_error($response)) {
+                if (function_exists('error_log')) error_log('CTM API error: ' . $response->get_error_message());
+                return null;
+            }
+            
+            $body = wp_remote_retrieve_body($response);
+            $data = json_decode($body, true);
+            
             if (json_last_error() !== JSON_ERROR_NONE) {
                 if (function_exists('error_log')) error_log('CTM API response JSON error: ' . json_last_error_msg());
                 return null;
             }
+            
             return $data;
-        } catch (RequestException $e) {
+        } catch (\Exception $e) {
             if (function_exists('error_log')) error_log('CTM API error: ' . $e->getMessage());
             return null;
         }
