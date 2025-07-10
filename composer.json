@@ -1,0 +1,30 @@
+{
+    "name": "calltrackingmetrics/wordpress-plugin",
+    "description": "CallTrackingMetrics WordPress plugin modernized.",
+    "type": "wordpress-plugin",
+    "version": "2.0.0",
+    "authors": [
+        {
+            "name": "CallTrackingMetrics",
+            "email": "support@calltrackingmetrics.com"
+        }
+    ],
+    "require": {
+      "php": ">=7.4",
+      "illuminate/http": "^10.0"
+    },
+    "autoload": {
+      "psr-4": {
+        "CTM\\": "src/"
+      }
+    },
+    "autoload-dev": {
+      "psr-4": {
+        "CTM\\Tests\\": "tests/"
+      }
+    },
+    "require-dev": {
+      "phpunit/phpunit": "^10.0"
+    },
+    "license": "GPL-2.0-or-later"
+} 
