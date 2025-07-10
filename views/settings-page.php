@@ -5,7 +5,7 @@
 <div class="mb-6">
     <?php if (!empty($notices)) foreach ($notices as $notice) echo $notice; ?>
 </div>
-<div class="wrap max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md">
+<div class="wrap max-w-full mx-auto p-6 bg-white rounded-lg shadow-md">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-3xl font-bold text-gray-800">CallTrackingMetrics Settings</h1>
         <!-- API Status Indicator -->

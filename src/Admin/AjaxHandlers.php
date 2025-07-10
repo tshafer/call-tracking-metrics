@@ -35,6 +35,7 @@ class AjaxHandlers
         add_action('wp_ajax_ctm_get_performance_metrics', [$this, 'ajaxGetPerformanceMetrics']);
         add_action('wp_ajax_ctm_analyze_issue', [$this, 'ajaxAnalyzeIssue']);
         add_action('wp_ajax_ctm_email_system_info', [$this, 'ajaxEmailSystemInfo']);
+        add_action('wp_ajax_ctm_refresh_system_info', [$this, 'ajaxRefreshSystemInfo']);
     }
 
     /**
@@ -1040,5 +1041,56 @@ class AjaxHandlers
         $report .= "=== END REPORT ===\n";
         
         return $report;
+    }
+
+    /**
+     * AJAX: Refresh System Information
+     */
+    public function ajaxRefreshSystemInfo(): void
+    {
+        check_ajax_referer('ctm_refresh_system_info', 'nonce');
+        
+        try {
+            // Generate fresh system information
+            $system_info = [
+                'php_version' => PHP_VERSION,
+                'wp_version' => get_bloginfo('version'),
+                'memory_usage' => size_format(memory_get_usage(true)) . ' / ' . ini_get('memory_limit'),
+                'db_queries' => get_num_queries(),
+                'wordpress_env' => [
+                    'version' => get_bloginfo('version'),
+                    'language' => get_locale(),
+                    'debug_mode' => WP_DEBUG ? 'Enabled' : 'Disabled',
+                    'memory_limit' => WP_MEMORY_LIMIT,
+                    'multisite' => is_multisite() ? 'Yes' : 'No',
+                    'timezone' => get_option('timezone_string') ?: 'UTC'
+                ],
+                'server_env' => [
+                    'php_version' => PHP_VERSION,
+                    'server_software' => $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown',
+                    'operating_system' => PHP_OS,
+                    'memory_limit' => ini_get('memory_limit'),
+                    'max_execution_time' => ini_get('max_execution_time') . 's',
+                    'upload_max_size' => ini_get('upload_max_filesize')
+                ],
+                'database_info' => [
+                    'version' => $GLOBALS['wpdb']->db_version(),
+                    'host' => DB_HOST,
+                    'charset' => DB_CHARSET,
+                    'table_prefix' => $GLOBALS['wpdb']->prefix
+                ]
+            ];
+            
+            wp_send_json_success([
+                'message' => 'System information refreshed successfully',
+                'system_info' => $system_info,
+                'timestamp' => current_time('mysql')
+            ]);
+            
+        } catch (\Exception $e) {
+            wp_send_json_error([
+                'message' => 'Failed to refresh system information: ' . $e->getMessage()
+            ]);
+        }
     }
 } 
