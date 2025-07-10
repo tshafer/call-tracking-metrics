@@ -1583,7 +1583,120 @@ class AjaxHandlers
         return 'API not configured';
     }
 
+    /**
+     * Get average API response time
+     */
+    private function getApiResponseTime(): string
+    {
+        // Check for stored API response times from recent calls
+        $response_times = get_option('ctm_api_response_times', []);
+        
+        if (!empty($response_times) && is_array($response_times)) {
+            // Clean old entries (older than 24 hours)
+            $twenty_four_hours_ago = time() - (24 * 60 * 60);
+            $recent_times = [];
+            
+            foreach ($response_times as $timestamp => $response_time) {
+                if ($timestamp >= $twenty_four_hours_ago) {
+                    $recent_times[] = $response_time;
+                }
+            }
+            
+            if (!empty($recent_times)) {
+                $avg_response_time = round(array_sum($recent_times) / count($recent_times), 2);
+                $count = count($recent_times);
+                
+                // Add performance context
+                if ($avg_response_time < 200) {
+                    return $avg_response_time . 'ms (excellent)';
+                } elseif ($avg_response_time < 500) {
+                    return $avg_response_time . 'ms (good)';
+                } elseif ($avg_response_time < 1000) {
+                    return $avg_response_time . 'ms (fair)';
+                } else {
+                    return $avg_response_time . 'ms (slow)';
+                }
+            }
+        }
+        
+        // Fallback: Test API response time now
+        $api_key = get_option('ctm_api_key');
+        $api_secret = get_option('ctm_api_secret');
+        
+        if ($api_key && $api_secret) {
+            $start_time = microtime(true);
+            
+            // Make a simple API call to test response time
+            $response = wp_remote_head('https://api.calltrackingmetrics.com/api/v1/accounts', [
+                'timeout' => 10,
+                'headers' => [
+                    'Authorization' => 'Basic ' . base64_encode($api_key . ':' . $api_secret),
+                    'Accept' => 'application/json',
+                ],
+            ]);
+            
+            $response_time = round((microtime(true) - $start_time) * 1000, 2);
+            
+            if (!is_wp_error($response)) {
+                $http_code = wp_remote_retrieve_response_code($response);
+                
+                if ($http_code >= 200 && $http_code < 400) {
+                    // Store this response time for future reference
+                    $this->storeApiResponseTime($response_time);
+                    
+                    // Add performance context
+                    if ($response_time < 200) {
+                        return $response_time . 'ms (live test, excellent)';
+                    } elseif ($response_time < 500) {
+                        return $response_time . 'ms (live test, good)';
+                    } elseif ($response_time < 1000) {
+                        return $response_time . 'ms (live test, fair)';
+                    } else {
+                        return $response_time . 'ms (live test, slow)';
+                    }
+                } else {
+                    return 'Error: HTTP ' . $http_code;
+                }
+            } else {
+                return 'Error: ' . $response->get_error_message();
+            }
+        }
+        
+        return 'API not configured';
+    }
 
+    /**
+     * Store API response time for monitoring
+     */
+    private function storeApiResponseTime(float $responseTime): void
+    {
+        try {
+            $response_times = get_option('ctm_api_response_times', []);
+            
+            if (!is_array($response_times)) {
+                $response_times = [];
+            }
+            
+            // Add current response time with timestamp
+            $response_times[time()] = $responseTime;
+            
+            // Clean old entries (older than 24 hours)
+            $twenty_four_hours_ago = time() - (24 * 60 * 60);
+            $response_times = array_filter($response_times, function($timestamp) use ($twenty_four_hours_ago) {
+                return $timestamp >= $twenty_four_hours_ago;
+            }, ARRAY_FILTER_USE_KEY);
+            
+            // Limit to prevent excessive data storage (keep last 100 response times max)
+            if (count($response_times) > 100) {
+                $response_times = array_slice($response_times, -100, null, true);
+            }
+            
+            update_option('ctm_api_response_times', $response_times);
+        } catch (\Exception $e) {
+            // Silently fail to avoid disrupting API monitoring
+            error_log('CTM API Response Time Storage Error: ' . $e->getMessage());
+        }
+    }
 
     /**
      * Get frontend queries

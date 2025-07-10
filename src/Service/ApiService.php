@@ -252,6 +252,9 @@ class ApiService
     {
         $url = $this->baseUrl . $endpoint;
         
+        // Start timing for response time tracking
+        $start_time = microtime(true);
+        
         // Prepare request arguments
         $args = [
             'method'  => strtoupper($method),
@@ -308,8 +311,12 @@ class ApiService
             throw new \Exception('Invalid JSON response: ' . json_last_error_msg());
         }
 
-        // Track successful API call for performance monitoring
+        // Calculate response time
+        $response_time = round((microtime(true) - $start_time) * 1000, 2);
+        
+        // Track successful API call and response time for performance monitoring
         $this->trackApiCall();
+        $this->trackApiResponseTime($response_time);
 
         return $decodedResponse;
     }
@@ -434,6 +441,46 @@ class ApiService
         } catch (\Exception $e) {
             // Silently fail to avoid disrupting API calls
             error_log('CTM API Call Tracking Error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Track API response time for performance monitoring
+     * 
+     * Records the response time of successful API calls for 24-hour tracking.
+     * This data is used by the performance monitor to show API response times.
+     * 
+     * @since 2.0.0
+     * @param float $responseTime Response time in milliseconds
+     * @return void
+     */
+    private function trackApiResponseTime(float $responseTime): void
+    {
+        try {
+            $response_times = get_option('ctm_api_response_times', []);
+            
+            if (!is_array($response_times)) {
+                $response_times = [];
+            }
+            
+            // Add current response time with timestamp
+            $response_times[time()] = $responseTime;
+            
+            // Clean old entries (older than 24 hours)
+            $twenty_four_hours_ago = time() - (24 * 60 * 60);
+            $response_times = array_filter($response_times, function($timestamp) use ($twenty_four_hours_ago) {
+                return $timestamp >= $twenty_four_hours_ago;
+            }, ARRAY_FILTER_USE_KEY);
+            
+            // Limit to prevent excessive data storage (keep last 100 response times max)
+            if (count($response_times) > 100) {
+                $response_times = array_slice($response_times, -100, null, true);
+            }
+            
+            update_option('ctm_api_response_times', $response_times);
+        } catch (\Exception $e) {
+            // Silently fail to avoid disrupting API calls
+            error_log('CTM API Response Time Tracking Error: ' . $e->getMessage());
         }
     }
 } 
