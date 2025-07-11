@@ -16,17 +16,61 @@ trait MonkeyTrait
                 $cb();
             }
         };
+        // WordPress core and plugin functions
+        $mock('active_plugins', fn() => \Brain\Monkey\Functions\when('active_plugins')->justReturn(['call-tracking-metrics/call-tracking-metrics.php']));
+        $mock('plugin_dir_path', fn() => \Brain\Monkey\Functions\when('plugin_dir_path')->alias(function($file) { return __DIR__ . '/../../'; }));
+        $mock('plugin_dir_url', fn() => \Brain\Monkey\Functions\when('plugin_dir_url')->alias(function($file) { return '/'; }));
+        $mock('home_url', fn() => \Brain\Monkey\Functions\when('home_url')->justReturn('http://example.com'));
+        $mock('admin_url', fn() => \Brain\Monkey\Functions\when('admin_url')->justReturn('http://example.com/wp-admin/'));
+        $mock('get_option', fn() => \Brain\Monkey\Functions\when('get_option')->alias(function($key, $default = '') {
+            if ($key === 'active_plugins') {
+                return [];
+            }
+            if ($key === 'ctm_api_cf7_logs' || $key === 'ctm_api_gf_logs') {
+                return [];
+            }
+            
+            return $default;
+        }));
+        $mock('checked', fn() => \Brain\Monkey\Functions\when('checked')->alias(function() { return ''; }));
+        $mock('wp_kses_post', fn() => \Brain\Monkey\Functions\when('wp_kses_post')->alias(function($v) { return $v; }));
+        $mock('wp_redirect', fn() => \Brain\Monkey\Functions\when('wp_redirect')->justReturn(null));
+        $mock('wp_get_referer', fn() => \Brain\Monkey\Functions\when('wp_get_referer')->justReturn('http://example.com'));
+        $mock('esc_attr', fn() => \Brain\Monkey\Functions\when('esc_attr')->alias(function($v) { return $v; }));
+        $mock('esc_textarea', fn() => \Brain\Monkey\Functions\when('esc_textarea')->alias(function($v) { return $v; }));
+        $mock('sanitize_text_field', fn() => \Brain\Monkey\Functions\when('sanitize_text_field')->alias(function($v) { return $v; }));
+        $mock('sanitize_email', fn() => \Brain\Monkey\Functions\when('sanitize_email')->alias(function($v) { return $v; }));
+        $mock('add_options_page', fn() => \Brain\Monkey\Functions\when('add_options_page')->justReturn(null));
+        $mock('register_setting', fn() => \Brain\Monkey\Functions\when('register_setting')->justReturn(null));
+        $mock('do_settings_sections', fn() => \Brain\Monkey\Functions\when('do_settings_sections')->alias(function() { echo '<!--do_settings_sections-->'; }));
+        $mock('settings_fields', fn() => \Brain\Monkey\Functions\when('settings_fields')->alias(function() { echo '<!--settings_fields-->'; }));
+        $mock('is_multisite', fn() => \Brain\Monkey\Functions\when('is_multisite')->justReturn(false));
+        // Plugin class stubs
+        if (!class_exists('WPCF7_ContactForm')) {
+            eval('class WPCF7_ContactForm {
+                public static function find() { return []; }
+                public static function get_instance($id = null) { return new self(); }
+                public function id() { return 2; }
+                public function title() { return "Test Form"; }
+            }');
+        }
+        if (!class_exists('GFAPI')) {
+            eval('class GFAPI {
+                public static function get_forms() { return []; }
+                public static function get_form($id = null) { return []; }
+            }');
+        }
         \Brain\Monkey\Functions\when('get_locale')->justReturn('en_US');
 
         $mock('register_setting', fn() => \Brain\Monkey\Functions\when('register_setting')->justReturn(null));
         $mock('plugin_dir_path', fn() => \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn('/tmp/'));
         $mock('count_users', fn() => \Brain\Monkey\Functions\when('count_users')->justReturn(['total_users' => 1]));
-        $mock('add_action', fn() => \Brain\Monkey\Functions\when('add_action')->justReturn(null));
+        // $mock('add_action', fn() => \Brain\Monkey\Functions\when('add_action')->justReturn(null));
         $mock('home_url', fn() => \Brain\Monkey\Functions\when('home_url')->justReturn('https://example.com'));
         $mock('check_ajax_referer', fn() => \Brain\Monkey\Functions\when('check_ajax_referer')->justReturn(true));
         $mock('sanitize_text_field', fn() => \Brain\Monkey\Functions\when('sanitize_text_field')->alias(fn($v) => $v));
-        $mock('wp_send_json_success', fn() => \Brain\Monkey\Functions\when('wp_send_json_success')->justReturn(null));
-        $mock('wp_send_json_error', fn() => \Brain\Monkey\Functions\when('wp_send_json_error')->justReturn(null));
+        // $mock('wp_send_json_success', fn() => \Brain\Monkey\Functions\when('wp_send_json_success')->justReturn(null));
+        // $mock('wp_send_json_error', fn() => \Brain\Monkey\Functions\when('wp_send_json_error')->justReturn(null));
         $mock('update_option', fn() => \Brain\Monkey\Functions\when('update_option')->justReturn(true));
         $mock('sanitize_email', fn() => \Brain\Monkey\Functions\when('sanitize_email')->alias(fn($v) => $v));
         $mock('is_email', fn() => \Brain\Monkey\Functions\when('is_email')->justReturn(true));
@@ -41,17 +85,7 @@ trait MonkeyTrait
         $mock('unlink', fn() => \Brain\Monkey\Functions\when('unlink')->justReturn(true));
         $mock('current_time', fn() => \Brain\Monkey\Functions\when('current_time')->justReturn('2024-01-01 00:00:00'));
         $mock('get_current_user_id', fn() => \Brain\Monkey\Functions\when('get_current_user_id')->justReturn(1));
-        $mock('get_option', fn() => \Brain\Monkey\Functions\when('get_option')->alias(function($key, $default = null) {
-            if ($key === 'active_plugins') {
-                return ['plugin1/plugin1.php', 'plugin2/plugin2.php'];
-            }
-            return 'test';
-        }));
         $mock('wp_generate_uuid4', fn() => \Brain\Monkey\Functions\when('wp_generate_uuid4')->justReturn('uuid-1234'));
-        $mock('admin_url', fn() => \Brain\Monkey\Functions\when('admin_url')->justReturn('https://example.com/wp-admin'));
-        $mock('get_locale', fn() => \Brain\Monkey\Functions\when('get_locale')->justReturn('en_US'));
-        $mock('is_multisite', fn() => \Brain\Monkey\Functions\when('is_multisite')->justReturn(false));
-        $mock('db_version', fn() => \Brain\Monkey\Functions\when('db_version')->justReturn('5.8'));
         $mock('wp_cache_get_stats', fn() => \Brain\Monkey\Functions\when('wp_cache_get_stats')->justReturn(['hits' => 100, 'misses' => 10]));
         $mock('size_format', fn() => \Brain\Monkey\Functions\when('size_format')->alias(fn($size) => $size));
         $mock('get_num_queries', fn() => \Brain\Monkey\Functions\when('get_num_queries')->justReturn(100));
@@ -109,6 +143,7 @@ trait MonkeyTrait
         $mock('wp_get_current_user', fn() => \Brain\Monkey\Functions\when('wp_get_current_user')->justReturn(new class {
             public function ID() { return 1; }
         }));
+
         // Define constants only if not already defined
         if (!defined('ABSPATH')) define('ABSPATH', '/tmp');
         if (!defined('WP_CONTENT_DIR')) define('WP_CONTENT_DIR', '/tmp');

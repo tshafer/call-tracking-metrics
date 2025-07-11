@@ -4,19 +4,14 @@ namespace CTM\Tests;
 
 use PHPUnit\Framework\TestCase;
 use CTM\Service\CF7Service;
+use CTM\Tests\Traits\MonkeyTrait;
 
 class CF7ServiceTest extends TestCase
 {
+    use MonkeyTrait;
     protected function setUp(): void
     {
-        \Brain\Monkey\setUp();
-        \Brain\Monkey\Functions\when('get_option')->justReturn([]);
-        \Brain\Monkey\Functions\when('current_time')->justReturn('2024-01-01 00:00:00');
-        \Brain\Monkey\Functions\when('sanitize_text_field')->alias(function($v){return $v;});
-    }
-    protected function tearDown(): void
-    {
-        \Brain\Monkey\tearDown();
+        $this->initalMonkey();
     }
 
     public function testProcessSubmissionReturnsNullIfNoCF7()

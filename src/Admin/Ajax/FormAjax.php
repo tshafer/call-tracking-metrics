@@ -11,10 +11,10 @@ class FormAjax {
         $this->fieldMapping = $fieldMapping ?: (class_exists('CTM\\Admin\\FieldMapping') ? new \CTM\Admin\FieldMapping() : null);
     }
     public function registerHandlers() {
-        add_action('wp_ajax_ctm_get_forms', [$this, 'ajaxGetForms']);
-        add_action('wp_ajax_ctm_get_fields', [$this, 'ajaxGetFields']);
-        add_action('wp_ajax_ctm_save_mapping', [$this, 'ajaxSaveMapping']);
-        add_action('wp_ajax_ctm_dismiss_notice', [$this, 'ajaxDismissNotice']);
+        \add_action('wp_ajax_ctm_get_forms', [$this, 'ajaxGetForms']);
+        \add_action('wp_ajax_ctm_get_fields', [$this, 'ajaxGetFields']);
+        \add_action('wp_ajax_ctm_save_mapping', [$this, 'ajaxSaveMapping']);
+        \add_action('wp_ajax_ctm_dismiss_notice', [$this, 'ajaxDismissNotice']);
     }
     public function ajaxGetForms(): void
     {

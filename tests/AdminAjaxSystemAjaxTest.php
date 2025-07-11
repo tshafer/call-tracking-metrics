@@ -194,27 +194,24 @@ class AdminAjaxSystemAjaxTest extends TestCase
         $renderer = new SettingsRenderer();
         $mock = $this->getMockBuilder(SystemAjax::class)
             ->setConstructorArgs([$loggingSystem, $renderer])
-            ->onlyMethods([])
+            ->onlyMethods(['generateSystemInfoReport'])
             ->getMock();
-        // Use reflection to make the private method accessible and throw an exception
-        $reflection = new \ReflectionClass($mock);
-        $method = $reflection->getMethod('ajaxExportDiagnosticReport');
-        $method->setAccessible(true);
+        $mock->method('generateSystemInfoReport')->will($this->throwException(new \Exception('fail')));
         \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arg) use (&$called, &$payload) {
             $called = true;
             $payload = $arg;
         });
-        // Patch: force an exception by making generateSystemInfoReport throw
-        $mockReflection = new \ReflectionClass($mock);
-        $genMethod = $mockReflection->getMethod('generateSystemInfoReport');
-        $genMethod->setAccessible(true);
-        $genMethod->invokeArgs($mock, [true]); // This will throw if you patch the method to throw
+        $reflection = new \ReflectionClass($mock);
+        $method = $reflection->getMethod('ajaxExportDiagnosticReport');
+        $method->setAccessible(true);
+        $obLevel = ob_get_level();
         try {
             $method->invoke($mock);
         } catch (\Throwable $e) {
             // ignore
         }
-        if (ob_get_level() > 0) {
+        // Only clean up buffers created during this test
+        while (ob_get_level() > $obLevel) {
             ob_end_clean();
         }
         $this->assertTrue($called, 'wp_send_json_error should be called');
@@ -302,18 +299,30 @@ class AdminAjaxSystemAjaxTest extends TestCase
     }
 
     public function testAjaxAutoFixIssuesException() {
+        $called = false;
+        $payload = null;
         $loggingSystem = new LoggingSystem();
         $renderer = new SettingsRenderer();
-        $mock = $this->getMockBuilder(SystemAjax::class)
-            ->setConstructorArgs([$loggingSystem, $renderer])
-            ->onlyMethods(['get_option'])
-            ->getMock();
-        $mock->method('get_option')->will($this->throwException(new \Exception('fail')));
-        \Brain\Monkey\Functions\expect('wp_send_json_error')->once();
-        $reflection = new \ReflectionClass($mock);
+        $systemAjax = new SystemAjax($loggingSystem, $renderer);
+        \Brain\Monkey\Functions\when('get_option')->alias(function() { throw new \Exception('fail'); });
+        \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arg) use (&$called, &$payload) {
+            $called = true;
+            $payload = $arg;
+        });
+        $reflection = new \ReflectionClass($systemAjax);
         $method = $reflection->getMethod('ajaxAutoFixIssues');
         $method->setAccessible(true);
-        $method->invoke($mock);
+        try {
+            $method->invoke($systemAjax);
+        } catch (\Throwable $e) {
+            // ignore
+        }
+        $this->assertTrue($called, 'wp_send_json_error should be called');
+        $this->assertNotNull($payload, 'Payload should not be null');
+        if ($payload !== null) {
+            $this->assertIsArray($payload, 'Payload should be an array');
+            $this->assertArrayHasKey('message', $payload, 'Payload should have message key');
+        }
     }
 
     public function testAjaxRefreshSystemInfoSuccess() {
@@ -343,20 +352,17 @@ class AdminAjaxSystemAjaxTest extends TestCase
         $payload = null;
         $loggingSystem = new LoggingSystem();
         $renderer = new SettingsRenderer();
-        $mock = $this->getMockBuilder(SystemAjax::class)
-            ->setConstructorArgs([$loggingSystem, $renderer])
-            ->onlyMethods(['generateSystemInfoReport'])
-            ->getMock();
-        $mock->method('generateSystemInfoReport')->will($this->throwException(new \Exception('fail')));
+        $systemAjax = new SystemAjax($loggingSystem, $renderer);
+        \Brain\Monkey\Functions\when('get_bloginfo')->alias(function() { throw new \Exception('fail'); });
         \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arg) use (&$called, &$payload) {
             $called = true;
             $payload = $arg;
         });
-        $reflection = new \ReflectionClass($mock);
+        $reflection = new \ReflectionClass($systemAjax);
         $method = $reflection->getMethod('ajaxRefreshSystemInfo');
         $method->setAccessible(true);
         try {
-            $method->invoke($mock);
+            $method->invoke($systemAjax);
         } catch (\Throwable $e) {
             // ignore
         }

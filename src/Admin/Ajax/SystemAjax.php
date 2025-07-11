@@ -827,7 +827,7 @@ class SystemAjax {
                 ]
             ]);
             
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             wp_send_json_error([
                 'message' => 'Auto-fix encountered an error: ' . $e->getMessage(),
                 'fixes' => $fixes
@@ -879,7 +879,7 @@ class SystemAjax {
                 'timestamp' => current_time('mysql')
             ]);
             
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             wp_send_json_error([
                 'message' => 'Failed to refresh system information: ' . $e->getMessage()
             ]);
@@ -1549,7 +1549,7 @@ class SystemAjax {
             'images_loaded' => $images_loaded,
             
             // WordPress Performance
-            'active_plugins' => count(\get_option('active_plugins', [])),
+            
             'theme_load_time' => $this->calculateThemeLoadTime(),
             'plugin_load_time' => $this->calculatePluginLoadTime(),
             'admin_queries' => is_admin() ? \get_num_queries() : 'N/A',

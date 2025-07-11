@@ -67,9 +67,11 @@ class FieldMapping
     {
         $option_name = "ctm_mapping_{$form_type}_{$form_id}";
         $mapping = get_option($option_name, null);
-        
-        // Return null if no mapping exists, otherwise return the mapping array
-        return $mapping === false ? null : $mapping;
+
+        if (!is_array($mapping)) {
+            return null;
+        }
+        return $mapping;
     }
 
     /**

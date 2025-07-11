@@ -11,12 +11,8 @@ class AdminOptionsTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->initalMonkey();
-    }
-    protected function tearDown(): void
-    {
-        Monkey\tearDown();
-        parent::tearDown();
+        \Brain\Monkey\Functions\when('settings_fields')->alias(function() { echo '<!--settings_fields-->'; });
+        \Brain\Monkey\Functions\when('do_settings_sections')->alias(function() { echo '<!--do_settings_sections-->'; });
     }
     public function testCanBeConstructed()
     {
@@ -32,15 +28,13 @@ class AdminOptionsTest extends TestCase
 
     public function testRegisterSettingsPageAddsOptionsPage()
     {
-        // Brain Monkey intercepts the call, but Mockery's expect() is not satisfied due to a test environment quirk.
-        // The debug output above confirms the function is called.
-        \Brain\Monkey\Functions\when('add_options_page')->alias(function(...$args) {
-            fwrite(STDERR, "add_options_page called with: " . json_encode($args) . "\n");
-            return 123;
+        $called = false;
+        \Brain\Monkey\Functions\when('add_options_page')->alias(function(...$args) use (&$called) {
+            $called = true;
         });
         $options = new \CTM\Admin\Options();
         $options->registerSettingsPage();
-        $this->addToAssertionCount(1);
+        $this->assertTrue($called, 'add_options_page should be called');
     }
 
     public function testInitializeRegistersHandlersAndAssets()
@@ -49,7 +43,7 @@ class AdminOptionsTest extends TestCase
         $fieldMapping = new \CTM\Admin\FieldMapping();
         $options = new \CTM\Admin\Options(null, $ajaxHandlers, $fieldMapping);
         $options->initialize();
-        $this->addToAssertionCount(1);
+        $this->assertInstanceOf(Options::class, $options);
     }
 
     public function testGenerateNoticesReturnsCf7Notice()
@@ -86,9 +80,11 @@ class AdminOptionsTest extends TestCase
 
     public function testGetTabContentRoutesToGeneral()
     {
-        $renderer = new \CTM\Admin\SettingsRenderer();
-        $result = $renderer->getGeneralTabContent();
-        $this->assertIsString($result);
+        $renderer = new class extends \CTM\Admin\SettingsRenderer {
+            public function renderView(string $view, array $vars = []): void {
+                echo $view;
+            }
+        };
         $options = new \CTM\Admin\Options();
         $reflection = new \ReflectionClass($options);
         $prop = $reflection->getProperty('renderer');
@@ -97,19 +93,20 @@ class AdminOptionsTest extends TestCase
         $method = $reflection->getMethod('getTabContent');
         $method->setAccessible(true);
         $result = $method->invoke($options, 'general');
-        $this->assertIsString($result);
-        $this->assertStringContainsString('general', strtolower($result));
+        $this->assertStringContainsString('general', $result);
     }
 
     public function testGetTabContentRoutesToLogs()
     {
-        \Brain\Monkey\Functions\when('get_option')->alias(function($key) {
+        \Brain\Monkey\Functions\when('get_option')->alias(function($key, $default = null) {
             if ($key === 'ctm_api_cf7_logs' || $key === 'ctm_api_gf_logs') return [];
-            return null;
+            return $default;
         });
-        $renderer = new \CTM\Admin\SettingsRenderer();
-        $result = $renderer->getLogsTabContent();
-        $this->assertIsString($result);
+        $renderer = new class extends \CTM\Admin\SettingsRenderer {
+            public function renderView(string $view, array $vars = []): void {
+                echo $view;
+            }
+        };
         $options = new \CTM\Admin\Options();
         $reflection = new \ReflectionClass($options);
         $prop = $reflection->getProperty('renderer');
@@ -118,15 +115,16 @@ class AdminOptionsTest extends TestCase
         $method = $reflection->getMethod('getTabContent');
         $method->setAccessible(true);
         $result = $method->invoke($options, 'logs');
-        $this->assertIsString($result);
-        $this->assertStringContainsString('logs', strtolower($result));
+        $this->assertStringContainsString('logs', $result);
     }
 
     public function testGetTabContentRoutesToMapping()
     {
-        $renderer = new \CTM\Admin\SettingsRenderer();
-        $result = $renderer->getMappingTabContent();
-        $this->assertIsString($result);
+        $renderer = new class extends \CTM\Admin\SettingsRenderer {
+            public function renderView(string $view, array $vars = []): void {
+                echo $view;
+            }
+        };
         $options = new \CTM\Admin\Options();
         $reflection = new \ReflectionClass($options);
         $prop = $reflection->getProperty('renderer');
@@ -135,15 +133,16 @@ class AdminOptionsTest extends TestCase
         $method = $reflection->getMethod('getTabContent');
         $method->setAccessible(true);
         $result = $method->invoke($options, 'mapping');
-        $this->assertIsString($result);
-        $this->assertStringContainsString('mapping', strtolower($result));
+        $this->assertStringContainsString('mapping', $result);
     }
 
     public function testGetTabContentRoutesToApi()
     {
-        $renderer = new \CTM\Admin\SettingsRenderer();
-        $result = $renderer->getApiTabContent();
-        $this->assertIsString($result);
+        $renderer = new class extends \CTM\Admin\SettingsRenderer {
+            public function renderView(string $view, array $vars = []): void {
+                echo $view;
+            }
+        };
         $options = new \CTM\Admin\Options();
         $reflection = new \ReflectionClass($options);
         $prop = $reflection->getProperty('renderer');
@@ -152,15 +151,16 @@ class AdminOptionsTest extends TestCase
         $method = $reflection->getMethod('getTabContent');
         $method->setAccessible(true);
         $result = $method->invoke($options, 'api');
-        $this->assertIsString($result);
-        $this->assertStringContainsString('api', strtolower($result));
+        $this->assertStringContainsString('api', $result);
     }
 
     public function testGetTabContentRoutesToDocumentation()
     {
-        $renderer = new \CTM\Admin\SettingsRenderer();
-        $result = $renderer->getDocumentationTabContent();
-        $this->assertIsString($result);
+        $renderer = new class extends \CTM\Admin\SettingsRenderer {
+            public function renderView(string $view, array $vars = []): void {
+                echo $view;
+            }
+        };
         $options = new \CTM\Admin\Options();
         $reflection = new \ReflectionClass($options);
         $prop = $reflection->getProperty('renderer');
@@ -169,15 +169,16 @@ class AdminOptionsTest extends TestCase
         $method = $reflection->getMethod('getTabContent');
         $method->setAccessible(true);
         $result = $method->invoke($options, 'documentation');
-        $this->assertIsString($result);
-        $this->assertStringContainsString('documentation', strtolower($result)); // or another expected marker
+        $this->assertStringContainsString('documentation', $result);
     }
 
     public function testGetTabContentRoutesToDebug()
     {
-        $renderer = new \CTM\Admin\SettingsRenderer();
-        $result = $renderer->getDebugTabContent();
-        $this->assertIsString($result);
+        $renderer = new class extends \CTM\Admin\SettingsRenderer {
+            public function renderView(string $view, array $vars = []): void {
+                echo $view;
+            }
+        };
         $options = new \CTM\Admin\Options();
         $reflection = new \ReflectionClass($options);
         $prop = $reflection->getProperty('renderer');
@@ -186,16 +187,18 @@ class AdminOptionsTest extends TestCase
         $method = $reflection->getMethod('getTabContent');
         $method->setAccessible(true);
         $result = $method->invoke($options, 'debug');
-        $this->assertIsString($result);
-        $this->assertStringContainsString('debug', strtolower($result)); // or another expected marker
+        $this->assertStringContainsString('debug', $result);
     }
 
     public function testAddDashboardWidgetAddsWidget()
     {
+        $called = false;
+        \Brain\Monkey\Functions\when('wp_add_dashboard_widget')->alias(function(...$args) use (&$called) {
+            $called = true;
+        });
         $options = new \CTM\Admin\Options();
-        \Brain\Monkey\Functions\expect('wp_add_dashboard_widget')->once();
         $options->addDashboardWidget();
-        $this->addToAssertionCount(1);
+        $this->assertTrue($called, 'wp_add_dashboard_widget should be called');
     }
 
     public function testRenderDashboardWidgetOutputsHtml()
@@ -209,8 +212,9 @@ class AdminOptionsTest extends TestCase
 
     public function testGetFieldMappingReturnsNullIfNotSet()
     {
-        $options = new Options();
-        $this->assertNull($options->getFieldMapping('gf', 1));
+        $fieldMapping = new \CTM\Admin\FieldMapping();
+        $result = $fieldMapping->getFieldMapping('gf', 123);
+        $this->assertNull($result, 'getFieldMapping should return null if not set');
     }
 
     public function testSaveFieldMappingAndGetFieldMapping()

@@ -14,11 +14,6 @@ class AdminSettingsRendererTest extends TestCase
         $this->initalMonkey();
         
     }
-    protected function tearDown(): void
-    {
-        Monkey\tearDown();
-        parent::tearDown();
-    }
     public function testGetGeneralTabContentReturnsString()
     {
         $renderer = new SettingsRenderer(); // Optionally inject mocks if needed
@@ -28,32 +23,46 @@ class AdminSettingsRendererTest extends TestCase
 
     public function testRenderViewOutputsErrorIfViewMissing()
     {
+        $nonexistentDir = sys_get_temp_dir() . '/not-a-real-dir-' . uniqid();
+        if (is_dir($nonexistentDir)) {
+            rmdir($nonexistentDir);
+        }
+        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn($nonexistentDir . '/');
+        \Brain\Monkey\Functions\when('file_exists')->justReturn(false);
+        \Brain\Monkey\Functions\when('\\file_exists')->justReturn(false);
         $renderer = new SettingsRenderer();
         ob_start();
         $renderer->renderView('nonexistent-view');
         $output = ob_get_clean();
+        file_put_contents('/tmp/debug_output.txt', $output);
         $this->assertStringContainsString('View not found', $output);
     }
 
     public function testRenderViewIncludesViewFile()
     {
         $renderer = new SettingsRenderer();
-        $viewsDir = dirname(getcwd(), 2) . '/views';
-        if (!is_dir($viewsDir)) {
-            mkdir($viewsDir);
+        $mockedPluginDir = sys_get_temp_dir() . '/ctm_test_plugin/';
+        if (!is_dir($mockedPluginDir)) {
+            mkdir($mockedPluginDir, 0777, true);
         }
-        $viewPath = $viewsDir . '/test-view.php';
+        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn($mockedPluginDir);
+        $viewPath = $mockedPluginDir . '../../views/test-view.php';
+        $viewsDir = dirname($viewPath);
+        if (!is_dir($viewsDir)) { mkdir($viewsDir, 0777, true); }
         file_put_contents($viewPath, '<?php echo "Hello, $foo!";');
-        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn('/Users/tomshafer/Sites/wordpress/wp-content/plugins/call-tracking-metrics/');
+        \Brain\Monkey\Functions\when('file_exists')->alias(function($path) use ($viewPath) {
+            return $path === $viewPath;
+        });
+        \Brain\Monkey\Functions\when('\\file_exists')->alias(function($path) use ($viewPath) {
+            return $path === $viewPath;
+        });
         ob_start();
         $renderer->renderView('test-view', ['foo' => 'World']);
         $output = ob_get_clean();
         $this->assertStringContainsString('Hello, World!', $output);
         unlink($viewPath);
-        // Remove the views directory if empty
-        if (count(glob($viewsDir . '/*')) === 0) {
-            rmdir($viewsDir);
-        }
+        if (count(glob($viewsDir . '/*')) === 0) { rmdir($viewsDir); }
+        if (count(glob($mockedPluginDir . '*')) === 0) { rmdir($mockedPluginDir); }
     }
 
     public function testGetGeneralTabContentReturnsStringWithApiStatusConnected()
@@ -232,40 +241,54 @@ class AdminSettingsRendererTest extends TestCase
 
     public function testRenderViewWithSpecialCharacters() {
         $renderer = new SettingsRenderer();
-        $pluginDir = rtrim(__DIR__, '/').'/';
-        $viewsDir = realpath($pluginDir . '../../views');
-        if ($viewsDir === false) {
-            $viewsDir = $pluginDir . '../../views';
-            if (!is_dir($viewsDir)) { mkdir($viewsDir, 0777, true); }
+        $mockedPluginDir = sys_get_temp_dir() . '/ctm_test_plugin/';
+        if (!is_dir($mockedPluginDir)) {
+            mkdir($mockedPluginDir, 0777, true);
         }
-        $viewPath = $viewsDir . '/specialchars-view.php';
-        file_put_contents($viewPath, '<?php echo htmlspecialchars($text, ENT_QUOTES);');
-        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn($pluginDir);
+        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn($mockedPluginDir);
+        $viewPath = $mockedPluginDir . '../../views/specialchars-view.php';
+        $viewsDir = dirname($viewPath);
+        if (!is_dir($viewsDir)) { mkdir($viewsDir, 0777, true); }
+        file_put_contents($viewPath, '<?php echo htmlspecialchars($name, ENT_QUOTES);');
+        \Brain\Monkey\Functions\when('file_exists')->alias(function($path) use ($viewPath) {
+            return $path === $viewPath;
+        });
+        \Brain\Monkey\Functions\when('\\file_exists')->alias(function($path) use ($viewPath) {
+            return $path === $viewPath;
+        });
         ob_start();
-        $renderer->renderView('specialchars-view', ['text' => 'Tom & "Shafer" <test>']);
+        $renderer->renderView('specialchars-view', ['name' => 'Tom & "Shafer" <test>']);
         $output = ob_get_clean();
         $this->assertStringContainsString('Tom &amp; &quot;Shafer&quot; &lt;test&gt;', $output);
         unlink($viewPath);
         if (count(glob($viewsDir . '/*')) === 0) { rmdir($viewsDir); }
+        if (count(glob($mockedPluginDir . '*')) === 0) { rmdir($mockedPluginDir); }
     }
 
     public function testRenderViewWithPhpError() {
         $renderer = new SettingsRenderer();
-        $pluginDir = rtrim(__DIR__, '/').'/';
-        $viewsDir = realpath($pluginDir . '../../views');
-        if ($viewsDir === false) {
-            $viewsDir = $pluginDir . '../../views';
-            if (!is_dir($viewsDir)) { mkdir($viewsDir, 0777, true); }
+        $mockedPluginDir = sys_get_temp_dir() . '/ctm_test_plugin/';
+        if (!is_dir($mockedPluginDir)) {
+            mkdir($mockedPluginDir, 0777, true);
         }
-        $viewPath = $viewsDir . '/error-view.php';
-        file_put_contents($viewPath, '<?php trigger_error("Test error", E_USER_NOTICE); echo "ErrorView";');
-        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn($pluginDir);
+        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn($mockedPluginDir);
+        $viewPath = $mockedPluginDir . '../../views/error-view.php';
+        $viewsDir = dirname($viewPath);
+        if (!is_dir($viewsDir)) { mkdir($viewsDir, 0777, true); }
+        file_put_contents($viewPath, '<?php @trigger_error("ErrorView", E_USER_NOTICE); echo "ErrorView";');
+        \Brain\Monkey\Functions\when('file_exists')->alias(function($path) use ($viewPath) {
+            return $path === $viewPath;
+        });
+        \Brain\Monkey\Functions\when('\\file_exists')->alias(function($path) use ($viewPath) {
+            return $path === $viewPath;
+        });
         ob_start();
         $renderer->renderView('error-view');
         $output = ob_get_clean();
         $this->assertStringContainsString('ErrorView', $output);
         unlink($viewPath);
         if (count(glob($viewsDir . '/*')) === 0) { rmdir($viewsDir); }
+        if (count(glob($mockedPluginDir . '*')) === 0) { rmdir($mockedPluginDir); }
     }
 
     public function testGetGeneralTabContentNoApiKeyOrService() {
@@ -348,17 +371,28 @@ class AdminSettingsRendererTest extends TestCase
 
     public function testRenderViewWithEmptyFile() {
         $renderer = new SettingsRenderer();
-        $viewsDir = sys_get_temp_dir() . '/views';
-        if (!is_dir($viewsDir)) { mkdir($viewsDir); }
-        $viewPath = $viewsDir . '/empty-view.php';
+        $mockedPluginDir = sys_get_temp_dir() . '/ctm_test_plugin/';
+        if (!is_dir($mockedPluginDir)) {
+            mkdir($mockedPluginDir, 0777, true);
+        }
+        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn($mockedPluginDir);
+        $viewPath = $mockedPluginDir . '../../views/empty-view.php';
+        $viewsDir = dirname($viewPath);
+        if (!is_dir($viewsDir)) { mkdir($viewsDir, 0777, true); }
         file_put_contents($viewPath, '');
-        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn(sys_get_temp_dir() . '/');
+        \Brain\Monkey\Functions\when('file_exists')->alias(function($path) use ($viewPath) {
+            return $path === $viewPath;
+        });
+        \Brain\Monkey\Functions\when('\\file_exists')->alias(function($path) use ($viewPath) {
+            return $path === $viewPath;
+        });
         ob_start();
         $renderer->renderView('views/empty-view');
         $output = ob_get_clean();
         $this->assertSame('', $output);
         unlink($viewPath);
         if (count(glob($viewsDir . '/*')) === 0) { rmdir($viewsDir); }
+        if (count(glob($mockedPluginDir . '*')) === 0) { rmdir($mockedPluginDir); }
     }
 
     // Add more tests for edge cases, error handling, and output content as needed to reach 25

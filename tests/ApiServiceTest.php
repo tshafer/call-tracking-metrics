@@ -12,35 +12,21 @@ namespace CTM\Tests;
 use PHPUnit\Framework\TestCase;
 use CTM\Service\ApiService;
 use Brain\Monkey;
+use CTM\Tests\Traits\MonkeyTrait;
 
 class ApiServiceTest extends TestCase
 {
+    use MonkeyTrait;
     protected ApiService $apiService;
 
     protected function setUp(): void
     {
         parent::setUp();
-        Monkey\setUp();
+        $this->initalMonkey();
         $this->apiService = new ApiService('https://dummy-ctm-api.test');
 
-        // Mock wp_remote_request to simulate API failure by default
-        \Brain\Monkey\Functions\when('wp_remote_request')->justReturn(['response' => ['code' => 401], 'body' => 'Unauthorized']);
-        \Brain\Monkey\Functions\when('wp_remote_retrieve_body')->justReturn('Unauthorized');
-        \Brain\Monkey\Functions\when('wp_remote_retrieve_response_code')->justReturn(401);
-        // Mock get_option to return null or dummy values as needed
-        \Brain\Monkey\Functions\when('get_option')->alias(function($key, $default = null) {
-            if ($key === 'some_option') return 'some_value';
-            return $default;
-        });
-        // Mock update_option to always return true
-        \Brain\Monkey\Functions\when('update_option')->justReturn(true);
     }
 
-    protected function tearDown(): void
-    {
-        Monkey\tearDown();
-        parent::tearDown();
-    }
 
     public function testGetAccountInfoReturnsNullOnFailure()
     {
@@ -50,6 +36,9 @@ class ApiServiceTest extends TestCase
 
     public function testSubmitFormReactorReturnsNullOnFailure()
     {
+        \Brain\Monkey\Functions\when('wp_remote_request')->alias(function() {
+            throw new \Exception('Simulated failure');
+        });
         $formData = ['test' => 'data'];
         $result = $this->apiService->submitFormReactor($formData, 'invalid', 'invalid');
         $this->assertNull($result, 'Should return null for failed submission');
