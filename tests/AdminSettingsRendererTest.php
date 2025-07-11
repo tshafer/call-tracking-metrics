@@ -8,11 +8,42 @@ class AdminSettingsRendererTest extends TestCase
 {
     use MonkeyTrait;
 
+    protected $tempPluginDir;
+    protected $tempViewsDir;
+
     protected function setUp(): void
     {
         parent::setUp();
+        \Brain\Monkey\setUp();
         $this->initalMonkey();
-        
+        $this->tempPluginDir = sys_get_temp_dir() . '/ctm_test_plugin/';
+        $this->tempViewsDir = $this->tempPluginDir . '../../views/';
+    }
+
+    protected function tearDown(): void
+    {
+        \Brain\Monkey\tearDown();
+        \Mockery::close();
+        parent::tearDown();
+    }
+
+    protected function createDummyViews(array $views = ['general-tab.php', 'notice-cf7.php', 'notice-gf.php']) {
+        if (!is_dir($this->tempViewsDir)) {
+            mkdir($this->tempViewsDir, 0777, true);
+        }
+        foreach ($views as $view) {
+            file_put_contents($this->tempViewsDir . $view, '<?php // Dummy file for tests');
+        }
+    }
+
+    protected function cleanupDummyViews(array $views = ['general-tab.php', 'notice-cf7.php', 'notice-gf.php']) {
+        foreach ($views as $view) {
+            $file = $this->tempViewsDir . $view;
+            if (file_exists($file)) unlink($file);
+        }
+        if (is_dir($this->tempViewsDir) && count(glob($this->tempViewsDir . '/*')) === 0) {
+            rmdir($this->tempViewsDir);
+        }
     }
     public function testGetGeneralTabContentReturnsString()
     {
@@ -76,11 +107,13 @@ class AdminSettingsRendererTest extends TestCase
             if ($class === 'WPCF7_ContactForm' || $class === 'GFAPI') return false;
             return false;
         });
-        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn(sys_get_temp_dir() . '/');
+        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn($this->tempPluginDir);
+        $this->createDummyViews();
         $renderer = new SettingsRenderer();
         ob_start();
         $result = $renderer->getGeneralTabContent();
         ob_end_clean();
+        $this->cleanupDummyViews();
         $this->assertIsString($result);
     }
 
@@ -88,22 +121,26 @@ class AdminSettingsRendererTest extends TestCase
     {
         \Brain\Monkey\Functions\when('get_option')->justReturn(null);
         \Brain\Monkey\Functions\when('class_exists')->justReturn(false);
-        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn(sys_get_temp_dir() . '/');
+        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn($this->tempPluginDir);
+        $this->createDummyViews();
         $renderer = new SettingsRenderer();
         ob_start();
         $result = $renderer->getGeneralTabContent();
         ob_end_clean();
+        $this->cleanupDummyViews();
         $this->assertIsString($result);
     }
 
     public function testGetLogsTabContentReturnsStringWithNoLogs()
     {
         \Brain\Monkey\Functions\when('get_option')->justReturn([]);
-        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn(sys_get_temp_dir() . '/');
+        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn($this->tempPluginDir);
+        $this->createDummyViews(['logs-tab.php']);
         $renderer = new SettingsRenderer();
         ob_start();
         $result = $renderer->getLogsTabContent();
         ob_end_clean();
+        $this->cleanupDummyViews(['logs-tab.php']);
         $this->assertIsString($result);
     }
 
@@ -114,22 +151,26 @@ class AdminSettingsRendererTest extends TestCase
             if ($key === 'ctm_api_gf_logs') return [['id'=>2]];
             return [];
         });
-        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn(sys_get_temp_dir() . '/');
+        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn($this->tempPluginDir);
+        $this->createDummyViews(['logs-tab.php']);
         $renderer = new SettingsRenderer();
         ob_start();
         $result = $renderer->getLogsTabContent();
         ob_end_clean();
+        $this->cleanupDummyViews(['logs-tab.php']);
         $this->assertIsString($result);
     }
 
     public function testGetMappingTabContentReturnsStringNoPlugins()
     {
         \Brain\Monkey\Functions\when('class_exists')->justReturn(false);
-        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn(sys_get_temp_dir() . '/');
+        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn($this->tempPluginDir);
+        $this->createDummyViews(['mapping-tab.php']);
         $renderer = new SettingsRenderer();
         ob_start();
         $result = $renderer->getMappingTabContent();
         ob_end_clean();
+        $this->cleanupDummyViews(['mapping-tab.php']);
         $this->assertIsString($result);
     }
 
@@ -139,15 +180,16 @@ class AdminSettingsRendererTest extends TestCase
             if ($class === 'WPCF7_ContactForm') return true;
             return false;
         });
-        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn(sys_get_temp_dir() . '/');
-        // Mock WPCF7_ContactForm::find to return a fake form
+        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn($this->tempPluginDir);
         if (!class_exists('WPCF7_ContactForm')) {
             eval('class WPCF7_ContactForm { public static function find() { $f = new self; return [$f]; } public function id() { return 1; } public function title() { return "CF7"; } }');
         }
+        $this->createDummyViews(['mapping-tab.php']);
         $renderer = new SettingsRenderer();
         ob_start();
         $result = $renderer->getMappingTabContent();
         ob_end_clean();
+        $this->cleanupDummyViews(['mapping-tab.php']);
         $this->assertIsString($result);
     }
 
@@ -157,15 +199,16 @@ class AdminSettingsRendererTest extends TestCase
             if ($class === 'GFAPI') return true;
             return false;
         });
-        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn(sys_get_temp_dir() . '/');
-        // Mock GFAPI::get_forms to return a fake form
+        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn($this->tempPluginDir);
         if (!class_exists('GFAPI')) {
             eval('class GFAPI { public static function get_forms() { return [["id"=>2,"title"=>"GF"]]; } }');
         }
+        $this->createDummyViews(['mapping-tab.php']);
         $renderer = new SettingsRenderer();
         ob_start();
         $result = $renderer->getMappingTabContent();
         ob_end_clean();
+        $this->cleanupDummyViews(['mapping-tab.php']);
         $this->assertIsString($result);
     }
 
@@ -176,66 +219,62 @@ class AdminSettingsRendererTest extends TestCase
             if ($key === 'ctm_api_secret') return 'secret';
             return null;
         });
-        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn(sys_get_temp_dir() . '/');
+        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn($this->tempPluginDir);
+        $this->createDummyViews(['api-tab.php']);
         $renderer = new SettingsRenderer();
         ob_start();
         $result = $renderer->getApiTabContent();
         ob_end_clean();
+        $this->cleanupDummyViews(['api-tab.php']);
         $this->assertIsString($result);
     }
 
     public function testGetApiTabContentReturnsStringNotConnected()
     {
         \Brain\Monkey\Functions\when('get_option')->justReturn(null);
-        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn(sys_get_temp_dir() . '/');
+        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn($this->tempPluginDir);
+        $this->createDummyViews(['api-tab.php']);
         $renderer = new SettingsRenderer();
         ob_start();
         $result = $renderer->getApiTabContent();
         ob_end_clean();
+        $this->cleanupDummyViews(['api-tab.php']);
         $this->assertIsString($result);
     }
 
     public function testGetDocumentationTabContentReturnsString()
     {
-        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn(sys_get_temp_dir() . '/');
+        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn($this->tempPluginDir);
+        $this->createDummyViews(['documentation-tab.php']);
         $renderer = new SettingsRenderer();
         ob_start();
         $result = $renderer->getDocumentationTabContent();
         ob_end_clean();
+        $this->cleanupDummyViews(['documentation-tab.php']);
         $this->assertIsString($result);
     }
 
     public function testGetDebugTabContentReturnsStringDebugEnabled()
     {
-        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn(sys_get_temp_dir() . '/');
-        \Brain\Monkey\Functions\when('get_option')->alias(function($key, $default = null) {
-            if ($key === 'ctm_log_retention_days') return 7;
-            if ($key === 'ctm_log_auto_cleanup') return true;
-            if ($key === 'ctm_log_email_notifications') return true;
-            if ($key === 'ctm_log_notification_email') return 'test@example.com';
-            return $default;
-        });
+        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn($this->tempPluginDir);
+        $this->createDummyViews(['debug-tab.php']);
         $renderer = new SettingsRenderer();
         ob_start();
         $result = $renderer->getDebugTabContent();
         ob_end_clean();
+        $this->cleanupDummyViews(['debug-tab.php']);
         $this->assertIsString($result);
     }
 
     public function testGetDebugTabContentReturnsStringDebugDisabled()
     {
-        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn(sys_get_temp_dir() . '/');
-        \Brain\Monkey\Functions\when('get_option')->alias(function($key, $default = null) {
-            if ($key === 'ctm_log_retention_days') return 7;
-            if ($key === 'ctm_log_auto_cleanup') return false;
-            if ($key === 'ctm_log_email_notifications') return false;
-            if ($key === 'ctm_log_notification_email') return '';
-            return $default;
-        });
+        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn($this->tempPluginDir);
+        $this->createDummyViews(['debug-tab.php']);
         $renderer = new SettingsRenderer();
         ob_start();
         $result = $renderer->getDebugTabContent();
         ob_end_clean();
+        $this->cleanupDummyViews(['debug-tab.php']);
         $this->assertIsString($result);
     }
 

@@ -176,5 +176,46 @@ trait MonkeyTrait
             public $db_host = 'localhost';
             public $db_name = 'wordpress';
         };
+
+        $mock('file_exists', fn() => \Brain\Monkey\Functions\when('file_exists')->alias(function($path) {
+            if (in_array($path, ['/tmpwp-config.php', '/tmp/functions.php', '/tmp/style.css'])) return true;
+            return false;
+        }));
+        $mock('file_get_contents', fn() => \Brain\Monkey\Functions\when('file_get_contents')->alias(function($path) {
+            if ($path === '/tmpwp-config.php') return '<?php // dummy wp-config';
+            if ($path === '/tmp/functions.php') return '<?php // dummy functions';
+            if ($path === '/tmp/style.css') return 'body{}';
+            return '';
+        }));
+        $mock('filesize', fn() => \Brain\Monkey\Functions\when('filesize')->alias(function($path) {
+            if ($path === '/tmp/style.css') return 10;
+            return 0;
+        }));
+        $mock('stat', fn() => \Brain\Monkey\Functions\when('stat')->alias(function($path) {
+            if (in_array($path, ['/tmpwp-config.php', '/tmp/functions.php', '/tmp/style.css'])) {
+                return [
+                    'dev' => 0, 'ino' => 0, 'mode' => 33206, 'nlink' => 1, 'uid' => 0, 'gid' => 0, 'rdev' => 0, 'size' => 100, 'atime' => time(), 'mtime' => time(), 'ctime' => time(), 'blksize' => 4096, 'blocks' => 1
+                ];
+            }
+            return false;
+        }));
+        $mock('fileperms', fn() => \Brain\Monkey\Functions\when('fileperms')->alias(function($path) {
+            if (in_array($path, ['/tmpwp-config.php', '/tmp/functions.php', '/tmp/style.css'])) {
+                return 33206;
+            }
+            return false;
+        }));
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->initalMonkey();
+    }
+
+    protected function tearDown(): void
+    {
+        \Mockery::close();
+        parent::tearDown();
     }
 }

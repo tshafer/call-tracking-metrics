@@ -9,14 +9,16 @@ class AdminAjaxHandlersTest extends TestCase
     use MonkeyTrait;
     protected function setUp(): void
     {
+
         parent::setUp();
-        Monkey\setUp();
+        \Brain\Monkey\setUp();
         $this->initalMonkey();
     
     }
     protected function tearDown(): void
     {
-        Monkey\tearDown();
+        \Brain\Monkey\tearDown();
+        \Mockery::close();
         parent::tearDown();
     }
     public function testCanBeConstructed()

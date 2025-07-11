@@ -10,13 +10,14 @@ class AdminAjaxLogAjaxTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Monkey\setUp();
+        \Brain\Monkey\setUp();
         $this->initalMonkey();
         
     }
     protected function tearDown(): void
     {
-        Monkey\tearDown();
+        \Brain\Monkey\tearDown();
+        \Mockery::close();
         parent::tearDown();
     }
     public function testCanBeConstructed()
@@ -35,8 +36,19 @@ class AdminAjaxLogAjaxTest extends TestCase
         $logAjax = new LogAjax($loggingSystem, $renderer);
         $_POST['nonce'] = 'abc';
         $_POST['log_date'] = '';
-        $_POST['to'] = 'admin@example.com';
+        $_POST['email_to'] = 'admin@example.com';
         $called = [];
+        \Brain\Monkey\Functions\when('get_option')->alias(function($key, $default = []) {
+            if ($key === 'admin_email') return 'admin@example.com';
+            return [
+                [
+                    'type'=>'info',
+                    'timestamp'=>'2024-01-01 00:00:00',
+                    'message'=>'Test',
+                    'context'=>['foo'=>'bar']
+                ]
+            ];
+        });
         \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arr) use (&$called) {
             $called = $arr;
         });
@@ -60,8 +72,9 @@ class AdminAjaxLogAjaxTest extends TestCase
         $logAjax = new LogAjax($loggingSystem, $renderer);
         $_POST['nonce'] = 'abc';
         $_POST['log_date'] = '2024-01-01';
-        $_POST['to'] = 'invalid-email';
+        $_POST['email_to'] = 'invalid-email';
         \Brain\Monkey\Functions\when('get_option')->alias(function($key, $default = []) {
+            if ($key === 'admin_email') return 'admin@example.com';
             return [
                 [
                     'type'=>'info',
@@ -90,9 +103,10 @@ class AdminAjaxLogAjaxTest extends TestCase
 
         $_POST['nonce'] = 'abc';
         $_POST['log_date'] = '2024-01-01';
-        $_POST['to'] = 'admin@example.com';
+        $_POST['email_to'] = 'admin@example.com';
 
         \Brain\Monkey\Functions\when('get_option')->alias(function($key, $default = []) {
+            if ($key === 'admin_email') return 'admin@example.com';
             return [
                 [
                     'type'=>'info',
@@ -123,9 +137,10 @@ class AdminAjaxLogAjaxTest extends TestCase
 
         $_POST['nonce'] = 'abc';
         $_POST['log_date'] = '2024-01-01';
-        $_POST['to'] = 'admin@example.com';
+        $_POST['email_to'] = 'admin@example.com';
 
         \Brain\Monkey\Functions\when('get_option')->alias(function($key, $default = []) {
+            if ($key === 'admin_email') return 'admin@example.com';
             return [
                 [
                     'type'=>'info',

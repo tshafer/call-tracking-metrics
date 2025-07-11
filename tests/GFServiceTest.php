@@ -13,6 +13,8 @@ class GFServiceTest extends TestCase
 
     protected function setUp(): void
     {
+        parent::setUp();
+        \Brain\Monkey\setUp();
         $this->initalMonkey();
         $this->gfService = new GFService();
         \Brain\Monkey\Functions\when('get_option')->alias(function($key, $default = null) {
@@ -25,8 +27,14 @@ class GFServiceTest extends TestCase
             return 'test';
         });
         if (!class_exists('GFAPI')) {
-            eval('class GFAPI { public static function get_form($id) { return ["id"=>$id, "title"=>"Test Form", "fields"=>[["id"=>1, "label"=>"Field 1", "type"=>"text"]]]; } }');
+            eval('class GFAPI { public static function get_form($id) { return ["id"=>$id, "title"=>"Test Form", "fields"=>[(object)["id"=>1, "label"=>"Field 1", "type"=>"text"]]]; } }');
         }
+    }
+    protected function tearDown(): void
+    {
+        \Brain\Monkey\tearDown();
+        \Mockery::close();
+        parent::tearDown();
     }
 
     public function testProcessSubmissionReturnsNullIfNoGFAPI()
@@ -43,7 +51,16 @@ class GFServiceTest extends TestCase
         }
         // Provide a minimal valid entry and form (mocked)
         $entry = ['id' => 1, 'date_created' => '2024-01-01 00:00:00'];
-        $form = ['id' => 1, 'title' => 'Test Form'];
+        $form = [
+            'id' => 1,
+            'title' => 'Test Form',
+            'fields' => [(object)[
+                'id' => 1,
+                'label' => 'Field 1',
+                'type' => 'text',
+                'adminLabel' => null
+            ]]
+        ];
         $result = $this->gfService->processSubmission($entry, $form);
         $this->assertIsArray($result, 'Should return an array for valid entry');
     }

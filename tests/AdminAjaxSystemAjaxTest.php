@@ -15,13 +15,15 @@ class AdminAjaxSystemAjaxTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->initalMonkey();
         parent::setUp();
-      
+        \Brain\Monkey\setUp();
+        $this->initalMonkey();
+        \Brain\Monkey\Functions\when('sanitize_textarea_field')->alias(function($v){return $v;});
     }
     protected function tearDown(): void
     {
-
+        \Brain\Monkey\tearDown();
+        \Mockery::close();
         parent::tearDown();
     }
 

@@ -9,7 +9,7 @@ class AdminAjaxFormAjaxTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Monkey\setUp();
+        \Brain\Monkey\setUp();
         $this->initalMonkey();
         // Remove global justReturn mocks for functions with expectations
 
@@ -31,7 +31,8 @@ class AdminAjaxFormAjaxTest extends TestCase
     }
     protected function tearDown(): void
     {
-        Monkey\tearDown();
+        \Brain\Monkey\tearDown();
+        \Mockery::close();
         parent::tearDown();
     }
     public function testCanBeConstructed()

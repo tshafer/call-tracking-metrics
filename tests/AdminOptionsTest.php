@@ -11,8 +11,16 @@ class AdminOptionsTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        \Brain\Monkey\setUp();
+        $this->initalMonkey();
         \Brain\Monkey\Functions\when('settings_fields')->alias(function() { echo '<!--settings_fields-->'; });
         \Brain\Monkey\Functions\when('do_settings_sections')->alias(function() { echo '<!--do_settings_sections-->'; });
+    }
+    protected function tearDown(): void
+    {
+        \Brain\Monkey\tearDown();
+        \Mockery::close();
+        parent::tearDown();
     }
     public function testCanBeConstructed()
     {
@@ -32,7 +40,7 @@ class AdminOptionsTest extends TestCase
         \Brain\Monkey\Functions\when('add_options_page')->alias(function(...$args) use (&$called) {
             $called = true;
         });
-        $options = new \CTM\Admin\Options();
+        $options = new Options();
         $options->registerSettingsPage();
         $this->assertTrue($called, 'add_options_page should be called');
     }
@@ -41,7 +49,7 @@ class AdminOptionsTest extends TestCase
     {
         $ajaxHandlers = new \CTM\Admin\AjaxHandlers();
         $fieldMapping = new \CTM\Admin\FieldMapping();
-        $options = new \CTM\Admin\Options(null, $ajaxHandlers, $fieldMapping);
+        $options = new Options(null, $ajaxHandlers, $fieldMapping);
         $options->initialize();
         $this->assertInstanceOf(Options::class, $options);
     }
@@ -51,7 +59,7 @@ class AdminOptionsTest extends TestCase
         \Brain\Monkey\Functions\when('class_exists')->alias(function($class) { return $class === 'GFAPI'; });
         \Brain\Monkey\Functions\when('get_option')->alias(function($key) { return $key === 'ctm_cf7_notice_dismissed' ? false : true; });
         $renderer = new \CTM\Admin\SettingsRenderer();
-        $options = new \CTM\Admin\Options();
+        $options = new Options();
         $reflection = new \ReflectionClass($options);
         $prop = $reflection->getProperty('renderer');
         $prop->setAccessible(true);
@@ -67,7 +75,7 @@ class AdminOptionsTest extends TestCase
         \Brain\Monkey\Functions\when('class_exists')->alias(function($class) { return $class === 'WPCF7_ContactForm'; });
         \Brain\Monkey\Functions\when('get_option')->alias(function($key) { return $key === 'ctm_gf_notice_dismissed' ? false : true; });
         $renderer = new \CTM\Admin\SettingsRenderer();
-        $options = new \CTM\Admin\Options();
+        $options = new Options();
         $reflection = new \ReflectionClass($options);
         $prop = $reflection->getProperty('renderer');
         $prop->setAccessible(true);
@@ -85,7 +93,7 @@ class AdminOptionsTest extends TestCase
                 echo $view;
             }
         };
-        $options = new \CTM\Admin\Options();
+        $options = new Options();
         $reflection = new \ReflectionClass($options);
         $prop = $reflection->getProperty('renderer');
         $prop->setAccessible(true);
@@ -107,7 +115,7 @@ class AdminOptionsTest extends TestCase
                 echo $view;
             }
         };
-        $options = new \CTM\Admin\Options();
+        $options = new Options();
         $reflection = new \ReflectionClass($options);
         $prop = $reflection->getProperty('renderer');
         $prop->setAccessible(true);
@@ -125,7 +133,7 @@ class AdminOptionsTest extends TestCase
                 echo $view;
             }
         };
-        $options = new \CTM\Admin\Options();
+        $options = new Options();
         $reflection = new \ReflectionClass($options);
         $prop = $reflection->getProperty('renderer');
         $prop->setAccessible(true);
@@ -143,7 +151,7 @@ class AdminOptionsTest extends TestCase
                 echo $view;
             }
         };
-        $options = new \CTM\Admin\Options();
+        $options = new Options();
         $reflection = new \ReflectionClass($options);
         $prop = $reflection->getProperty('renderer');
         $prop->setAccessible(true);
@@ -161,7 +169,7 @@ class AdminOptionsTest extends TestCase
                 echo $view;
             }
         };
-        $options = new \CTM\Admin\Options();
+        $options = new Options();
         $reflection = new \ReflectionClass($options);
         $prop = $reflection->getProperty('renderer');
         $prop->setAccessible(true);
@@ -179,7 +187,7 @@ class AdminOptionsTest extends TestCase
                 echo $view;
             }
         };
-        $options = new \CTM\Admin\Options();
+        $options = new Options();
         $reflection = new \ReflectionClass($options);
         $prop = $reflection->getProperty('renderer');
         $prop->setAccessible(true);
@@ -196,7 +204,7 @@ class AdminOptionsTest extends TestCase
         \Brain\Monkey\Functions\when('wp_add_dashboard_widget')->alias(function(...$args) use (&$called) {
             $called = true;
         });
-        $options = new \CTM\Admin\Options();
+        $options = new Options();
         $options->addDashboardWidget();
         $this->assertTrue($called, 'wp_add_dashboard_widget should be called');
     }
@@ -223,7 +231,7 @@ class AdminOptionsTest extends TestCase
             if ($key === 'ctm_mapping_cf7_1') return ['foo' => 'bar'];
             return null;
         });
-        $options = new \CTM\Admin\Options();
+        $options = new Options();
         $options->saveFieldMapping('cf7', 1, ['foo' => 'bar']);
         $result = $options->getFieldMapping('cf7', 1);
         $this->assertIsArray($result);

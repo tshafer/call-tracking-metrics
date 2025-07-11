@@ -11,7 +11,15 @@ class CF7ServiceTest extends TestCase
     use MonkeyTrait;
     protected function setUp(): void
     {
+        parent::setUp();
+        \Brain\Monkey\setUp();
         $this->initalMonkey();
+    }
+    protected function tearDown(): void
+    {
+        \Brain\Monkey\tearDown();
+        \Mockery::close();
+        parent::tearDown();
     }
 
     public function testProcessSubmissionReturnsNullIfNoCF7()

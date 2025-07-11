@@ -22,9 +22,16 @@ class ApiServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        \Brain\Monkey\setUp();
         $this->initalMonkey();
         $this->apiService = new ApiService('https://dummy-ctm-api.test');
 
+    }
+    protected function tearDown(): void
+    {
+        \Brain\Monkey\tearDown();
+        \Mockery::close();
+        parent::tearDown();
     }
 
 

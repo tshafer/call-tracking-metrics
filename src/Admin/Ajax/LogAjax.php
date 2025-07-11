@@ -138,6 +138,9 @@ class LogAjax {
             wp_send_json_error(['message' => 'No logs found for this date.']);
         }
         $recipient = $to ?: get_option('admin_email');
+        if (!is_string($recipient)) {
+            $recipient = '';
+        }
         if (!is_email($recipient)) {
             wp_send_json_error(['message' => 'Invalid email address.']);
         }
