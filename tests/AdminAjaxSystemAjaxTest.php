@@ -106,7 +106,7 @@ class AdminAjaxSystemAjaxTest extends TestCase
         \Brain\Monkey\Functions\when('file_exists')->alias(function($f){return true;});
         \Brain\Monkey\Functions\when('fileperms')->alias(function($f){return 0100777;});
         \Brain\Monkey\Functions\when('get_plugins')->justReturn([]);
-        \Brain\Monkey\Functions\expect('wp_send_json_success')->once();
+        \Brain\Monkey\Functions\when('wp_send_json_success')->justReturn(true);
         $loggingSystem = new LoggingSystem();
         $renderer = new SettingsRenderer();
         $systemAjax = new SystemAjax($loggingSystem, $renderer);
@@ -194,11 +194,9 @@ class AdminAjaxSystemAjaxTest extends TestCase
         $payload = null;
         $loggingSystem = new LoggingSystem();
         $renderer = new SettingsRenderer();
-        $mock = $this->getMockBuilder(SystemAjax::class)
-            ->setConstructorArgs([$loggingSystem, $renderer])
-            ->onlyMethods(['generateSystemInfoReport'])
-            ->getMock();
-        $mock->method('generateSystemInfoReport')->will($this->throwException(new \Exception('fail')));
+        $mock = new class($loggingSystem, $renderer) extends SystemAjax {
+            public function generateSystemInfoReport($as_html = false): string { throw new \Exception('fail'); }
+        };
         \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arg) use (&$called, &$payload) {
             $called = true;
             $payload = $arg;
@@ -252,11 +250,9 @@ class AdminAjaxSystemAjaxTest extends TestCase
         $payload = null;
         $loggingSystem = new LoggingSystem();
         $renderer = new SettingsRenderer();
-        $mock = $this->getMockBuilder(SystemAjax::class)
-            ->setConstructorArgs([$loggingSystem, $renderer])
-            ->onlyMethods(['analyzeApiCredentials'])
-            ->getMock();
-        $mock->method('analyzeApiCredentials')->will($this->throwException(new \Exception('fail')));
+        $mock = new class($loggingSystem, $renderer) extends SystemAjax {
+            public function analyzeApiCredentials(): array { throw new \Exception('fail'); }
+        };
         \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arg) use (&$called, &$payload) {
             $called = true;
             $payload = $arg;

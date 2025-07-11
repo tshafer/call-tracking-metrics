@@ -209,8 +209,8 @@ class AdminAjaxFormAjaxTest extends TestCase
         $_POST['nonce'] = 'dummy';
         $called = null;
         \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arg) use (&$called) { $called = $arg; });
-        \Brain\Monkey\Functions\expect('update_option')->zeroOrMoreTimes();
-        \Brain\Monkey\Functions\expect('wp_send_json_success')->zeroOrMoreTimes();
+        \Brain\Monkey\Functions\when('update_option')->justReturn(true);
+        \Brain\Monkey\Functions\when('wp_send_json_success')->justReturn(true);
         $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
         $formAjax->ajaxSaveMapping();
         $this->assertEquals(['message' => 'Invalid mapping data.'], $called);

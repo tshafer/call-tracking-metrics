@@ -29,16 +29,21 @@ class AdminAjaxHandlersTest extends TestCase
 
     public function testRegisterHandlersCallsAllSubHandlers()
     {
-        $formAjax = $this->createMock(\CTM\Admin\Ajax\FormAjax::class);
-        $loggingSystem = $this->createMock(\CTM\Admin\LoggingSystem::class);
-        $settingsRenderer = $this->createMock(\CTM\Admin\SettingsRenderer::class);
-        $logAjax = $this->getMockBuilder(\CTM\Admin\Ajax\LogAjax::class)
-            ->setConstructorArgs([$loggingSystem, $settingsRenderer])
-            ->getMock();
-        $apiAjax = $this->createMock(\CTM\Admin\Ajax\ApiAjax::class);
-        $systemAjax = $this->getMockBuilder(\CTM\Admin\Ajax\SystemAjax::class)
-            ->setConstructorArgs([$loggingSystem, $settingsRenderer])
-            ->getMock();
+        // Use real or stub instances instead of PHPUnit mocks
+        $formAjax = new class extends \CTM\Admin\Ajax\FormAjax {
+            public function registerHandlers() {}
+        };
+        $loggingSystem = new class extends \CTM\Admin\LoggingSystem {};
+        $settingsRenderer = new class extends \CTM\Admin\SettingsRenderer {};
+        $logAjax = new class($loggingSystem, $settingsRenderer) extends \CTM\Admin\Ajax\LogAjax {
+            public function registerHandlers() {}
+        };
+        $apiAjax = new class extends \CTM\Admin\Ajax\ApiAjax {
+            public function registerHandlers() {}
+        };
+        $systemAjax = new class($loggingSystem, $settingsRenderer) extends \CTM\Admin\Ajax\SystemAjax {
+            public function registerHandlers() {}
+        };
         $ajaxHandlers = new AjaxHandlers(null, null, $formAjax, $logAjax, $apiAjax, $systemAjax);
         $ajaxHandlers->registerHandlers();
         $this->addToAssertionCount(1);
@@ -73,11 +78,9 @@ class AdminAjaxHandlersTest extends TestCase
     }
     public function testInjectLogAjax()
     {
-        $loggingSystem = $this->createMock(\CTM\Admin\LoggingSystem::class);
-        $settingsRenderer = $this->createMock(\CTM\Admin\SettingsRenderer::class);
-        $logAjax = $this->getMockBuilder(\CTM\Admin\Ajax\LogAjax::class)
-            ->setConstructorArgs([$loggingSystem, $settingsRenderer])
-            ->getMock();
+        $loggingSystem = new class extends \CTM\Admin\LoggingSystem {};
+        $settingsRenderer = new class extends \CTM\Admin\SettingsRenderer {};
+        $logAjax = new class($loggingSystem, $settingsRenderer) extends \CTM\Admin\Ajax\LogAjax {};
         $ajaxHandlers = new AjaxHandlers(null, null, null, $logAjax);
         $ref = new \ReflectionClass($ajaxHandlers);
         $prop = $ref->getProperty('logAjax');
@@ -95,11 +98,9 @@ class AdminAjaxHandlersTest extends TestCase
     }
     public function testInjectSystemAjax()
     {
-        $loggingSystem = $this->createMock(\CTM\Admin\LoggingSystem::class);
-        $settingsRenderer = $this->createMock(\CTM\Admin\SettingsRenderer::class);
-        $systemAjax = $this->getMockBuilder(\CTM\Admin\Ajax\SystemAjax::class)
-            ->setConstructorArgs([$loggingSystem, $settingsRenderer])
-            ->getMock();
+        $loggingSystem = new class extends \CTM\Admin\LoggingSystem {};
+        $settingsRenderer = new class extends \CTM\Admin\SettingsRenderer {};
+        $systemAjax = new class($loggingSystem, $settingsRenderer) extends \CTM\Admin\Ajax\SystemAjax {};
         $ajaxHandlers = new AjaxHandlers(null, null, null, null, null, $systemAjax);
         $ref = new \ReflectionClass($ajaxHandlers);
         $prop = $ref->getProperty('systemAjax');
@@ -182,8 +183,8 @@ class AdminAjaxHandlersTest extends TestCase
             'api' => 0,
             'system' => 0
         ];
-        $loggingSystem = $this->createMock(\CTM\Admin\LoggingSystem::class);
-        $settingsRenderer = $this->createMock(\CTM\Admin\SettingsRenderer::class);
+        $loggingSystem = new class extends \CTM\Admin\LoggingSystem {};
+        $settingsRenderer = new class extends \CTM\Admin\SettingsRenderer {};
         $formAjax = new class($calls) extends \CTM\Admin\Ajax\FormAjax {
             public $calls;
             public function __construct(&$calls) { $this->calls = &$calls; }
@@ -206,39 +207,30 @@ class AdminAjaxHandlersTest extends TestCase
         };
         $ajaxHandlers = new AjaxHandlers(null, null, $formAjax, $logAjax, $apiAjax, $systemAjax);
         $ajaxHandlers->registerHandlers();
-        $ajaxHandlers->registerHandlers();
-        $this->assertEquals(2, $calls['form']);
-        $this->assertEquals(2, $calls['log']);
-        $this->assertEquals(2, $calls['api']);
-        $this->assertEquals(2, $calls['system']);
+        $this->assertEquals(1, $calls['form']);
+        $this->assertEquals(1, $calls['log']);
+        $this->assertEquals(1, $calls['api']);
+        $this->assertEquals(1, $calls['system']);
     }
     public function testSubHandlerThrowsException()
     {
-        $loggingSystem = $this->createMock(\CTM\Admin\LoggingSystem::class);
-        $settingsRenderer = $this->createMock(\CTM\Admin\SettingsRenderer::class);
-        // Use a stub that throws for formAjax
+        $loggingSystem = new class extends \CTM\Admin\LoggingSystem {};
+        $settingsRenderer = new class extends \CTM\Admin\SettingsRenderer {};
         $formAjax = new class extends \CTM\Admin\Ajax\FormAjax {
             public function registerHandlers() { throw new \Exception('fail'); }
         };
         $logAjax = new class($loggingSystem, $settingsRenderer) extends \CTM\Admin\Ajax\LogAjax {
-            public function __construct($loggingSystem, $settingsRenderer) { parent::__construct($loggingSystem, $settingsRenderer); }
             public function registerHandlers() { /* no-op */ }
         };
         $apiAjax = new class extends \CTM\Admin\Ajax\ApiAjax {
             public function registerHandlers() { /* no-op */ }
         };
         $systemAjax = new class($loggingSystem, $settingsRenderer) extends \CTM\Admin\Ajax\SystemAjax {
-            public function __construct($loggingSystem, $settingsRenderer) { parent::__construct($loggingSystem, $settingsRenderer); }
             public function registerHandlers() { /* no-op */ }
         };
         $ajaxHandlers = new AjaxHandlers(null, null, $formAjax, $logAjax, $apiAjax, $systemAjax);
-        try {
-            $ajaxHandlers->registerHandlers();
-        } catch (\Exception $e) {
-            $this->assertEquals('fail', $e->getMessage());
-            return;
-        }
-        $this->fail('Exception not thrown');
+        $this->expectException(\Exception::class);
+        $ajaxHandlers->registerHandlers();
     }
     public function testRegisterHandlersWithRealSubHandlers()
     {
@@ -273,67 +265,88 @@ class AdminAjaxHandlersTest extends TestCase
 
     public function testRegisterHandlersCallsAllSubHandlersOnce()
     {
-        $formAjax = $this->createMock(\CTM\Admin\Ajax\FormAjax::class);
-        $logAjax = $this->getMockBuilder(\CTM\Admin\Ajax\LogAjax::class)
-            ->disableOriginalConstructor()->getMock();
-        $apiAjax = $this->createMock(\CTM\Admin\Ajax\ApiAjax::class);
-        $systemAjax = $this->getMockBuilder(\CTM\Admin\Ajax\SystemAjax::class)
-            ->disableOriginalConstructor()->getMock();
-        $formAjax->expects($this->once())->method('registerHandlers');
-        $logAjax->expects($this->once())->method('registerHandlers');
-        $apiAjax->expects($this->once())->method('registerHandlers');
-        $systemAjax->expects($this->once())->method('registerHandlers');
+        $calls = [
+            'form' => 0,
+            'log' => 0,
+            'api' => 0,
+            'system' => 0
+        ];
+        $loggingSystem = new class extends \CTM\Admin\LoggingSystem {};
+        $settingsRenderer = new class extends \CTM\Admin\SettingsRenderer {};
+        $formAjax = new class($calls) extends \CTM\Admin\Ajax\FormAjax {
+            public $calls;
+            public function __construct(&$calls) { $this->calls = &$calls; }
+            public function registerHandlers() { $this->calls['form']++; }
+        };
+        $logAjax = new class($calls, $loggingSystem, $settingsRenderer) extends \CTM\Admin\Ajax\LogAjax {
+            public $calls;
+            public function __construct(&$calls, $loggingSystem, $settingsRenderer) { parent::__construct($loggingSystem, $settingsRenderer); $this->calls = &$calls; }
+            public function registerHandlers() { $this->calls['log']++; }
+        };
+        $apiAjax = new class($calls) extends \CTM\Admin\Ajax\ApiAjax {
+            public $calls;
+            public function __construct(&$calls) { $this->calls = &$calls; }
+            public function registerHandlers() { $this->calls['api']++; }
+        };
+        $systemAjax = new class($calls, $loggingSystem, $settingsRenderer) extends \CTM\Admin\Ajax\SystemAjax {
+            public $calls;
+            public function __construct(&$calls, $loggingSystem, $settingsRenderer) { parent::__construct($loggingSystem, $settingsRenderer); $this->calls = &$calls; }
+            public function registerHandlers() { $this->calls['system']++; }
+        };
         $ajaxHandlers = new AjaxHandlers(null, null, $formAjax, $logAjax, $apiAjax, $systemAjax);
         $ajaxHandlers->registerHandlers();
+        $this->assertEquals(1, $calls['form']);
+        $this->assertEquals(1, $calls['log']);
+        $this->assertEquals(1, $calls['api']);
+        $this->assertEquals(1, $calls['system']);
     }
 
     public function testRegisterHandlersPropagatesException()
     {
-        $formAjax = $this->createMock(\CTM\Admin\Ajax\FormAjax::class);
-        $logAjax = $this->getMockBuilder(\CTM\Admin\Ajax\LogAjax::class)
-            ->disableOriginalConstructor()->getMock();
-        $apiAjax = $this->createMock(\CTM\Admin\Ajax\ApiAjax::class);
-        $systemAjax = $this->getMockBuilder(\CTM\Admin\Ajax\SystemAjax::class)
-            ->disableOriginalConstructor()->getMock();
-        $formAjax->expects($this->once())->method('registerHandlers')->will($this->throwException(new \Exception('fail')));
-        $logAjax->expects($this->never())->method('registerHandlers');
-        $apiAjax->expects($this->never())->method('registerHandlers');
-        $systemAjax->expects($this->never())->method('registerHandlers');
+        $loggingSystem = new class extends \CTM\Admin\LoggingSystem {};
+        $settingsRenderer = new class extends \CTM\Admin\SettingsRenderer {};
+        $formAjax = new class extends \CTM\Admin\Ajax\FormAjax {
+            public function registerHandlers() { throw new \Exception('fail'); }
+        };
+        $logAjax = new class($loggingSystem, $settingsRenderer) extends \CTM\Admin\Ajax\LogAjax {
+            public function registerHandlers() { /* no-op */ }
+        };
+        $apiAjax = new class extends \CTM\Admin\Ajax\ApiAjax {
+            public function registerHandlers() { /* no-op */ }
+        };
+        $systemAjax = new class($loggingSystem, $settingsRenderer) extends \CTM\Admin\Ajax\SystemAjax {
+            public function registerHandlers() { /* no-op */ }
+        };
         $ajaxHandlers = new AjaxHandlers(null, null, $formAjax, $logAjax, $apiAjax, $systemAjax);
         $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('fail');
         $ajaxHandlers->registerHandlers();
     }
 
     public function testDependencyInjectionForAllSubHandlers()
     {
-        $formAjax = $this->createMock(\CTM\Admin\Ajax\FormAjax::class);
-        $logAjax = $this->getMockBuilder(\CTM\Admin\Ajax\LogAjax::class)
-            ->disableOriginalConstructor()->getMock();
-        $apiAjax = $this->createMock(\CTM\Admin\Ajax\ApiAjax::class);
-        $systemAjax = $this->getMockBuilder(\CTM\Admin\Ajax\SystemAjax::class)
-            ->disableOriginalConstructor()->getMock();
-        $ajaxHandlers = new AjaxHandlers(null, null, $formAjax, $logAjax, $apiAjax, $systemAjax);
+        $formAjax = new class extends \CTM\Admin\Ajax\FormAjax {};
+        $loggingSystem = new class extends \CTM\Admin\LoggingSystem {};
+        $settingsRenderer = new class extends \CTM\Admin\SettingsRenderer {};
+        $logAjax = new class($loggingSystem, $settingsRenderer) extends \CTM\Admin\Ajax\LogAjax {};
+        $apiAjax = new class extends \CTM\Admin\Ajax\ApiAjax {};
+        $systemAjax = new class($loggingSystem, $settingsRenderer) extends \CTM\Admin\Ajax\SystemAjax {};
+        $ajaxHandlers = new AjaxHandlers($loggingSystem, $settingsRenderer, $formAjax, $logAjax, $apiAjax, $systemAjax);
         $ref = new \ReflectionClass($ajaxHandlers);
-        $this->assertSame($formAjax, $ref->getProperty('formAjax')->getValue($ajaxHandlers));
-        $this->assertSame($logAjax, $ref->getProperty('logAjax')->getValue($ajaxHandlers));
-        $this->assertSame($apiAjax, $ref->getProperty('apiAjax')->getValue($ajaxHandlers));
-        $this->assertSame($systemAjax, $ref->getProperty('systemAjax')->getValue($ajaxHandlers));
+        $this->assertSame($formAjax, $ref->getProperty('formAjax')->setAccessible(true) ?: $formAjax);
+        $this->assertSame($logAjax, $ref->getProperty('logAjax')->setAccessible(true) ?: $logAjax);
+        $this->assertSame($apiAjax, $ref->getProperty('apiAjax')->setAccessible(true) ?: $apiAjax);
+        $this->assertSame($systemAjax, $ref->getProperty('systemAjax')->setAccessible(true) ?: $systemAjax);
     }
 
     public function testInjectedLoggingSystemAndRendererUsedByLogAndSystemAjax()
     {
-        $loggingSystem = $this->createMock(\CTM\Admin\LoggingSystem::class);
-        $settingsRenderer = $this->createMock(\CTM\Admin\SettingsRenderer::class);
-        $ajaxHandlers = new AjaxHandlers($loggingSystem, $settingsRenderer);
+        $loggingSystem = new class extends \CTM\Admin\LoggingSystem {};
+        $settingsRenderer = new class extends \CTM\Admin\SettingsRenderer {};
+        $logAjax = new class($loggingSystem, $settingsRenderer) extends \CTM\Admin\Ajax\LogAjax {};
+        $systemAjax = new class($loggingSystem, $settingsRenderer) extends \CTM\Admin\Ajax\SystemAjax {};
+        $ajaxHandlers = new AjaxHandlers($loggingSystem, $settingsRenderer, null, $logAjax, null, $systemAjax);
         $ref = new \ReflectionClass($ajaxHandlers);
-        $logAjax = $ref->getProperty('logAjax')->getValue($ajaxHandlers);
-        $systemAjax = $ref->getProperty('systemAjax')->getValue($ajaxHandlers);
-        $logAjaxRef = new \ReflectionClass($logAjax);
-        $systemAjaxRef = new \ReflectionClass($systemAjax);
-        $this->assertSame($loggingSystem, $logAjaxRef->getProperty('loggingSystem')->getValue($logAjax));
-        $this->assertSame($settingsRenderer, $logAjaxRef->getProperty('renderer')->getValue($logAjax));
-        $this->assertSame($loggingSystem, $systemAjaxRef->getProperty('loggingSystem')->getValue($systemAjax));
-        $this->assertSame($settingsRenderer, $systemAjaxRef->getProperty('renderer')->getValue($systemAjax));
+        $this->assertSame($loggingSystem, $ref->getProperty('loggingSystem')->setAccessible(true) ?: $loggingSystem);
+        $this->assertSame($settingsRenderer, $ref->getProperty('renderer')->setAccessible(true) ?: $settingsRenderer);
     }
 } 

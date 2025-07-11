@@ -255,11 +255,9 @@ class AdminAjaxApiAjaxTest extends TestCase
         $this->assertEquals('N/A', $called['account_id']);
     }
     public function testAjaxTestApiConnectionApiServiceThrowsSslException() {
-        $apiService = $this->getMockBuilder('CTM\\Service\\ApiService')
-            ->setConstructorArgs(['https://dummy-ctm-api.test'])
-            ->onlyMethods(['getAccountInfo'])
-            ->getMock();
-        $apiService->method('getAccountInfo')->will($this->throwException(new \Exception('SSL certificate error')));
+        $apiService = new class('https://dummy-ctm-api.test') extends \CTM\Service\ApiService {
+            public function getAccountInfo(string $apiKey, string $apiSecret): ?array { throw new \Exception('SSL certificate error'); }
+        };
         $apiAjax = new ApiAjax($apiService);
         $_POST['api_key'] = str_repeat('a', 21);
         $_POST['api_secret'] = str_repeat('b', 21);
@@ -271,11 +269,9 @@ class AdminAjaxApiAjaxTest extends TestCase
         $this->assertContains('SSL/TLS certificate issue detected', $called['details']);
     }
     public function testAjaxTestApiConnectionApiServiceThrowsDnsException() {
-        $apiService = $this->getMockBuilder('CTM\\Service\\ApiService')
-            ->setConstructorArgs(['https://dummy-ctm-api.test'])
-            ->onlyMethods(['getAccountInfo'])
-            ->getMock();
-        $apiService->method('getAccountInfo')->will($this->throwException(new \Exception('DNS lookup failed')));
+        $apiService = new class('https://dummy-ctm-api.test') extends \CTM\Service\ApiService {
+            public function getAccountInfo(string $apiKey, string $apiSecret): ?array { throw new \Exception('DNS lookup failed'); }
+        };
         $apiAjax = new ApiAjax($apiService);
         $_POST['api_key'] = str_repeat('a', 21);
         $_POST['api_secret'] = str_repeat('b', 21);
@@ -371,11 +367,9 @@ class AdminAjaxApiAjaxTest extends TestCase
         $this->assertEquals('DELETE', $called['method']);
     }
     public function testAjaxSimulateApiRequestThrowsException() {
-        $apiService = $this->getMockBuilder('CTM\\Service\\ApiService')
-            ->setConstructorArgs(['https://dummy-ctm-api.test'])
-            ->onlyMethods(['getAccountInfo'])
-            ->getMock();
-        $apiService->method('getAccountInfo')->will($this->throwException(new \Exception('Simulated error')));
+        $apiService = new class('https://dummy-ctm-api.test') extends \CTM\Service\ApiService {
+            public function getAccountInfo(string $apiKey, string $apiSecret): ?array { throw new \Exception('Simulated error'); }
+        };
         $apiAjax = new ApiAjax($apiService);
         \Brain\Monkey\Functions\when('get_option')->justReturn('test');
         $called = false;
