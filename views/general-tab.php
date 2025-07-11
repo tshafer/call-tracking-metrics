@@ -123,6 +123,8 @@
         
     <?php else: ?>
         <!-- Full Settings View (Connected) -->
+        <input type="hidden" name="ctm_api_key" value="<?= esc_attr($apiKey) ?>">
+        <input type="hidden" name="ctm_api_secret" value="<?= esc_attr($apiSecret) ?>">
         <div class="mb-8">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2">
                 <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded flex items-center gap-4">
@@ -148,11 +150,25 @@
         <!-- Settings Form Fields -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             
-            <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
-                <h2 class="text-xl font-semibold mb-4 text-gray-700">Tracking</h2>
-                <label class="flex items-center mb-4"><input type="checkbox" name="ctm_api_tracking_enabled" value="1"<?= checked($trackingEnabled, 1, false) ?> class="mr-2 rounded border-gray-300 focus:ring-blue-500" />Enable Tracking</label>
-                <label class="block mb-2 text-gray-600 font-medium">Tracking Script</label>
-                <textarea name="call_track_account_script" rows="3" class="block w-full rounded border-gray-300 focus:ring-blue-500 focus:border-blue-500 mb-4"><?= esc_textarea(get_option('call_track_account_script')) ?></textarea>
+            <!-- Tracking Script Section -->
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6 shadow-sm max-w-2xl">
+                <label for="ctm_tracking_script" class="text-xl font-semibold mb-4 text-gray-700">Tracking Script</label>
+                <p class="text-gray-500 text-sm mb-4">This script is automatically fetched from CallTrackingMetrics. You can override it if needed, but we recommend using the auto-fetched version for accuracy.</p>
+                <div class="flex flex-col md:flex-row md:items-center gap-4 mb-4">
+                    <textarea id="ctm_tracking_script" name="call_track_account_script" rows="3"
+                        class="p-2 block w-full rounded border border-gray-300 focus:ring-blue-500 focus:border-blue-500 transition bg-gray-100 text-gray-700 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed read-only:bg-gray-100 read-only:text-gray-400 read-only:cursor-not-allowed shadow-sm"
+                        style="min-height: 60px; font-family: monospace; font-size: 0.97em; resize: vertical;"
+                        readonly><?= esc_textarea(get_option('call_track_account_script')) ?></textarea>
+                </div>
+                <div class="flex items-center gap-2 mt-2">
+                    <input type="checkbox" id="ctm_tracking_override_checkbox" class="mr-2">
+                    <label for="ctm_tracking_override_checkbox" class="text-gray-700 select-none cursor-pointer">Allow manual override of tracking code</label>
+                </div>
+                <div class="flex items-center gap-2 mt-4">
+                    <input type="checkbox" id="ctm_auto_inject_tracking_script" name="ctm_auto_inject_tracking_script" value="1" class="mr-2" <?= checked(get_option('ctm_auto_inject_tracking_script'), 1, false) ?>>
+                    <label for="ctm_auto_inject_tracking_script" class="text-gray-700 select-none cursor-pointer font-medium">Auto-inject tracking script into site &lt;head&gt;</label>
+                </div>
+                <p class="text-gray-500 text-xs mt-1 ml-6">If enabled, the tracking script above will be automatically inserted into your site's &lt;head&gt; on every page.</p>
             </div>
             <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
                 <h2 class="text-xl font-semibold mb-4 text-gray-700">Integrations</h2>
@@ -699,4 +715,52 @@ function dismissNotice(type) {
      rawDataContent.classList.toggle('hidden');
      rawDataIcon.classList.toggle('rotate-90');
  }
+
+// Ensure ctmShowToast is available
+if (typeof window.ctmShowToast !== 'function') {
+    window.ctmShowToast = function(message, type = 'info') {
+        let container = document.getElementById('ctm-toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'ctm-toast-container';
+            container.style.position = 'fixed';
+            container.style.top = '1.5rem';
+            container.style.right = '1.5rem';
+            container.style.zIndex = '9999';
+            document.body.appendChild(container);
+        }
+        // Remove any existing toasts after a short delay
+        Array.from(container.children).forEach(child => {
+            child.style.opacity = 0;
+            setTimeout(() => child.remove(), 500);
+        });
+        // Toast color based on type
+        let bg = 'bg-blue-600';
+        if (type === 'success') bg = 'bg-green-600';
+        if (type === 'error') bg = 'bg-red-600';
+        if (type === 'warning') bg = 'bg-yellow-600';
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = `${bg} text-white px-4 py-2 rounded shadow mb-2 transition-opacity duration-500`;
+        toast.style.opacity = 1;
+        toast.textContent = message;
+        container.appendChild(toast);
+        // Fade out and remove after 3 seconds
+        setTimeout(() => {
+            toast.style.opacity = 0;
+            setTimeout(() => toast.remove(), 500);
+        }, 3000);
+    };
+}
+
+// Only keep the override checkbox logic for readOnly, remove any fetch/update tracking script JS
+    document.addEventListener('DOMContentLoaded', function() {
+        const overrideCheckbox = document.getElementById('ctm_tracking_override_checkbox');
+        const trackingTextarea = document.getElementById('ctm_tracking_script');
+        if (overrideCheckbox && trackingTextarea) {
+            overrideCheckbox.addEventListener('change', function() {
+                trackingTextarea.readOnly = !this.checked;
+            });
+        }
+    });
 </script> 

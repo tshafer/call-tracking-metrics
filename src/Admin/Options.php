@@ -116,6 +116,7 @@ class Options
         register_setting("call-tracking-metrics", "ctm_api_tracking_enabled");
         register_setting("call-tracking-metrics", "ctm_api_cf7_enabled");
         register_setting("call-tracking-metrics", "ctm_api_gf_enabled");
+        register_setting("call-tracking-metrics", "ctm_auto_inject_tracking_script");
         
         // Logging Settings
         register_setting("call-tracking-metrics", "ctm_api_cf7_logs");
@@ -368,12 +369,14 @@ class Options
     private function saveGeneralSettings(): void
     {
         // Sanitize and extract form data
-        $apiKey = sanitize_text_field($_POST['ctm_api_key']);
-        $apiSecret = sanitize_text_field($_POST['ctm_api_secret']);
+        // Only update API key/secret if present in POST, otherwise keep existing
+        $apiKey = isset($_POST['ctm_api_key']) ? sanitize_text_field($_POST['ctm_api_key']) : get_option('ctm_api_key');
+        $apiSecret = isset($_POST['ctm_api_secret']) ? sanitize_text_field($_POST['ctm_api_secret']) : get_option('ctm_api_secret');
         $trackingEnabled = isset($_POST['ctm_api_tracking_enabled']);
         $cf7Enabled = isset($_POST['ctm_api_cf7_enabled']);
         $gfEnabled = isset($_POST['ctm_api_gf_enabled']);
         $dashboardEnabled = isset($_POST['ctm_api_dashboard_enabled']);
+        $autoInjectTracking = isset($_POST['ctm_auto_inject_tracking_script']) ? 1 : 0;
         
         // Log API key changes for security auditing
         $old_key = get_option('ctm_api_key');
@@ -391,10 +394,34 @@ class Options
         update_option('ctm_api_cf7_enabled', $cf7Enabled);
         update_option('ctm_api_gf_enabled', $gfEnabled);
         update_option('ctm_api_dashboard_enabled', $dashboardEnabled);
+        update_option('ctm_auto_inject_tracking_script', $autoInjectTracking);
         
         // Save tracking script if provided
-        if (!empty($_POST['call_track_account_script'])) {
-            update_option('call_track_account_script', wp_kses_post($_POST['call_track_account_script']));
+        if (isset($_POST['call_track_account_script'])) {
+            // Save as raw HTML, not entities
+            $raw_script = wp_unslash($_POST['call_track_account_script']);
+            update_option('call_track_account_script', wp_kses_post($raw_script));
+        } else {
+            // Auto-fetch tracking code from CTM API if credentials are present
+            if (!empty($apiKey) && !empty($apiSecret)) {
+                $apiService = new \CTM\Service\ApiService('https://api.calltrackingmetrics.com');
+                $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
+                $accountId = null;
+                if ($accountInfo && isset($accountInfo['account']['id'])) {
+                    $accountId = $accountInfo['account']['id'];
+                    update_option('ctm_api_auth_account', $accountId);
+                }
+                if ($accountId) {
+                    try {
+                        $scripts = $apiService->getTrackingScript($accountId, $apiKey, $apiSecret);
+                        if ($scripts && isset($scripts['tracking']) && !empty($scripts['tracking'])) {
+                            update_option('call_track_account_script', $scripts['tracking']);
+                        }
+                    } catch (\Exception $e) {
+                        // Optionally log error
+                    }
+                }
+            }
         }
         
         // Log the settings change
@@ -440,59 +467,152 @@ class Options
      */
     public function renderDashboardWidget(): void
     {
-        echo '<div style="padding:18px; font-family:sans-serif;">';
-        echo '<h2 style="margin-top:0; font-size:1.5em; display:flex; align-items:center; gap:0.5em;">📞 CallTrackingMetrics <span style="font-size:0.7em; color:#888;">Dashboard</span></h2>';
-        
-        // Show a chart for call volume (placeholder data, real API integration can be added)
-        echo '<canvas id="ctm-calls-chart" height="80" style="max-width:100%; margin-bottom:18px;"></canvas>';
-        $dates = [];
-        $calls = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $dates[] = date('M j', strtotime("-$i days"));
-            $calls[] = rand(0, 10); // TODO: Replace with real data
-        }
-        echo '<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>';
-        echo '<script>
-        if (window.Chart) {
-            var ctx = document.getElementById("ctm-calls-chart").getContext("2d");
-            new Chart(ctx, {
-                type: "bar",
-                data: {
-                    labels: ' . json_encode($dates) . ',
-                    datasets: [{
-                        label: "Calls",
-                        data: ' . json_encode($calls) . ',
-                        backgroundColor: "#2563eb",
-                        borderRadius: 6,
-                        maxBarThickness: 32
-                    }]
-                },
-                options: {
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
-                    animation: { duration: 1200 }
+        // Use inline styles for dashboard widget (no Tailwind available)
+        ?>
+        <div style="padding: 10px; font-family: sans-serif;">
+            <?php
+            // --- Widget logic: show last 30 days, like legacy ctm.php ---
+            $dates = [];
+            $calls = [];
+            $error = '';
+            $apiKey = get_option('ctm_api_key');
+            $apiSecret = get_option('ctm_api_secret');
+            $accountId = get_option('ctm_api_auth_account');
+            $totalCalls = 0;
+            $lastCall = null;
+            $firstCall = null;
+            $callsByDay = [];
+            if ($apiKey && $apiSecret && $accountId && class_exists('CTM\\Service\\ApiService')) {
+                try {
+                    $api = new \CTM\Service\ApiService('https://api.calltrackingmetrics.com');
+                    $since = date('Y-m-d', strtotime('-29 days'));
+                    $until = date('Y-m-d');
+                    $params = [
+                        'start_date' => $since,
+                        'end_date' => $until,
+                        'group_by' => 'date',
+                        'per_page' => 1000
+                    ];
+                    $result = $api->getCalls($apiKey, $apiSecret, $params);
+                    if (isset($result['calls']) && is_array($result['calls'])) {
+                        foreach ($result['calls'] as $call) {
+                            $date = isset($call['date']) ? substr($call['date'], 0, 10) : (isset($call['start_time']) ? substr($call['start_time'], 0, 10) : null);
+                            if ($date) {
+                                if (!isset($callsByDay[$date])) $callsByDay[$date] = 0;
+                                $callsByDay[$date]++;
+                                $totalCalls++;
+                                // Track first and last call
+                                if (!$firstCall || $call['start_time'] < $firstCall['start_time']) {
+                                    $firstCall = $call;
+                                }
+                                if (!$lastCall || $call['start_time'] > $lastCall['start_time']) {
+                                    $lastCall = $call;
+                                }
+                            }
+                        }
+                        // Fill in all days (even with 0 calls)
+                        for ($i = 29; $i >= 0; $i--) {
+                            $d = date('Y-m-d', strtotime("-$i days"));
+                            $dates[] = date('M j', strtotime($d));
+                            $calls[] = isset($callsByDay[$d]) ? $callsByDay[$d] : 0;
+                        }
+                    } else {
+                        $error = 'No call data found.';
+                    }
+                } catch (\Throwable $e) {
+                    $error = 'Error fetching call data: ' . $e->getMessage();
                 }
-            });
-        }
-        </script>';
-        
-        // Fun stat cards
-        echo '<div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:18px;">';
-        echo '<div style="flex:1; min-width:120px; background:#f1f5f9; border-radius:8px; padding:16px; text-align:center; box-shadow:0 1px 4px #0001;">
-            <div style="font-size:2em;">🎯</div><div style="font-size:1.1em; font-weight:600;">' . rand(80,99) . '%</div><div style="color:#2563eb; font-size:0.95em;">Uptime</div></div>';
-        echo '<div style="flex:1; min-width:120px; background:#f1f5f9; border-radius:8px; padding:16px; text-align:center; box-shadow:0 1px 4px #0001;">
-            <div style="font-size:2em;">⚡️</div><div style="font-size:1.1em; font-weight:600;">' . rand(200,400) . 'ms</div><div style="color:#2563eb; font-size:0.95em;">API Response</div></div>';
-        echo '<div style="flex:1; min-width:120px; background:#f1f5f9; border-radius:8px; padding:16px; text-align:center; box-shadow:0 1px 4px #0001;">
-            <div style="font-size:2em;">👥</div><div style="font-size:1.1em; font-weight:600;">' . rand(1,5) . '</div><div style="color:#2563eb; font-size:0.95em;">Active Users</div></div>';
-        echo '</div>';
-        
-        // Plugin/WordPress/server info
-        echo '<div style="margin-top:18px; font-size:0.98em; color:#444; background:#f9fafb; border-radius:8px; padding:12px 16px; box-shadow:0 1px 4px #0001;">';
-        echo '<strong>Plugin:</strong> v2.0 &nbsp;|&nbsp; <strong>WP:</strong> ' . esc_html(get_bloginfo('version')) . ' &nbsp;|&nbsp; <strong>PHP:</strong> ' . esc_html(PHP_VERSION) . ' &nbsp;|&nbsp; <strong>Server:</strong> ' . esc_html($_SERVER['SERVER_SOFTWARE'] ?? 'Unknown') . ' &nbsp;|&nbsp; <strong>Timezone:</strong> ' . esc_html(get_option('timezone_string') ?: 'UTC');
-        echo '</div>';
-        
-        echo '<div style="margin-top:12px; color:#2563eb; font-size:1.1em; text-align:right;">Have a great day! 🚀</div>';
-        echo '</div>';
+            } else {
+                $error = 'API credentials not set.';
+            }
+            ?>
+            <div style="margin-bottom: 1.5rem;">
+                <canvas id="ctm-calls-chart" height="80" style="width: 100%; max-width: 100%; border-radius: 0.5rem; background: #f3f4f6; box-shadow: 0 1px 4px rgba(0,0,0,0.04);"></canvas>
+            </div>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script>
+                <?php if ($error): ?>
+                    document.addEventListener("DOMContentLoaded", function() {
+                        var ctx = document.getElementById("ctm-calls-chart");
+                        if (ctx) {
+                            let errorDiv = document.createElement("div");
+                            errorDiv.style.marginBottom = "1rem";
+                            errorDiv.style.color = "#fff";
+                            errorDiv.style.background = "#dc2626";
+                            errorDiv.style.borderRadius = "0.5rem";
+                            errorDiv.style.padding = "0.75rem";
+                            errorDiv.style.fontWeight = "600";
+                            errorDiv.innerHTML = "<span><?php echo addslashes($error); ?></span>";
+                            ctx.parentNode.insertBefore(errorDiv, ctx);
+                            ctx.style.display = 'none';
+                        }
+                    });
+                <?php else: ?>
+                    if (window.Chart) {
+                        var ctx = document.getElementById("ctm-calls-chart").getContext("2d");
+                        new Chart(ctx, {
+                            type: "bar",
+                            data: {
+                                labels: <?php echo json_encode($dates); ?>,
+                                datasets: [{
+                                    label: "Calls",
+                                    data: <?php echo json_encode($calls); ?>,
+                                    backgroundColor: "#2563eb",
+                                    borderRadius: 8,
+                                    maxBarThickness: 32
+                                }]
+                            },
+                            options: {
+                                plugins: {
+                                    legend: { display: false }
+                                },
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        ticks: { stepSize: 1 }
+                                    }
+                                },
+                                animation: { duration: 1200 }
+                            }
+                        });
+                    }
+                <?php endif; ?>
+            </script>
+            <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+                <div style="flex: 1 1 120px; min-width: 120px; background: #f3f4f6; border-radius: 0.5rem; padding: 1rem; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+                    <div style="font-size: 2rem; margin-bottom: 0.25rem;">📈</div>
+                    <div style="font-size: 1.125rem; font-weight: bold;"><?php echo esc_html($totalCalls); ?></div>
+                    <div style="color: #2563eb; font-size: 0.875rem;">Total Calls (30d)</div>
+                </div>
+                <div style="flex: 1 1 120px; min-width: 120px; background: #f3f4f6; border-radius: 0.5rem; padding: 1rem; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+                    <div style="font-size: 2rem; margin-bottom: 0.25rem;">🕒</div>
+                    <div style="font-size: 1.125rem; font-weight: bold;">
+                        <?php
+                        if ($lastCall && isset($lastCall['start_time'])) {
+                            echo esc_html(date('M j, Y H:i', strtotime($lastCall['start_time'])));
+                        } else {
+                            echo '—';
+                        }
+                        ?>
+                    </div>
+                    <div style="color: #2563eb; font-size: 0.875rem;">Last Call</div>
+                </div>
+                <div style="flex: 1 1 120px; min-width: 120px; background: #f3f4f6; border-radius: 0.5rem; padding: 1rem; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+                    <div style="font-size: 2rem; margin-bottom: 0.25rem;">📅</div>
+                    <div style="font-size: 1.125rem; font-weight: bold;">
+                        <?php
+                        if ($firstCall && isset($firstCall['start_time'])) {
+                            echo esc_html(date('M j, Y H:i', strtotime($firstCall['start_time'])));
+                        } else {
+                            echo '—';
+                        }
+                        ?>
+                    </div>
+                    <div style="color: #2563eb; font-size: 0.875rem;">First Call (30d)</div>
+                </div>
+            </div>
+        </div>
+        <?php
     }
 
     // ===================================================================

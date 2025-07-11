@@ -16,6 +16,9 @@ trait MonkeyTrait
                 $cb();
             }
         };
+        $mock('delete_option', fn() => \Brain\Monkey\Functions\when('delete_option')->justReturn(true));
+        $mock('wp_next_scheduled', fn() => \Brain\Monkey\Functions\when('wp_next_scheduled')->justReturn(null));
+        $mock('wp_schedule_event', fn() => \Brain\Monkey\Functions\when('wp_schedule_event')->justReturn(null));
         // WordPress core and plugin functions
         $mock('active_plugins', fn() => \Brain\Monkey\Functions\when('active_plugins')->justReturn(['call-tracking-metrics/call-tracking-metrics.php']));
         $mock('plugin_dir_path', fn() => \Brain\Monkey\Functions\when('plugin_dir_path')->alias(function($file) { return __DIR__ . '/../../'; }));
@@ -65,7 +68,12 @@ trait MonkeyTrait
         $mock('register_setting', fn() => \Brain\Monkey\Functions\when('register_setting')->justReturn(null));
         $mock('plugin_dir_path', fn() => \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn('/tmp/'));
         $mock('count_users', fn() => \Brain\Monkey\Functions\when('count_users')->justReturn(['total_users' => 1]));
-        // $mock('add_action', fn() => \Brain\Monkey\Functions\when('add_action')->justReturn(null));
+        $mock('add_action', fn() => \Brain\Monkey\Functions\when('add_action')->justReturn(null));
+        $mock('add_filter', fn() => \Brain\Monkey\Functions\when('add_filter')->justReturn(null));
+        $mock('register_activation_hook', fn() => \Brain\Monkey\Functions\when('register_activation_hook')->justReturn(null));
+        $mock('register_deactivation_hook', fn() => \Brain\Monkey\Functions\when('register_deactivation_hook')->justReturn(null));
+        $mock('wp_send_json_success', fn() => \Brain\Monkey\Functions\when('wp_send_json_success')->justReturn(null));
+        $mock('wp_send_json_error', fn() => \Brain\Monkey\Functions\when('wp_send_json_error')->justReturn(null));
         $mock('home_url', fn() => \Brain\Monkey\Functions\when('home_url')->justReturn('https://example.com'));
         $mock('check_ajax_referer', fn() => \Brain\Monkey\Functions\when('check_ajax_referer')->justReturn(true));
         $mock('sanitize_text_field', fn() => \Brain\Monkey\Functions\when('sanitize_text_field')->alias(fn($v) => $v));

@@ -3,6 +3,10 @@
 // Data is passed from Options.php: $apiKey, $apiSecret, $apiStatus, $accountInfo
 $api_connected = ($apiStatus === 'connected');
 ?>
+<?php // Add nonces for AJAX actions
+$ctm_change_api_nonce = wp_create_nonce('ctm_change_api_keys');
+$ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
+?>
 
 <div class="space-y-6">
     
@@ -10,11 +14,16 @@ $api_connected = ($apiStatus === 'connected');
         
         <!-- Account Information Section -->
         <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
-            <div class="bg-gradient-to-r from-blue-50 to-green-50 px-6 py-4 border-b border-gray-200 rounded-t-lg">
+            <div class="bg-gradient-to-r from-blue-50 to-green-50 px-6 py-4 border-b border-gray-200 rounded-t-lg flex items-center justify-between">
                 <div class="flex items-center">
                     <div class="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
                     <h2 class="text-lg font-semibold text-gray-800">Account Information</h2>
                     <span class="ml-2 px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">Active</span>
+                </div>
+                <!-- Move buttons here -->
+                <div class="flex gap-2">
+                    <button id="ctm-change-api-btn" type="button" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded font-medium transition text-sm">Change API Keys</button>
+                    <button id="ctm-disable-api-btn" type="button" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded font-medium transition text-sm">Disable API / Start Over</button>
                 </div>
             </div>
             
@@ -54,6 +63,36 @@ $api_connected = ($apiStatus === 'connected');
                                         <?= isset($account['created_at']) ? esc_html(date('M j, Y', strtotime($account['created_at']))) : 'N/A' ?>
                                     </span>
                                 </div>
+                                <?php if (!empty($account['phone'])): ?>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Phone:</span>
+                                    <span class="text-gray-800"><?= esc_html($account['phone']) ?></span>
+                                </div>
+                                <?php endif; ?>
+                                <?php if (!empty($account['address'])): ?>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Address:</span>
+                                    <span class="text-gray-800"><?= esc_html($account['address']) ?></span>
+                                </div>
+                                <?php endif; ?>
+                                <?php if (!empty($account['plan'])): ?>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Plan:</span>
+                                    <span class="text-gray-800"><?= esc_html($account['plan']) ?></span>
+                                </div>
+                                <?php endif; ?>
+                                <?php if (!empty($account['usage'])): ?>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Usage:</span>
+                                    <span class="text-gray-800"><?= esc_html($account['usage']) ?></span>
+                                </div>
+                                <?php endif; ?>
+                                <?php if (!empty($account['website'])): ?>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Website:</span>
+                                    <span class="text-blue-700 underline"><a href="<?= esc_url($account['website']) ?>" target="_blank" rel="noopener noreferrer"><?= esc_html($account['website']) ?></a></span>
+                                </div>
+                                <?php endif; ?>
                             </div>
                         <?php else: ?>
                             <p class="text-gray-500 text-sm">Account information not available</p>
@@ -85,6 +124,40 @@ $api_connected = ($apiStatus === 'connected');
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Authentication:</span>
                                 <span class="text-gray-800">HTTP Basic Auth</span>
+                            </div>
+                        </div>
+                        <!-- Add Change API Keys and Disable API buttons -->
+                        <!-- Change API Keys Modal -->
+                        <div id="ctm-change-api-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+                            <div class="bg-white rounded-lg shadow-lg p-8 max-w-md w-full relative">
+                                <h3 class="text-lg font-semibold mb-4">Change API Keys</h3>
+                                <form id="ctm-change-api-form">
+                                    <div class="mb-4">
+                                        <label for="ctm_new_api_key" class="block text-gray-700 font-medium mb-1">API Key</label>
+                                        <input type="text" id="ctm_new_api_key" name="ctm_new_api_key" class="w-full border border-gray-300 rounded px-3 py-2" required autocomplete="off">
+                                    </div>
+                                    <div class="mb-4">
+                                        <label for="ctm_new_api_secret" class="block text-gray-700 font-medium mb-1">API Secret</label>
+                                        <input type="text" id="ctm_new_api_secret" name="ctm_new_api_secret" class="w-full border border-gray-300 rounded px-3 py-2" required autocomplete="off">
+                                    </div>
+                                    <div class="flex justify-end gap-2 mt-6">
+                                        <button type="button" id="ctm-cancel-change-api" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded">Cancel</button>
+                                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Save</button>
+                                    </div>
+                                </form>
+                                <button id="ctm-close-change-api" class="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl leading-none">&times;</button>
+                            </div>
+                        </div>
+                        <!-- Disable API Modal -->
+                        <div id="ctm-disable-api-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+                            <div class="bg-white rounded-lg shadow-lg p-8 max-w-md w-full relative">
+                                <h3 class="text-lg font-semibold mb-4 text-red-700">Disable API / Start Over</h3>
+                                <p class="mb-6 text-gray-700">Are you sure you want to disable the API and clear all credentials? This cannot be undone.</p>
+                                <div class="flex justify-end gap-2">
+                                    <button type="button" id="ctm-cancel-disable-api" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded">Cancel</button>
+                                    <button type="button" id="ctm-confirm-disable-api" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">Disable API</button>
+                                </div>
+                                <button id="ctm-close-disable-api" class="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl leading-none">&times;</button>
                             </div>
                         </div>
                     </div>
@@ -175,6 +248,24 @@ $api_connected = ($apiStatus === 'connected');
                     <p class="text-sm">Real-time metrics updating every 10 seconds</p>
                     <p class="text-xs text-gray-400 mt-1">Live monitoring ensures optimal API performance</p>
                 </div>
+            </div>
+        </div>
+        
+        <!-- Documentation & Support Links -->
+        <div class="bg-white border border-blue-200 rounded-lg shadow-sm mt-8">
+            <div class="bg-blue-50 px-6 py-4 border-b border-blue-200 rounded-t-lg flex items-center">
+                <svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 14h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8s-9-3.582-9-8 4.03-8 9-8 9 3.582 9 8z"/></svg>
+                <h2 class="text-lg font-semibold text-blue-800">CallTrackingMetrics Documentation & Support</h2>
+            </div>
+            <div class="p-6 space-y-3 text-sm">
+                <ul class="list-disc list-inside space-y-2">
+                    <li><a href="https://calltrackingmetrics.zendesk.com/hc/en-us" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline hover:text-blue-900">CTM Help Center</a></li>
+                    <li><a href="https://calltrackingmetrics.zendesk.com/hc/en-us/categories/200216006-API-Developers" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline hover:text-blue-900">API Documentation</a></li>
+                    <li><a href="https://calltrackingmetrics.zendesk.com/hc/en-us/articles/360050247232-Getting-Started-with-CallTrackingMetrics" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline hover:text-blue-900">Getting Started Guide</a></li>
+                    <li><a href="https://calltrackingmetrics.zendesk.com/hc/en-us/sections/200216016-Troubleshooting" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline hover:text-blue-900">Troubleshooting</a></li>
+                    <li><a href="https://calltrackingmetrics.zendesk.com/hc/en-us/requests/new" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline hover:text-blue-900">Contact Support</a></li>
+                </ul>
+                <p class="text-xs text-gray-500 mt-2">For more guides, best practices, and API reference, visit the <a href="https://calltrackingmetrics.zendesk.com/hc/en-us" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline">CallTrackingMetrics Help Center</a>.</p>
             </div>
         </div>
         
@@ -395,6 +486,66 @@ jQuery(document).ready(function($) {
         $('#ctm-progress-container').addClass('hidden');
         $('#ctm-progress-bar').css('width', '0%');
         $('#ctm-progress-percent').text('0%');
+    });
+    
+    // Modal logic for Change API Keys
+    $('#ctm-change-api-btn').on('click', function() {
+        $('#ctm-change-api-modal').removeClass('hidden');
+    });
+    $('#ctm-close-change-api, #ctm-cancel-change-api').on('click', function() {
+        $('#ctm-change-api-modal').addClass('hidden');
+    });
+    // AJAX submit for Change API Keys
+    $('#ctm-change-api-form').on('submit', function(e) {
+        e.preventDefault();
+        var apiKey = $('#ctm_new_api_key').val();
+        var apiSecret = $('#ctm_new_api_secret').val();
+        var nonce = '<?php echo esc_js($ctm_change_api_nonce); ?>';
+        var $modal = $('#ctm-change-api-modal');
+        var $saveBtn = $(this).find('button[type=submit]');
+        $saveBtn.prop('disabled', true).text('Saving...');
+        $.post(ajaxurl, {
+            action: 'ctm_change_api_keys',
+            api_key: apiKey,
+            api_secret: apiSecret,
+            nonce: nonce
+        }, function(resp) {
+            $saveBtn.prop('disabled', false).text('Save');
+            if (resp.success) {
+                $modal.addClass('hidden');
+                alert('API keys updated successfully.');
+                location.reload();
+            } else {
+                alert(resp.data && resp.data.message ? resp.data.message : 'Failed to update API keys.');
+            }
+        });
+    });
+    // Modal logic for Disable API
+    $('#ctm-disable-api-btn').on('click', function() {
+        $('#ctm-disable-api-modal').removeClass('hidden');
+    });
+    $('#ctm-close-disable-api, #ctm-cancel-disable-api').on('click', function() {
+        $('#ctm-disable-api-modal').addClass('hidden');
+    });
+    // AJAX for Disable API
+    $('#ctm-confirm-disable-api').on('click', function() {
+        var nonce = '<?php echo esc_js($ctm_disable_api_nonce); ?>';
+        var $modal = $('#ctm-disable-api-modal');
+        var $btn = $(this);
+        $btn.prop('disabled', true).text('Disabling...');
+        $.post(ajaxurl, {
+            action: 'ctm_disable_api',
+            nonce: nonce
+        }, function(resp) {
+            $btn.prop('disabled', false).text('Disable API');
+            if (resp.success) {
+                $modal.addClass('hidden');
+                alert('API credentials cleared.');
+                location.reload();
+            } else {
+                alert(resp.data && resp.data.message ? resp.data.message : 'Failed to disable API.');
+            }
+        });
     });
     
     // Initialize

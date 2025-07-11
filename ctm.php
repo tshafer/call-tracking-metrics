@@ -37,8 +37,8 @@
  * Network:           false
  */
 
-// Prevent direct access to this file
-if (!defined('ABSPATH')) {
+// Prevent direct access to this file, except during tests or CLI
+if (!defined('ABSPATH') && !defined('CTM_TESTING') && php_sapi_name() !== 'cli') {
     exit('Direct access forbidden.');
 }
 
@@ -151,6 +151,7 @@ class CallTrackingMetrics
     {
         add_action('admin_init', [$this->adminOptions, 'registerSettings']);
         add_action('admin_menu', [$this->adminOptions, 'registerSettingsPage']);
+        
     }
 
     /**
@@ -173,6 +174,8 @@ class CallTrackingMetrics
         // Form confirmation handlers
         add_filter('gform_confirmation', [$this, 'gfConfirmation'], 10, 1);
         add_action('wp_footer', [$this, 'cf7Confirmation'], 10, 1);
+
+       
     }
 
     /**
@@ -489,13 +492,39 @@ class CallTrackingMetrics
  * The plugin will automatically register all necessary hooks and
  * initialize all services.
  */
-new CallTrackingMetrics();
+// Only instantiate if not running under test
+if (!defined('CTM_TESTING')) {
+    new CallTrackingMetrics();
+}
+
+add_action('admin_footer', function() {
+    echo '<div id="ctm-toast-container" style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 9999;"></div>';
+});
+
+
+add_action('wp_enqueue_scripts', function() {
+    if (!get_option('ctm_auto_inject_tracking_script')) return;
+    $script = get_option('call_track_account_script');
+    if ($script && strpos($script, '<script') !== false) {
+        wp_register_script('ctm-tracking', '', [], null, false);
+        wp_add_inline_script('ctm-tracking', $script, 'before');
+        wp_enqueue_script('ctm-tracking');
+    }
+}, 1);
 
 // Enqueue debug JS and localize export nonce for debug tab
 add_action('admin_enqueue_scripts', function($hook) {
     // Only enqueue on the CallTrackingMetrics debug/settings page
     if (strpos($hook, 'call-tracking-metrics') === false) return;
     
+    wp_enqueue_script(
+        'ctm-toast',
+        plugins_url('assets/js/toast.js', __FILE__),
+        [],
+        null,
+        true
+    );
+
     // Enqueue debug JS if not already enqueued
     wp_enqueue_script(
         'ctm-debug-js',

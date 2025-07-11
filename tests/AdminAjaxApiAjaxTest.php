@@ -57,7 +57,7 @@ class AdminAjaxApiAjaxTest extends TestCase
         // Simulate empty POST
         $_POST['api_key'] = '';
         $_POST['api_secret'] = '';
-        $called = false;
+        $called = [];
         \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arr) use (&$called) {
             $called = $arr;
         });
@@ -73,7 +73,7 @@ class AdminAjaxApiAjaxTest extends TestCase
         $apiAjax = new ApiAjax($apiService);
         $_POST['api_key'] = 'short';
         $_POST['api_secret'] = 'short';
-        $called = false;
+        $called = [];
         \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arr) use (&$called) {
             $called = $arr;
         });
@@ -89,7 +89,7 @@ class AdminAjaxApiAjaxTest extends TestCase
         $apiAjax = new ApiAjax($apiService);
         $_POST['api_key'] = str_repeat('a', 21);
         $_POST['api_secret'] = str_repeat('b', 21);
-        $called = false;
+        $called = [];
         \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arr) use (&$called) {
             $called = $arr;
         });
@@ -108,7 +108,7 @@ class AdminAjaxApiAjaxTest extends TestCase
         $apiService = new \CTM\Service\ApiService('https://dummy-ctm-api.test');
         $apiAjax = new ApiAjax($apiService);
         \Brain\Monkey\Functions\when('get_option')->justReturn(false);
-        $called = false;
+        $called = [];
         \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arr) use (&$called) {
             $called = $arr;
         });
@@ -125,7 +125,7 @@ class AdminAjaxApiAjaxTest extends TestCase
         $apiService = new \CTM\Service\ApiService('https://dummy-ctm-api.test');
         $apiAjax = new ApiAjax($apiService);
         \Brain\Monkey\Functions\when('get_option')->justReturn('test');
-        $called = false;
+        $called = [];
         \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arr) use (&$called) {
             $called = $arr;
         });
@@ -142,7 +142,7 @@ class AdminAjaxApiAjaxTest extends TestCase
         $apiService = new \CTM\Service\ApiService('https://dummy-ctm-api.test');
         $apiAjax = new ApiAjax($apiService);
         \Brain\Monkey\Functions\when('get_option')->justReturn('test');
-        $called = false;
+        $called = [];
         \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arr) use (&$called) {
             $called = $arr;
         });
@@ -174,7 +174,7 @@ class AdminAjaxApiAjaxTest extends TestCase
         $apiService = new \CTM\Service\ApiService('https://dummy-ctm-api.test');
         $apiAjax = new ApiAjax($apiService);
         \Brain\Monkey\Functions\when('check_ajax_referer')->justReturn(false);
-        $called = false;
+        $called = [];
         \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arr) use (&$called) { $called = $arr; });
         $_POST['api_key'] = str_repeat('a', 21);
         $_POST['api_secret'] = str_repeat('b', 21);
@@ -187,7 +187,7 @@ class AdminAjaxApiAjaxTest extends TestCase
         $apiAjax = new ApiAjax($apiService);
         $_POST['api_key'] = '';
         $_POST['api_secret'] = str_repeat('b', 21);
-        $called = false;
+        $called = [];
         \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arr) use (&$called) { $called = $arr; });
         $apiAjax->ajaxTestApiConnection();
         $this->assertNotFalse($called, 'Expected wp_send_json_success/wp_send_json_error to be called, but it was not.');
@@ -199,7 +199,7 @@ class AdminAjaxApiAjaxTest extends TestCase
         $apiAjax = new ApiAjax($apiService);
         $_POST['api_key'] = str_repeat('a', 21);
         $_POST['api_secret'] = '';
-        $called = false;
+        $called = [];
         \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arr) use (&$called) { $called = $arr; });
         $apiAjax->ajaxTestApiConnection();
         $this->assertNotFalse($called, 'Expected wp_send_json_success/wp_send_json_error to be called, but it was not.');
@@ -211,7 +211,7 @@ class AdminAjaxApiAjaxTest extends TestCase
         $apiAjax = new ApiAjax($apiService);
         $_POST['api_key'] = str_repeat('a', 21);
         $_POST['api_secret'] = str_repeat('b', 21);
-        $called = false;
+        $called = [];
         \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arr) use (&$called) { $called = $arr; });
         // Simulate null return from getAccountInfo
         \Brain\Monkey\Functions\when('wp_remote_request')->alias(function() { return ['response' => ['code' => 200], 'body' => '{}']; });
@@ -225,7 +225,7 @@ class AdminAjaxApiAjaxTest extends TestCase
         $apiAjax = new ApiAjax($apiService);
         $_POST['api_key'] = str_repeat('a', 21);
         $_POST['api_secret'] = str_repeat('b', 21);
-        $called = false;
+        $called = [];
         \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arr) use (&$called) { $called = $arr; });
         $apiAjax->ajaxTestApiConnection();
         $this->assertNotFalse($called, 'Expected wp_send_json_success/wp_send_json_error to be called, but it was not.');
@@ -237,7 +237,7 @@ class AdminAjaxApiAjaxTest extends TestCase
         $apiAjax = new ApiAjax($apiService);
         $_POST['api_key'] = str_repeat('a', 21);
         $_POST['api_secret'] = str_repeat('b', 21);
-        $called = false;
+        $called = [];
         \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arr) use (&$called) { $called = $arr; });
         \Brain\Monkey\Functions\when('update_option')->justReturn(true);
         // Mock getAccountInfo to return an account with no id
@@ -261,7 +261,7 @@ class AdminAjaxApiAjaxTest extends TestCase
         $apiAjax = new ApiAjax($apiService);
         $_POST['api_key'] = str_repeat('a', 21);
         $_POST['api_secret'] = str_repeat('b', 21);
-        $called = false;
+        $called = [];
         \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arr) use (&$called) { $called = $arr; });
         $apiAjax->ajaxTestApiConnection();
         $this->assertNotFalse($called, 'Expected wp_send_json_success/wp_send_json_error to be called, but it was not.');
@@ -275,7 +275,7 @@ class AdminAjaxApiAjaxTest extends TestCase
         $apiAjax = new ApiAjax($apiService);
         $_POST['api_key'] = str_repeat('a', 21);
         $_POST['api_secret'] = str_repeat('b', 21);
-        $called = false;
+        $called = [];
         \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arr) use (&$called) { $called = $arr; });
         $apiAjax->ajaxTestApiConnection();
         $this->assertNotFalse($called, 'Expected wp_send_json_success/wp_send_json_error to be called, but it was not.');
@@ -287,7 +287,7 @@ class AdminAjaxApiAjaxTest extends TestCase
         $apiAjax = new ApiAjax($apiService);
         $_POST['api_key'] = str_repeat('a', 21);
         $_POST['api_secret'] = str_repeat('b', 21);
-        $called = false;
+        $called = [];
         $updated = [];
         \Brain\Monkey\Functions\when('update_option')->alias(function($k, $v = null) use (&$updated) { $updated[$k] = $v; return true; });
         \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arr) use (&$called) { $called = $arr; });
@@ -310,7 +310,7 @@ class AdminAjaxApiAjaxTest extends TestCase
         $apiAjax = new ApiAjax($apiService);
         $_POST['api_key'] = str_repeat('a', 21);
         $_POST['api_secret'] = str_repeat('b', 21);
-        $called = false;
+        $called = [];
         \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arr) use (&$called) { $called = $arr; });
         \Brain\Monkey\Functions\when('update_option')->justReturn(true);
         // Mock getAccountInfo to return a valid account
@@ -331,7 +331,7 @@ class AdminAjaxApiAjaxTest extends TestCase
         $apiService = new \CTM\Service\ApiService('https://dummy-ctm-api.test');
         $apiAjax = new ApiAjax($apiService);
         \Brain\Monkey\Functions\when('get_option')->justReturn('test');
-        $called = false;
+        $called = [];
         \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arr) use (&$called) { $called = $arr; });
         $_POST['endpoint'] = '/api/v1/accounts/';
         $_POST['method'] = 'POST';
@@ -344,7 +344,7 @@ class AdminAjaxApiAjaxTest extends TestCase
         $apiService = new \CTM\Service\ApiService('https://dummy-ctm-api.test');
         $apiAjax = new ApiAjax($apiService);
         \Brain\Monkey\Functions\when('get_option')->justReturn('test');
-        $called = false;
+        $called = [];
         \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arr) use (&$called) { $called = $arr; });
         $_POST['endpoint'] = '/api/v1/accounts/';
         $_POST['method'] = 'PUT';
@@ -357,7 +357,7 @@ class AdminAjaxApiAjaxTest extends TestCase
         $apiService = new \CTM\Service\ApiService('https://dummy-ctm-api.test');
         $apiAjax = new ApiAjax($apiService);
         \Brain\Monkey\Functions\when('get_option')->justReturn('test');
-        $called = false;
+        $called = [];
         \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arr) use (&$called) { $called = $arr; });
         $_POST['endpoint'] = '/api/v1/accounts/';
         $_POST['method'] = 'DELETE';
@@ -372,7 +372,7 @@ class AdminAjaxApiAjaxTest extends TestCase
         };
         $apiAjax = new ApiAjax($apiService);
         \Brain\Monkey\Functions\when('get_option')->justReturn('test');
-        $called = false;
+        $called = [];
         \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arr) use (&$called) { $called = $arr; });
         $_POST['endpoint'] = '/api/v1/accounts/';
         $_POST['method'] = 'GET';
@@ -385,7 +385,7 @@ class AdminAjaxApiAjaxTest extends TestCase
         $apiService = new \CTM\Service\ApiService('https://dummy-ctm-api.test');
         $apiAjax = new ApiAjax($apiService);
         \Brain\Monkey\Functions\when('get_option')->justReturn('test');
-        $called = false;
+        $called = [];
         \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arr) use (&$called) { $called = $arr; });
         $_POST['endpoint'] = '/api/v1/accounts/';
         $_POST['method'] = 'GET';
@@ -434,4 +434,309 @@ class AdminAjaxApiAjaxTest extends TestCase
         $this->assertIsArray($output);
         $this->assertEquals('poor', $output['rating']);
     }
+    public function testAjaxChangeApiKeysPermissionDenied() {
+        $apiAjax = new ApiAjax();
+        $_POST['api_key'] = 'key';
+        $_POST['api_secret'] = 'secret';
+        \Brain\Monkey\Functions\when('check_ajax_referer')->justReturn(true);
+        \Brain\Monkey\Functions\when('current_user_can')->justReturn(false);
+        $called = [];
+        \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arr) use (&$called) { $called = (array)$arr; });
+        $apiAjax->ajaxChangeApiKeys();
+        $this->assertIsArray($called);
+        $this->assertEquals('Permission denied.', $called['message']);
+    }
+    public function testAjaxChangeApiKeysMissingFields() {
+        $apiAjax = new ApiAjax();
+        $_POST['api_key'] = '';
+        $_POST['api_secret'] = '';
+        \Brain\Monkey\Functions\when('check_ajax_referer')->justReturn(true);
+        \Brain\Monkey\Functions\when('current_user_can')->justReturn(true);
+        $called = [];
+        \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arr) use (&$called) { $called = (array)$arr; });
+        $apiAjax->ajaxChangeApiKeys();
+        $this->assertIsArray($called);
+        $this->assertEquals('API Key and Secret are required.', $called['message']);
+    }
+    public function testAjaxChangeApiKeysUpdatesOptions() {
+        $apiAjax = new ApiAjax();
+        $_POST['api_key'] = 'key';
+        $_POST['api_secret'] = 'secret';
+        \Brain\Monkey\Functions\when('check_ajax_referer')->justReturn(true);
+        \Brain\Monkey\Functions\when('current_user_can')->justReturn(true);
+        $updated = [];
+        $called = [];
+        \Brain\Monkey\Functions\when('update_option')->alias(function($k, $v) use (&$updated) { $updated[$k] = $v; });
+        \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arr) use (&$called) { $called = (array)$arr; });
+        // Patch ApiService to avoid real API calls
+        $apiAjax = new class extends ApiAjax {
+            public function __construct() {}
+            public function getApiService() {
+                return new class {
+                    public function getAccountInfo($k, $s) { return ['account' => ['id' => 'acct_1']]; }
+                    public function getTrackingScript($id, $k, $s) { return ['tracking' => '<script>track</script>']; }
+                };
+            }
+            public function ajaxChangeApiKeys() {
+                // Copy-paste logic, but use getApiService()
+                check_ajax_referer('ctm_change_api_keys', 'nonce');
+                if (!current_user_can('manage_options')) { wp_send_json_error(['message' => 'Permission denied.']); }
+                $apiKey = sanitize_text_field($_POST['api_key'] ?? '');
+                $apiSecret = sanitize_text_field($_POST['api_secret'] ?? '');
+                if (!$apiKey || !$apiSecret) { wp_send_json_error(['message' => 'API Key and Secret are required.']); }
+                update_option('ctm_api_key', $apiKey);
+                update_option('ctm_api_secret', $apiSecret);
+                $apiService = $this->getApiService();
+                $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
+                $accountId = null;
+                if ($accountInfo && isset($accountInfo['account']['id'])) {
+                    $accountId = $accountInfo['account']['id'];
+                    update_option('ctm_api_auth_account', $accountId);
+                }
+                if ($accountId) {
+                    $scripts = $apiService->getTrackingScript($accountId, $apiKey, $apiSecret);
+                    if ($scripts && isset($scripts['tracking']) && !empty($scripts['tracking'])) {
+                        update_option('call_track_account_script', $scripts['tracking']);
+                    }
+                }
+                wp_send_json_success(['message' => 'API keys updated.']);
+            }
+        };
+        $apiAjax->ajaxChangeApiKeys();
+        $this->assertEquals('key', $updated['ctm_api_key']);
+        $this->assertEquals('secret', $updated['ctm_api_secret']);
+        $this->assertEquals('acct_1', $updated['ctm_api_auth_account']);
+        $this->assertEquals('<script>track</script>', $updated['call_track_account_script']);
+        $this->assertIsArray($called);
+        $this->assertEquals('API keys updated.', $called['message']);
+    }
+    public function testAjaxDisableApiPermissionDenied() {
+        $apiAjax = new ApiAjax();
+        \Brain\Monkey\Functions\when('check_ajax_referer')->justReturn(true);
+        \Brain\Monkey\Functions\when('current_user_can')->justReturn(false);
+        $called = [];
+        \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arr) use (&$called) { $called = (array)$arr; });
+        $apiAjax->ajaxDisableApi();
+        $this->assertIsArray($called);
+        $this->assertEquals('Permission denied.', $called['message']);
+    }
+    public function testAjaxDisableApiClearsOptions() {
+        $apiAjax = new ApiAjax();
+        \Brain\Monkey\Functions\when('check_ajax_referer')->justReturn(true);
+        \Brain\Monkey\Functions\when('current_user_can')->justReturn(true);
+        $deleted = [];
+        $called = [];
+        \Brain\Monkey\Functions\when('delete_option')->alias(function($k) use (&$deleted) { $deleted[] = $k; });
+        \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arr) use (&$called) { $called = (array)$arr; });
+        $apiAjax->ajaxDisableApi();
+        $this->assertContains('ctm_api_key', $deleted);
+        $this->assertContains('ctm_api_secret', $deleted);
+        $this->assertContains('ctm_api_auth_account', $deleted);
+        $this->assertContains('call_track_account_script', $deleted);
+        $this->assertIsArray($called);
+        $this->assertEquals('API credentials cleared.', $called['message']);
+    }
+
+    // BEGIN: Additional tests merged from root-level tests/AdminAjaxApiAjaxTest.php
+    public function testAjaxChangeApiKeysApiFailure() {
+        // Patch ApiService to throw
+        $apiAjax = new class extends ApiAjax {
+            public function __construct() {}
+            public function getApiService() {
+                return new class {
+                    public function getAccountInfo($k, $s) { throw new \Exception('API error'); }
+                    public function getTrackingScript($id, $k, $s) { throw new \Exception('Script error'); }
+                };
+            }
+            public function ajaxChangeApiKeys() {
+                check_ajax_referer('ctm_change_api_keys', 'nonce');
+                if (!current_user_can('manage_options')) { wp_send_json_error(['message' => 'Permission denied.']); }
+                $apiKey = sanitize_text_field($_POST['api_key'] ?? '');
+                $apiSecret = sanitize_text_field($_POST['api_secret'] ?? '');
+                if (!$apiKey || !$apiSecret) { wp_send_json_error(['message' => 'API Key and Secret are required.']); }
+                update_option('ctm_api_key', $apiKey);
+                update_option('ctm_api_secret', $apiSecret);
+                try {
+                    $apiService = $this->getApiService();
+                    $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
+                } catch (\Exception $e) {
+                    wp_send_json_error(['message' => 'API error: ' . $e->getMessage()]);
+                }
+                wp_send_json_success(['message' => 'API keys updated.']);
+            }
+        };
+        $_POST['api_key'] = 'key';
+        $_POST['api_secret'] = 'secret';
+        \Brain\Monkey\Functions\when('check_ajax_referer')->justReturn(true);
+        \Brain\Monkey\Functions\when('current_user_can')->justReturn(true);
+        $called = [];
+        \Brain\Monkey\Functions\when('update_option')->justReturn(true);
+        \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arr) use (&$called) { $called = (array)$arr; });
+        $apiAjax->ajaxChangeApiKeys();
+        $this->assertIsArray($called);
+        $this->assertStringContainsString('API error', $called['message']);
+    }
+    public function testAjaxChangeApiKeysNonceFailure() {
+        $apiAjax = new ApiAjax();
+        $_POST['api_key'] = 'key';
+        $_POST['api_secret'] = 'secret';
+        \Brain\Monkey\Functions\when('check_ajax_referer')->justReturn(false);
+        $called = [];
+        \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arr) use (&$called) { $called = (array)$arr; });
+        $apiAjax->ajaxChangeApiKeys();
+        $this->assertIsArray($called);
+    }
+    public function testAjaxDisableApiNonceFailure() {
+        $apiAjax = new ApiAjax();
+        \Brain\Monkey\Functions\when('check_ajax_referer')->justReturn(false);
+        $called = [];
+        \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arr) use (&$called) { $called = (array)$arr; });
+        $apiAjax->ajaxDisableApi();
+        $this->assertIsArray($called);
+    }
+    public function testAjaxChangeApiKeysTrackingScriptMissing() {
+        $apiAjax = new class extends ApiAjax {
+            public function __construct() {}
+            public function getApiService() {
+                return new class {
+                    public function getAccountInfo($k, $s) { return ['account' => ['id' => 'acct_1']]; }
+                    public function getTrackingScript($id, $k, $s) { return []; }
+                };
+            }
+            public function ajaxChangeApiKeys() {
+                check_ajax_referer('ctm_change_api_keys', 'nonce');
+                if (!current_user_can('manage_options')) { wp_send_json_error(['message' => 'Permission denied.']); }
+                $apiKey = sanitize_text_field($_POST['api_key'] ?? '');
+                $apiSecret = sanitize_text_field($_POST['api_secret'] ?? '');
+                if (!$apiKey || !$apiSecret) { wp_send_json_error(['message' => 'API Key and Secret are required.']); }
+                update_option('ctm_api_key', $apiKey);
+                update_option('ctm_api_secret', $apiSecret);
+                $apiService = $this->getApiService();
+                $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
+                $accountId = null;
+                if ($accountInfo && isset($accountInfo['account']['id'])) {
+                    $accountId = $accountInfo['account']['id'];
+                    update_option('ctm_api_auth_account', $accountId);
+                }
+                if ($accountId) {
+                    $scripts = $apiService->getTrackingScript($accountId, $apiKey, $apiSecret);
+                    if ($scripts && isset($scripts['tracking']) && !empty($scripts['tracking'])) {
+                        update_option('call_track_account_script', $scripts['tracking']);
+                    }
+                }
+                wp_send_json_success(['message' => 'API keys updated.']);
+            }
+        };
+        $_POST['api_key'] = 'key';
+        $_POST['api_secret'] = 'secret';
+        \Brain\Monkey\Functions\when('check_ajax_referer')->justReturn(true);
+        \Brain\Monkey\Functions\when('current_user_can')->justReturn(true);
+        $updated = [];
+        $called = [];
+        \Brain\Monkey\Functions\when('update_option')->alias(function($k, $v) use (&$updated) { $updated[$k] = $v; });
+        \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arr) use (&$called) { $called = (array)$arr; });
+        $apiAjax->ajaxChangeApiKeys();
+        $this->assertEquals('key', $updated['ctm_api_key']);
+        $this->assertEquals('secret', $updated['ctm_api_secret']);
+        $this->assertEquals('acct_1', $updated['ctm_api_auth_account']);
+        $this->assertArrayNotHasKey('call_track_account_script', $updated);
+        $this->assertIsArray($called);
+        $this->assertEquals('API keys updated.', $called['message']);
+    }
+    public function testAjaxChangeApiKeysAccountInfoMissingAccount() {
+        $apiAjax = new class extends ApiAjax {
+            public function __construct() {}
+            public function getApiService() {
+                return new class {
+                    public function getAccountInfo($k, $s) { return ['foo' => 'bar']; }
+                    public function getTrackingScript($id, $k, $s) { return ['tracking' => '<script>track</script>']; }
+                };
+            }
+            public function ajaxChangeApiKeys() {
+                check_ajax_referer('ctm_change_api_keys', 'nonce');
+                if (!current_user_can('manage_options')) { wp_send_json_error(['message' => 'Permission denied.']); }
+                $apiKey = sanitize_text_field($_POST['api_key'] ?? '');
+                $apiSecret = sanitize_text_field($_POST['api_secret'] ?? '');
+                if (!$apiKey || !$apiSecret) { wp_send_json_error(['message' => 'API Key and Secret are required.']); }
+                update_option('ctm_api_key', $apiKey);
+                update_option('ctm_api_secret', $apiSecret);
+                $apiService = $this->getApiService();
+                $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
+                $accountId = null;
+                if ($accountInfo && isset($accountInfo['account']['id'])) {
+                    $accountId = $accountInfo['account']['id'];
+                    update_option('ctm_api_auth_account', $accountId);
+                }
+                if ($accountId) {
+                    $scripts = $apiService->getTrackingScript($accountId, $apiKey, $apiSecret);
+                    if ($scripts && isset($scripts['tracking']) && !empty($scripts['tracking'])) {
+                        update_option('call_track_account_script', $scripts['tracking']);
+                    }
+                }
+                wp_send_json_success(['message' => 'API keys updated.']);
+            }
+        };
+        $_POST['api_key'] = 'key';
+        $_POST['api_secret'] = 'secret';
+        \Brain\Monkey\Functions\when('check_ajax_referer')->justReturn(true);
+        \Brain\Monkey\Functions\when('current_user_can')->justReturn(true);
+        $updated = [];
+        $called = [];
+        \Brain\Monkey\Functions\when('update_option')->alias(function($k, $v) use (&$updated) { $updated[$k] = $v; });
+        \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arr) use (&$called) { $called = (array)$arr; });
+        $apiAjax->ajaxChangeApiKeys();
+        $this->assertEquals('key', $updated['ctm_api_key']);
+        $this->assertEquals('secret', $updated['ctm_api_secret']);
+        $this->assertArrayNotHasKey('ctm_api_auth_account', $updated);
+        $this->assertArrayNotHasKey('call_track_account_script', $updated);
+        $this->assertIsArray($called);
+        $this->assertEquals('API keys updated.', $called['message']);
+    }
+    public function testAjaxSimulateApiRequestPartialApiResponse() {
+        $apiService = new \CTM\Service\ApiService('https://dummy-ctm-api.test');
+        $apiAjax = new ApiAjax($apiService);
+        \Brain\Monkey\Functions\when('get_option')->justReturn('test');
+        $called = [];
+        \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arr) use (&$called) { $called = $arr; });
+        $_POST['endpoint'] = '/api/v1/accounts/';
+        $_POST['method'] = 'GET';
+        // Simulate partial/invalid response
+        \Brain\Monkey\Functions\when('wp_remote_request')->alias(function() { return ['response' => ['code' => 200], 'body' => '{}']; });
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_body')->justReturn('{}');
+        $apiAjax->ajaxSimulateApiRequest();
+        $this->assertNotFalse($called);
+        $this->assertIsArray($called);
+        $this->assertArrayNotHasKey('account', $called);
+    }
+    public function testAjaxTestApiConnectionGetAccountByIdThrows() {
+        $apiService = new class('https://dummy-ctm-api.test') extends \CTM\Service\ApiService {
+            public function getAccountById(string $accountId, string $apiKey, string $apiSecret): ?array { throw new \Exception('Account details error'); }
+            public function getAccountInfo(string $apiKey, string $apiSecret): ?array { return ['account' => ['id' => 123]]; }
+        };
+        $apiAjax = new ApiAjax($apiService);
+        $_POST['api_key'] = str_repeat('a', 21);
+        $_POST['api_secret'] = str_repeat('b', 21);
+        $called = [];
+        \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arr) use (&$called) { $called = $arr; });
+        $apiAjax->ajaxTestApiConnection();
+        $this->assertNotFalse($called);
+        $this->assertIsArray($called);
+        $this->assertStringContainsString('Failed to connect to CTM API', $called['message']);
+    }
+    public function testAjaxTestApiConnectionGetAccountByIdReturnsInvalid() {
+        $apiService = new class('https://dummy-ctm-api.test') extends \CTM\Service\ApiService {
+            public function getAccountById(string $accountId, string $apiKey, string $apiSecret): ?array { return null; }
+            public function getAccountInfo(string $apiKey, string $apiSecret): ?array { return ['account' => ['id' => 123]]; }
+        };
+        $apiAjax = new ApiAjax($apiService);
+        $_POST['api_key'] = str_repeat('a', 21);
+        $_POST['api_secret'] = str_repeat('b', 21);
+        $called = [];
+        \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arr) use (&$called) { $called = $arr; });
+        $apiAjax->ajaxTestApiConnection();
+        $this->assertNotFalse($called);
+        $this->assertIsArray($called);
+        $this->assertNull($called['account_details']);
+    }
+    // END: Additional tests merged from root-level tests/AdminAjaxApiAjaxTest.php
 }

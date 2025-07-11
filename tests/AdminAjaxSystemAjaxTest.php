@@ -561,4 +561,45 @@ class AdminAjaxSystemAjaxTest extends TestCase
         $result = $method->invoke($systemAjax, true);
         $this->assertIsString($result);
     }
+
+    // BEGIN: Additional tests merged from root-level tests/AdminAjaxSystemAjaxTest.php
+    public function testCanBeConstructedWithDependencies()
+    {
+        $systemAjax = new \CTM\Admin\Ajax\SystemAjax(new \CTM\Admin\LoggingSystem(), new \CTM\Admin\SettingsRenderer());
+        $this->assertInstanceOf(\CTM\Admin\Ajax\SystemAjax::class, $systemAjax);
+    }
+    public function testInjectLoggingSystemFromRoot()
+    {
+        $realLogger = new \CTM\Admin\LoggingSystem();
+        $systemAjax = new \CTM\Admin\Ajax\SystemAjax($realLogger, new \CTM\Admin\SettingsRenderer());
+        $ref = new \ReflectionClass($systemAjax);
+        $prop = $ref->getProperty('loggingSystem');
+        $prop->setAccessible(true);
+        $this->assertSame($realLogger, $prop->getValue($systemAjax));
+    }
+    public function testInjectSettingsRendererFromRoot()
+    {
+        $realRenderer = new \CTM\Admin\SettingsRenderer();
+        $systemAjax = new \CTM\Admin\Ajax\SystemAjax(new \CTM\Admin\LoggingSystem(), $realRenderer);
+        $ref = new \ReflectionClass($systemAjax);
+        $prop = $ref->getProperty('renderer');
+        $prop->setAccessible(true);
+        $this->assertSame($realRenderer, $prop->getValue($systemAjax));
+    }
+    public function testDefaultLoggingSystemFromRoot()
+    {
+        $systemAjax = new \CTM\Admin\Ajax\SystemAjax(new \CTM\Admin\LoggingSystem(), new \CTM\Admin\SettingsRenderer());
+        $ref = new \ReflectionClass($systemAjax);
+        $prop = $ref->getProperty('loggingSystem');
+        $prop->setAccessible(true);
+        $this->assertInstanceOf(\CTM\Admin\LoggingSystem::class, $prop->getValue($systemAjax));
+    }
+    public function testDefaultSettingsRendererFromRoot()
+    {
+        $systemAjax = new \CTM\Admin\Ajax\SystemAjax(new \CTM\Admin\LoggingSystem(), new \CTM\Admin\SettingsRenderer());
+        $ref = new \ReflectionClass($systemAjax);
+        $prop = $ref->getProperty('renderer');
+        $prop->setAccessible(true);
+        $this->assertInstanceOf(\CTM\Admin\SettingsRenderer::class, $prop->getValue($systemAjax));
+    }
 } 

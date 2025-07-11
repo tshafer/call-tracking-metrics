@@ -13,6 +13,10 @@ class ApiAjax {
     public function registerHandlers() {
         add_action('wp_ajax_ctm_test_api_connection', [$this, 'ajaxTestApiConnection']);
         add_action('wp_ajax_ctm_simulate_api_request', [$this, 'ajaxSimulateApiRequest']);
+        // AJAX: Change API Keys
+        add_action('wp_ajax_ctm_change_api_keys', [$this, 'ajaxChangeApiKeys']);
+        // AJAX: Disable API
+        add_action('wp_ajax_ctm_disable_api', [$this, 'ajaxDisableApi']);
     }
 
     public function ajaxTestApiConnection(): void
@@ -222,5 +226,51 @@ class ApiAjax {
                 'method' => $method
             ]);
         }
+    }
+
+    public function ajaxChangeApiKeys() {
+        check_ajax_referer('ctm_change_api_keys', 'nonce');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Permission denied.']);
+        }
+        $apiKey = sanitize_text_field($_POST['api_key'] ?? '');
+        $apiSecret = sanitize_text_field($_POST['api_secret'] ?? '');
+        if (!$apiKey || !$apiSecret) {
+            wp_send_json_error(['message' => 'API Key and Secret are required.']);
+        }
+        update_option('ctm_api_key', $apiKey);
+        update_option('ctm_api_secret', $apiSecret);
+        // Fetch account info and tracking script
+        $apiService = new \CTM\Service\ApiService('https://api.calltrackingmetrics.com');
+        $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
+        $accountId = null;
+        if ($accountInfo && isset($accountInfo['account']['id'])) {
+            $accountId = $accountInfo['account']['id'];
+            update_option('ctm_api_auth_account', $accountId);
+        }
+        if ($accountId) {
+            try {
+                $scripts = $apiService->getTrackingScript($accountId, $apiKey, $apiSecret);
+                if ($scripts && isset($scripts['tracking']) && !empty($scripts['tracking'])) {
+                    update_option('call_track_account_script', $scripts['tracking']);
+                }
+            } catch (\Exception $e) {
+                // Optionally log error
+            }
+        }
+        wp_send_json_success(['message' => 'API keys updated.']);
+    }
+
+    public function ajaxDisableApi() {
+        check_ajax_referer('ctm_disable_api', 'nonce');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Permission denied.']);
+        }
+        // Clear all API credentials and related options
+        delete_option('ctm_api_key');
+        delete_option('ctm_api_secret');
+        delete_option('ctm_api_auth_account');
+        delete_option('call_track_account_script');
+        wp_send_json_success(['message' => 'API credentials cleared.']);
     }
 } 

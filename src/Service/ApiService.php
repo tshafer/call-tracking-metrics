@@ -234,6 +234,24 @@ class ApiService
     }
 
     /**
+     * Get the tracking script for an account
+     *
+     * @param string $accountId
+     * @param string $apiKey
+     * @param string $apiSecret
+     * @return array|null
+     */
+    public function getTrackingScript(string $accountId, string $apiKey, string $apiSecret): ?array
+    {
+        try {
+            return $this->makeRequest('GET', "/api/v1/accounts/{$accountId}/scripts", [], $apiKey, $apiSecret);
+        } catch (\Exception $e) {
+            error_log('CTM API Error (getTrackingScript): ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Make an HTTP request to the CTM API
      * 
      * Core method that handles all HTTP communication with the API including

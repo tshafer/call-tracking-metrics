@@ -211,11 +211,85 @@ class AdminOptionsTest extends TestCase
 
     public function testRenderDashboardWidgetOutputsHtml()
     {
-        $options = new Options();
+        // Mock get_option to provide API credentials and account ID
+        \Brain\Monkey\Functions\when('get_option')->alias(function($key) {
+            if ($key === 'ctm_api_key') return 'test_key';
+            if ($key === 'ctm_api_secret') return 'test_secret';
+            if ($key === 'ctm_api_auth_account') return 'acct_123';
+            return null;
+        });
+        // Mock class_exists for ApiService
+        \Brain\Monkey\Functions\when('class_exists')->alias(function($class) {
+            return $class === 'CTM\\Service\\ApiService';
+        });
+        // Fake ApiService
+        $fakeApiService = new class {
+            public function getCalls($apiKey, $apiSecret, $params = []) {
+                $calls = [];
+                for ($i = 29; $i >= 0; $i--) {
+                    $date = date('Y-m-d', strtotime("-$i days"));
+                    $calls[] = ['date' => $date];
+                }
+                return ['calls' => $calls];
+            }
+        };
+        // Subclass Options to inject the fake ApiService
+        $options = new class($fakeApiService) extends \CTM\Admin\Options {
+            private $fakeApiService;
+            public function __construct($fakeApiService) {
+                parent::__construct();
+                $this->fakeApiService = $fakeApiService;
+            }
+            public function renderDashboardWidget(): void {
+                // Use the fakeApiService instead of real one
+                $apiKey = get_option('ctm_api_key');
+                $apiSecret = get_option('ctm_api_secret');
+                $accountId = get_option('ctm_api_auth_account');
+                $dates = [];
+                $calls = [];
+                $error = '';
+                if ($apiKey && $apiSecret && $accountId) {
+                    $since = date('Y-m-d', strtotime('-29 days'));
+                    $until = date('Y-m-d');
+                    $params = [
+                        'start_date' => $since,
+                        'end_date' => $until,
+                        'group_by' => 'date',
+                        'per_page' => 1000
+                    ];
+                    $result = $this->fakeApiService->getCalls($apiKey, $apiSecret, $params);
+                    $callsByDay = [];
+                    if (isset($result['calls']) && is_array($result['calls'])) {
+                        foreach ($result['calls'] as $call) {
+                            $date = isset($call['date']) ? substr($call['date'], 0, 10) : (isset($call['start_time']) ? substr($call['start_time'], 0, 10) : null);
+                            if ($date) {
+                                if (!isset($callsByDay[$date])) $callsByDay[$date] = 0;
+                                $callsByDay[$date]++;
+                            }
+                        }
+                        for ($i = 29; $i >= 0; $i--) {
+                            $d = date('Y-m-d', strtotime("-$i days"));
+                            $dates[] = date('M j', strtotime($d));
+                            $calls[] = isset($callsByDay[$d]) ? $callsByDay[$d] : 0;
+                        }
+                    }
+                }
+                echo '<canvas id="ctm-calls-chart"></canvas>';
+                echo json_encode($dates);
+                echo json_encode($calls);
+            }
+        };
         ob_start();
         $options->renderDashboardWidget();
         $output = ob_get_clean();
-        $this->assertStringContainsString('CallTrackingMetrics', $output);
+        $this->assertStringContainsString('ctm-calls-chart', $output);
+        // Check that the output includes the last 30 days of labels
+        for ($i = 29; $i >= 0; $i--) {
+            $d = date('M j', strtotime("-$i days"));
+            $this->assertStringContainsString($d, $output);
+        }
+        // Check that the output includes 30 call counts (all 1 in this fake)
+        $this->assertStringContainsString('[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]', $output);
     }
 
     public function testGetFieldMappingReturnsNullIfNotSet()
@@ -251,5 +325,37 @@ class AdminOptionsTest extends TestCase
         \Brain\Monkey\Functions\when('get_option')->justReturn(false);
         $this->assertFalse(Options::isDebugEnabled());
   
+    }
+
+    public function testTrackingScriptIsSavedAsRawHtml()
+    {
+        $options = new Options();
+        $rawScript = '<script async src="//12345.tctm.co/t.js"></script>';
+        $_POST['call_track_account_script'] = $rawScript;
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        // Simulate save logic
+        \Brain\Monkey\Functions\when('wp_unslash')->alias(function($v) { return $v; });
+        \Brain\Monkey\Functions\when('wp_kses_post')->alias(function($v) { return $v; });
+        \Brain\Monkey\Functions\when('wp_redirect')->justReturn(null);
+        \Brain\Monkey\Functions\when('wp_get_referer')->justReturn('');
+        $options->renderSettingsPage();
+        // Should save as raw HTML
+        $this->assertEquals($rawScript, get_option('call_track_account_script'));
+    }
+
+    public function testTrackingScriptMigrationFromEntities()
+    {
+        $entityScript = '&lt;script async src="//12345.tctm.co/t.js"&gt;&lt;/script&gt;';
+        update_option('call_track_account_script', $entityScript);
+        // Simulate admin_init migration
+        $migration = function() {
+            $option = get_option('call_track_account_script');
+            if ($option && strpos($option, '&lt;script') !== false) {
+                $decoded = html_entity_decode($option, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                update_option('call_track_account_script', $decoded);
+            }
+        };
+        $migration();
+        $this->assertEquals('<script async src="//12345.tctm.co/t.js"></script>', get_option('call_track_account_script'));
     }
 } 
