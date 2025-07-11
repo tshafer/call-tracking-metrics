@@ -29,7 +29,7 @@ class AdminSettingsRendererTest extends TestCase
 
     protected function createDummyViews(array $views = ['general-tab.php', 'notice-cf7.php', 'notice-gf.php']) {
         if (!is_dir($this->tempViewsDir)) {
-            mkdir($this->tempViewsDir, 0777, true);
+            @mkdir($this->tempViewsDir, 0777, true);
         }
         foreach ($views as $view) {
             file_put_contents($this->tempViewsDir . $view, '<?php // Dummy file for tests');

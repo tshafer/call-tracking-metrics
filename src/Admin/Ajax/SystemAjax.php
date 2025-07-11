@@ -198,14 +198,16 @@ class SystemAjax {
 
         // 5. Plugin Load Time
         $metrics['plugin_load_time'] = method_exists($this, 'calculatePluginLoadTime') ? $this->calculatePluginLoadTime() : 'N/A';
-        if (is_numeric($metrics['plugin_load_time']) && $metrics['plugin_load_time'] > 500) {
+        $plugin_load_time_val = is_numeric($metrics['plugin_load_time']) ? $metrics['plugin_load_time'] : (float) filter_var($metrics['plugin_load_time'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+        if (is_numeric($plugin_load_time_val) && $plugin_load_time_val > 500) {
             $score -= 10;
             $optimizations[] = 'Reduce plugin load time.';
         }
 
         // 6. Theme Load Time
         $metrics['theme_load_time'] = method_exists($this, 'calculateThemeLoadTime') ? $this->calculateThemeLoadTime() : 'N/A';
-        if (is_numeric($metrics['theme_load_time']) && $metrics['theme_load_time'] > 500) {
+        $theme_load_time_val = is_numeric($metrics['theme_load_time']) ? $metrics['theme_load_time'] : (float) filter_var($metrics['theme_load_time'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+        if (is_numeric($theme_load_time_val) && $theme_load_time_val > 500) {
             $score -= 10;
             $optimizations[] = 'Reduce theme load time.';
         }
@@ -1416,7 +1418,11 @@ class SystemAjax {
         $memory_limit = \ini_get('memory_limit');
         $memory_limit_bytes = \wp_convert_hr_to_bytes($memory_limit);
         $current_usage = memory_get_usage(true);
-        $memory_percentage = $memory_limit_bytes > 0 ? round(($current_usage / $memory_limit_bytes) * 100, 1) . '%' : 'N/A';
+        if (is_numeric($memory_limit_bytes) && $memory_limit_bytes > 0 && is_numeric($current_usage)) {
+            $memory_percentage = round(($current_usage / $memory_limit_bytes) * 100, 1) . '%';
+        } else {
+            $memory_percentage = 'N/A';
+        }
         
         // Database Performance
         $total_queries = isset($wpdb->num_queries) ? $wpdb->num_queries : \get_num_queries();
@@ -1921,26 +1927,23 @@ class SystemAjax {
     private function getActiveSessions(): string
     {
         global $wpdb;
-        
         // Count active user sessions from WordPress
         $logged_in_users = count_users();
         $total_users = $logged_in_users['total_users'];
-        
         // Check for active sessions in the last hour
+        $usermeta_table = property_exists($wpdb, 'usermeta') ? $wpdb->usermeta : $wpdb->prefix . 'usermeta';
         $active_sessions = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->usermeta} 
+            "SELECT COUNT(*) FROM {$usermeta_table} 
              WHERE meta_key LIKE %s 
              AND meta_value > %d",
             'session_tokens',
             time() - 3600 // Last hour
         ));
-        
         if ($active_sessions > 0) {
             return $active_sessions . ' active';
         } elseif ($total_users > 0) {
             return '0 active (' . $total_users . ' total users)';
         }
-        
         return 'No sessions tracked';
     }
 
