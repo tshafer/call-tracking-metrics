@@ -107,6 +107,28 @@ class AdminAjaxHandlersTest extends TestCase
         $prop->setAccessible(true);
         $this->assertSame($systemAjax, $prop->getValue($ajaxHandlers));
     }
+    public function testInjectSystemSecurityAjax()
+    {
+        $loggingSystem = new class extends \CTM\Admin\LoggingSystem {};
+        $settingsRenderer = new class extends \CTM\Admin\SettingsRenderer {};
+        $systemSecurityAjax = new class($loggingSystem, $settingsRenderer) extends \CTM\Admin\Ajax\SystemSecurityAjax {};
+        $ajaxHandlers = new \CTM\Admin\AjaxHandlers(null, null, null, null, null, null, $systemSecurityAjax);
+        $ref = new \ReflectionClass($ajaxHandlers);
+        $prop = $ref->getProperty('systemSecurityAjax');
+        $prop->setAccessible(true);
+        $this->assertSame($systemSecurityAjax, $prop->getValue($ajaxHandlers));
+    }
+    public function testInjectSystemPerformanceAjax()
+    {
+        $loggingSystem = new class extends \CTM\Admin\LoggingSystem {};
+        $settingsRenderer = new class extends \CTM\Admin\SettingsRenderer {};
+        $systemPerformanceAjax = new class($loggingSystem, $settingsRenderer) extends \CTM\Admin\Ajax\SystemPerformanceAjax {};
+        $ajaxHandlers = new \CTM\Admin\AjaxHandlers(null, null, null, null, null, null, null, $systemPerformanceAjax);
+        $ref = new \ReflectionClass($ajaxHandlers);
+        $prop = $ref->getProperty('systemPerformanceAjax');
+        $prop->setAccessible(true);
+        $this->assertSame($systemPerformanceAjax, $prop->getValue($ajaxHandlers));
+    }
     public function testDefaultLoggingSystem()
     {
         $ajaxHandlers = new AjaxHandlers();
@@ -154,6 +176,17 @@ class AdminAjaxHandlersTest extends TestCase
         $prop = $ref->getProperty('systemAjax');
         $prop->setAccessible(true);
         $this->assertInstanceOf(\CTM\Admin\Ajax\SystemAjax::class, $prop->getValue($ajaxHandlers));
+    }
+    public function testDefaultSystemSecurityAndPerformanceAjax()
+    {
+        $ajaxHandlers = new \CTM\Admin\AjaxHandlers();
+        $ref = new \ReflectionClass($ajaxHandlers);
+        $propSec = $ref->getProperty('systemSecurityAjax');
+        $propSec->setAccessible(true);
+        $this->assertInstanceOf(\CTM\Admin\Ajax\SystemSecurityAjax::class, $propSec->getValue($ajaxHandlers));
+        $propPerf = $ref->getProperty('systemPerformanceAjax');
+        $propPerf->setAccessible(true);
+        $this->assertInstanceOf(\CTM\Admin\Ajax\SystemPerformanceAjax::class, $propPerf->getValue($ajaxHandlers));
     }
     public function testPartialDependencyInjection()
     {
@@ -348,5 +381,51 @@ class AdminAjaxHandlersTest extends TestCase
         $ref = new \ReflectionClass($ajaxHandlers);
         $this->assertSame($loggingSystem, $ref->getProperty('loggingSystem')->setAccessible(true) ?: $loggingSystem);
         $this->assertSame($settingsRenderer, $ref->getProperty('renderer')->setAccessible(true) ?: $settingsRenderer);
+    }
+
+    public function testRegisterHandlersCallsAllSubHandlersIncludingSecurityAndPerformance()
+    {
+        $calls = [
+            'form' => 0,
+            'log' => 0,
+            'api' => 0,
+            'system' => 0,
+            'security' => 0,
+            'performance' => 0
+        ];
+        $loggingSystem = new class extends \CTM\Admin\LoggingSystem {};
+        $settingsRenderer = new class extends \CTM\Admin\SettingsRenderer {};
+        $formAjax = new class($calls) extends \CTM\Admin\Ajax\FormAjax {
+            public $calls; public function __construct(&$calls) { $this->calls = &$calls; }
+            public function registerHandlers() { $this->calls['form']++; }
+        };
+        $logAjax = new class($calls, $loggingSystem, $settingsRenderer) extends \CTM\Admin\Ajax\LogAjax {
+            public $calls; public function __construct(&$calls, $l, $r) { parent::__construct($l, $r); $this->calls = &$calls; }
+            public function registerHandlers() { $this->calls['log']++; }
+        };
+        $apiAjax = new class($calls) extends \CTM\Admin\Ajax\ApiAjax {
+            public $calls; public function __construct(&$calls) { $this->calls = &$calls; }
+            public function registerHandlers() { $this->calls['api']++; }
+        };
+        $systemAjax = new class($calls, $loggingSystem, $settingsRenderer) extends \CTM\Admin\Ajax\SystemAjax {
+            public $calls; public function __construct(&$calls, $l, $r) { parent::__construct($l, $r); $this->calls = &$calls; }
+            public function registerHandlers() { $this->calls['system']++; }
+        };
+        $systemSecurityAjax = new class($calls, $loggingSystem, $settingsRenderer) extends \CTM\Admin\Ajax\SystemSecurityAjax {
+            public $calls; public function __construct(&$calls, $l, $r) { parent::__construct($l, $r); $this->calls = &$calls; }
+            public function registerHandlers() { $this->calls['security']++; }
+        };
+        $systemPerformanceAjax = new class($calls, $loggingSystem, $settingsRenderer) extends \CTM\Admin\Ajax\SystemPerformanceAjax {
+            public $calls; public function __construct(&$calls, $l, $r) { parent::__construct($l, $r); $this->calls = &$calls; }
+            public function registerHandlers() { $this->calls['performance']++; }
+        };
+        $ajaxHandlers = new \CTM\Admin\AjaxHandlers($loggingSystem, $settingsRenderer, $formAjax, $logAjax, $apiAjax, $systemAjax, $systemSecurityAjax, $systemPerformanceAjax);
+        $ajaxHandlers->registerHandlers();
+        $this->assertEquals(1, $calls['form']);
+        $this->assertEquals(1, $calls['log']);
+        $this->assertEquals(1, $calls['api']);
+        $this->assertEquals(1, $calls['system']);
+        $this->assertEquals(1, $calls['security']);
+        $this->assertEquals(1, $calls['performance']);
     }
 } 

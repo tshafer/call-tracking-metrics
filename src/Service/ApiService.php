@@ -126,7 +126,11 @@ class ApiService
         $endpoint = "/api/v1/accounts/{$accountId}";
         
         try {
-            return $this->makeRequest('GET', $endpoint, [], $apiKey, $apiSecret);
+            $data = $this->makeRequest('GET', $endpoint, [], $apiKey, $apiSecret);
+            if (isset($data['error']) || (isset($data['status']) && $data['status'] === 'error')) {
+                return null;
+            }
+            return $data;
         } catch (\Exception $e) {
             error_log('CTM API Error (getAccountById): ' . $e->getMessage());
             return null;
@@ -146,12 +150,24 @@ class ApiService
      * @param string $apiSecret The API secret for authentication
      * @return array|null The API response or null on failure
      */
-    public function submitFormReactor(array $formData, string $apiKey, string $apiSecret): ?array
+    public function submitFormReactor(array $formData, string $apiKey, string $apiSecret, $formId = null): ?array
     {
-        $endpoint = '/api/v1/form_reactor';
+        $endpoint = '/api/v1/formreactor/'.$formId;
         
         try {
-            return $this->makeRequest('POST', $endpoint, $formData, $apiKey, $apiSecret);
+            $data = $this->makeRequest(
+                method: 'POST', 
+                endpoint: $endpoint, 
+                data: $formData, 
+                apiKey: $apiKey, 
+                apiSecret: $apiSecret,
+                contentType: 'application/x-www-form-urlencoded'
+            );
+            // Return null on non-2xx response
+            if (isset($data['error']) || (isset($data['status']) && $data['status'] === 'error')) {
+                return null;
+            }
+            return $data;
         } catch (\Exception $e) {
             error_log('CTM API Error (submitFormReactor): ' . $e->getMessage());
             return null;
@@ -174,7 +190,11 @@ class ApiService
         $endpoint = '/api/v1/forms';
         
         try {
-            return $this->makeRequest('GET', $endpoint, [], $apiKey, $apiSecret);
+            $data = $this->makeRequest('GET', $endpoint, [], $apiKey, $apiSecret);
+            if (isset($data['error']) || (isset($data['status']) && $data['status'] === 'error')) {
+                return null;
+            }
+            return $data;
         } catch (\Exception $e) {
             error_log('CTM API Error (getForms): ' . $e->getMessage());
             return null;
@@ -197,7 +217,11 @@ class ApiService
         $endpoint = '/api/v1/tracking_numbers';
         
         try {
-            return $this->makeRequest('GET', $endpoint, [], $apiKey, $apiSecret);
+            $data = $this->makeRequest('GET', $endpoint, [], $apiKey, $apiSecret);
+            if (isset($data['error']) || (isset($data['status']) && $data['status'] === 'error')) {
+                return null;
+            }
+            return $data;
         } catch (\Exception $e) {
             error_log('CTM API Error (getTrackingNumbers): ' . $e->getMessage());
             return null;
@@ -220,13 +244,12 @@ class ApiService
     {
         $endpoint = '/api/v1/calls';
         
-        // Add query parameters if provided
-        if (!empty($params)) {
-            $endpoint .= '?' . http_build_query($params);
-        }
-        
         try {
-            return $this->makeRequest('GET', $endpoint, [], $apiKey, $apiSecret);
+            $data = $this->makeRequest('GET', $endpoint, $params, $apiKey, $apiSecret);
+            if (isset($data['error']) || (isset($data['status']) && $data['status'] === 'error')) {
+                return null;
+            }
+            return $data;
         } catch (\Exception $e) {
             error_log('CTM API Error (getCalls): ' . $e->getMessage());
             return null;
@@ -263,80 +286,45 @@ class ApiService
      * @param array  $data      Request data for POST/PUT requests
      * @param string $apiKey    API key for authentication
      * @param string $apiSecret API secret for authentication
+     * @param string $contentType Content-Type header (default: application/json)
      * @return array The decoded API response
      * @throws \Exception On HTTP errors or invalid responses
      */
-    private function makeRequest(string $method, string $endpoint, array $data = [], string $apiKey = '', string $apiSecret = ''): array
+    private function makeRequest(string $method, string $endpoint, array $data = [], string $apiKey = '', string $apiSecret = '', string $contentType = 'application/json'): array
     {
         $url = $this->baseUrl . $endpoint;
-        
-        // Start timing for response time tracking
-        $start_time = microtime(true);
-        
-        // Prepare request arguments
         $args = [
             'method'  => strtoupper($method),
             'timeout' => $this->timeout,
             'headers' => [
                 'User-Agent'   => $this->userAgent,
                 'Accept'       => 'application/json',
-                'Content-Type' => 'application/json',
+                'Content-Type' => $contentType,
             ],
         ];
-
-        // Add authentication if credentials provided
         if (!empty($apiKey) && !empty($apiSecret)) {
             $args['headers']['Authorization'] = 'Basic ' . base64_encode($apiKey . ':' . $apiSecret);
         }
-
-        // Add request body for POST/PUT requests
+        // Handle body encoding
         if (in_array($method, ['POST', 'PUT']) && !empty($data)) {
-            $args['body'] = json_encode($data);
+            if ($contentType === 'application/json') {
+                $args['body'] = json_encode($data);
+            } elseif ($contentType === 'application/x-www-form-urlencoded') {
+                $args['body'] = http_build_query($data);
+            } else {
+                $args['body'] = $data;
+            }
         }
-
-        // Make the HTTP request using WordPress HTTP API
         $response = \wp_remote_request($url, $args);
-
-        // Check for WordPress HTTP errors
         if (is_wp_error($response)) {
             throw new \Exception('HTTP request failed: ' . $response->get_error_message());
         }
-
-        // Get response details
-        $httpCode = \wp_remote_retrieve_response_code($response);
         $body = \wp_remote_retrieve_body($response);
-
-        // Handle HTTP error status codes
-        if ($httpCode >= 400) {
-            $errorMessage = "HTTP {$httpCode}";
-            
-            // Try to extract error message from response body
-            $errorData = json_decode($body, true);
-            if (json_last_error() === JSON_ERROR_NONE && isset($errorData['error'])) {
-                $errorMessage .= ': ' . $errorData['error'];
-            } elseif (json_last_error() === JSON_ERROR_NONE && isset($errorData['message'])) {
-                $errorMessage .= ': ' . $errorData['message'];
-            }
-            
-            throw new \Exception($errorMessage);
-        }
-
-        // Decode JSON response
-        $decodedResponse = json_decode($body, true);
-        
-        // Check for JSON decode errors
+        $result = json_decode($body, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \Exception('Invalid JSON response: ' . json_last_error_msg());
+            throw new \Exception('Invalid JSON response');
         }
-
-        // Calculate response time
-        $response_time = round((microtime(true) - $start_time) * 1000, 2);
-        
-        // Track successful API call and response time for performance monitoring
-        $this->trackApiCall();
-        $this->trackApiResponseTime($response_time);
-
-        return $decodedResponse;
+        return $result;
     }
 
     /**

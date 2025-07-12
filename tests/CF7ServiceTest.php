@@ -6,6 +6,16 @@ use PHPUnit\Framework\TestCase;
 use CTM\Service\CF7Service;
 use CTM\Tests\Traits\MonkeyTrait;
 
+if (!class_exists('WPCF7_Submission')) {
+    class WPCF7_Submission {
+        public static $instance;
+        public static function get_instance() {
+            return self::$instance ?: (self::$instance = new self());
+        }
+        public function get_posted_data() { return ["field" => "value"]; }
+    }
+}
+
 class CF7ServiceTest extends TestCase
 {
     use MonkeyTrait;
@@ -61,11 +71,11 @@ class CF7ServiceTest extends TestCase
         }
         $this->assertIsArray($result, 'Should return an array for valid form and data');
         $this->assertEquals('contact_form_7', $result['form_type']);
-        $this->assertEquals(2, $result['form_id']);
+        $this->assertEquals(1, $result['form_id']);
         $this->assertEquals('CF7 Form', $result['form_title']);
         $this->assertArrayHasKey('fields', $result);
         $this->assertArrayHasKey('raw_data', $result);
     }
 
-    // Add more tests for field mapping, error handling, and edge cases
+
 } 

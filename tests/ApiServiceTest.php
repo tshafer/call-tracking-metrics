@@ -158,6 +158,19 @@ class ApiServiceTest extends TestCase
         });
         $result = $this->apiService->submitFormReactor(['foo' => 'bar'], 'valid', 'valid');
         $this->assertNull($result, 'Should return null on exception');
+
+    }
+
+    public function testSubmitFormReactorReturnsThrottlingError()
+    {
+        \Brain\Monkey\Functions\when('wp_remote_request')->justReturn([
+            'response' => ['code' => 429],
+            'body' => json_encode(['status' => 'error', 'reason' => 'Rate limit exceeded'])
+        ]);
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_body')->justReturn(json_encode(['status' => 'error', 'reason' => 'Rate limit exceeded']));
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_response_code')->justReturn(429);
+        $result = $this->apiService->submitFormReactor(['foo' => 'bar'], 'valid', 'valid');
+        $this->assertNull($result, 'Should return null for throttling error');
     }
 
     public function testGetFormsReturnsFormsOnSuccess()

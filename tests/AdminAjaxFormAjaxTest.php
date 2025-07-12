@@ -141,7 +141,15 @@ class AdminAjaxFormAjaxTest extends TestCase
 
     public function testAjaxSaveMappingSuccess()
     {
-        $this->markTestSkipped('update_option not called as expected');
+        $_POST['form_type'] = 'gf';
+        $_POST['form_id'] = '1';
+        $_POST['mapping'] = ['field1' => 'value1'];
+        $_POST['nonce'] = 'dummy';
+        $called = null;
+        \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arg) use (&$called) { $called = $arg; });
+        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
+        $formAjax->ajaxSaveMapping();
+        $this->assertEquals(['message' => 'Mapping saved.'], $called);
     }
 
     public function testAjaxSaveMappingErrorOnInvalidData()
@@ -159,12 +167,40 @@ class AdminAjaxFormAjaxTest extends TestCase
 
     public function testAjaxDismissNoticeCF7()
     {
-        $this->markTestSkipped('update_option not called as expected');
+        $_POST['notice_type'] = 'cf7';
+        $_POST['nonce'] = 'dummy';
+        $called = null;
+        $updateOptionCalled = false;
+        \Brain\Monkey\Functions\when('update_option')->alias(function($option, $value) use (&$updateOptionCalled) {
+            if ($option === 'ctm_cf7_notice_dismissed' && $value === true) {
+                $updateOptionCalled = true;
+            }
+            return true;
+        });
+        \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arg) use (&$called) { $called = $arg; });
+        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
+        $formAjax->ajaxDismissNotice();
+        $this->assertTrue($updateOptionCalled, 'update_option should be called for cf7');
+        $this->assertEquals(['message' => 'CF7 notice dismissed.'], $called);
     }
 
     public function testAjaxDismissNoticeGF()
     {
-        $this->markTestSkipped('update_option not called as expected');
+        $_POST['notice_type'] = 'gf';
+        $_POST['nonce'] = 'dummy';
+        $called = null;
+        $updateOptionCalled = false;
+        \Brain\Monkey\Functions\when('update_option')->alias(function($option, $value) use (&$updateOptionCalled) {
+            if ($option === 'ctm_gf_notice_dismissed' && $value === true) {
+                $updateOptionCalled = true;
+            }
+            return true;
+        });
+        \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arg) use (&$called) { $called = $arg; });
+        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
+        $formAjax->ajaxDismissNotice();
+        $this->assertTrue($updateOptionCalled, 'update_option should be called for gf');
+        $this->assertEquals(['message' => 'GF notice dismissed.'], $called);
     }
 
     public function testAjaxDismissNoticeErrorOnInvalidType()

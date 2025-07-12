@@ -48,7 +48,7 @@ class ApiAjax {
             ]);
             return;
         }
-        if (strlen($api_key) < 20 || strlen($api_secret) < 20) {
+        if (!is_string($api_key) || !is_string($api_secret) || strlen($api_key) < 20 || strlen($api_secret) < 20) {
             wp_send_json_error([
                 'message' => 'Invalid API credential format',
                 'details' => [

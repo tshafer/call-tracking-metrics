@@ -54,6 +54,37 @@ class GFService
      */
     public function processSubmission(array $entry, array $form): ?array
     {
+        // File-based debug logging for troubleshooting
+        $logFile = WP_CONTENT_DIR . '/ctm-gf-debug.log';
+        // Build a mapping of entry keys to field labels
+        $fieldLabels = [];
+        if (isset($form['fields']) && is_array($form['fields'])) {
+            foreach ($form['fields'] as $field) {
+                // Single field
+                $fieldLabels[(string)$field->id] = $field->label ?? ('Field ' . $field->id);
+                // Multi-part fields (e.g., name, address)
+                if (isset($field->inputs) && is_array($field->inputs)) {
+                    foreach ($field->inputs as $input) {
+                        $fieldLabels[(string)$input['id']] = $input['label'] ?? ($field->label . ' ' . $input['id']);
+                    }
+                }
+            }
+        }
+        // Build a pretty entry with labels
+        $prettyEntry = [];
+        foreach ($entry as $key => $value) {
+            $label = $fieldLabels[(string)$key] ?? $key;
+            $prettyEntry[$label] = $value;
+        }
+        $logEntry = [
+            'timestamp' => date('Y-m-d H:i:s'),
+            'entry' => $entry,
+            'pretty_entry' => $prettyEntry,
+            'form' => $form,
+            'backtrace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10)
+        ];
+        file_put_contents($logFile, json_encode($logEntry, JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
+
         // Validate that Gravity Forms is available and data is valid
         if (!class_exists('GFAPI') || empty($entry) || empty($form)) {
             return null;
@@ -68,32 +99,90 @@ class GFService
             // Get field mapping configuration for this form
             $fieldMapping = get_option("ctm_mapping_gf_{$formId}", []);
             
-            // Build the payload for CTM API
-            $payload = [
-                'form_type' => 'gravity_forms',
-                'form_id' => $formId,
-                'form_title' => $formTitle,
-                'entry_id' => $entryId,
-                'form_url' => $this->getFormUrl($entry),
-                'timestamp' => $entry['date_created'] ?? current_time('mysql'),
-                'user_agent' => $entry['user_agent'] ?? '',
-                'ip_address' => $entry['ip'] ?? $this->getClientIpAddress(),
-                'fields' => $this->mapFormFields($entry, $form, $fieldMapping),
-                'metadata' => $this->extractEntryMetadata($entry),
-                'raw_data' => $entry, // Keep original entry for debugging
+            // Build a mapping of entry keys to field labels
+            $fieldLabels = [];
+            if (isset($form['fields']) && is_array($form['fields'])) {
+                foreach ($form['fields'] as $field) {
+                    $fieldLabels[(string)$field->id] = $field->label ?? ('Field ' . $field->id);
+                    if (isset($field->inputs) && is_array($field->inputs)) {
+                        foreach ($field->inputs as $input) {
+                            $fieldLabels[(string)$input['id']] = $input['label'] ?? ($field->label . ' ' . $input['id']);
+                        }
+                    }
+                }
+            }
+            // Map form fields using labels as keys
+            $fieldsWithLabels = [];
+            foreach ($entry as $key => $value) {
+                $label = $fieldLabels[(string)$key] ?? $key;
+                $fieldsWithLabels[$label] = $value;
+            }
+            // Merge address fields into a single string
+            $addressParts = [
+                'Street Address', 'Address Line 2', 'City', 'State / Province', 'ZIP / Postal Code', 'Country'
             ];
-            
-            // Add source URL if available
-            if (!empty($entry['source_url'])) {
-                $payload['source_url'] = $entry['source_url'];
+            $addressValues = [];
+            foreach ($addressParts as $part) {
+                if (!empty($fieldsWithLabels[$part])) {
+                    $addressValues[] = $fieldsWithLabels[$part];
+                }
             }
-            
-            // Add UTM parameters if present in entry
-            $utmParams = $this->extractUtmFromEntry($entry);
-            if (!empty($utmParams)) {
-                $payload['utm_parameters'] = $utmParams;
+            if (!empty($addressValues)) {
+                $fieldsWithLabels['address'] = implode(', ', $addressValues);
             }
-            
+            // Merge name fields into a single string
+            $nameParts = ['Prefix', 'First', 'Middle', 'Last', 'Suffix'];
+            $nameValues = [];
+            foreach ($nameParts as $part) {
+                if (!empty($fieldsWithLabels[$part])) {
+                    $nameValues[] = $fieldsWithLabels[$part];
+                }
+            }
+            if (!empty($nameValues)) {
+                $fieldsWithLabels['name'] = implode(' ', $nameValues);
+            }
+            // Extract form_reactor fields (top 5)
+            $formReactor = [];
+            if (!empty($fieldsWithLabels['Phone'])) {
+                $formReactor['phone_number'] = $fieldsWithLabels['Phone'];
+            }
+            if (!empty($fieldsWithLabels['name'])) {
+                $formReactor['caller_name'] = $fieldsWithLabels['name'];
+            }
+            if (!empty($fieldsWithLabels['Email'])) {
+                $formReactor['email'] = $fieldsWithLabels['Email'];
+            }
+            if (!empty($fieldsWithLabels['Country'])) {
+                $formReactor['country_code'] = $fieldsWithLabels['Country'];
+            }
+            $formReactor['form_id'] = $formId;
+            // Remove these from the field array to avoid duplication
+            $customFields = $fieldsWithLabels;
+            unset($customFields['Phone'], $customFields['name'], $customFields['Email'], $customFields['Country']);
+            // Prefix all custom fields with 'custom_'
+            $customPrefixed = [];
+            foreach ($customFields as $k => $v) {
+                $customPrefixed['custom_' . $k] = $v;
+            }
+            // Build the payload with top-level fields and custom fields
+            $payload = [
+                'phone_number' => $formReactor['phone_number'] ?? '',
+                'country_code' => $formReactor['country_code'] ?? '',
+                'type' => 'API',
+                'caller_name' => $formReactor['caller_name'] ?? '',
+                'email' => $formReactor['email'] ?? '',
+            ];
+            foreach ($customFields as $k => $v) {
+                $payload['custom_' . $k] = $v;
+            }
+            $payload['form_reactor'] = $formReactor;
+            $payload['id'] = $formId;
+            $payload['name'] = $formTitle;
+            $payload['__ctm_api_authorized__'] = '1';
+            $payload['visitor_sid'] = $_COOKIE['__ctmid'] ?? '';
+            $payload['domain'] = $_SERVER['HTTP_HOST'] ?? '';
+            $payload['raw_data'] = $entry;
+            // dd('payload', $payload);
             return $payload;
             
         } catch (\Exception $e) {
@@ -223,33 +312,71 @@ class GFService
     private function mapFormFields(array $entry, array $form, array $fieldMapping): array
     {
         $mappedFields = [];
-        
-        // Process each field in the form
         foreach ($form['fields'] as $field) {
             $fieldId = $field->id;
-            $fieldValue = $entry[$fieldId] ?? '';
-            
-            // Skip empty values and admin fields
-            if (empty($fieldValue) || $this->isAdminField($field)) {
+            $fieldValue = $entry[$fieldId] ?? null;
+            if ($this->isAdminField($field)) {
                 continue;
             }
-            
-            // Handle multi-part fields (name, address, etc.)
-            if ($this->isMultiPartField($field)) {
-                $subFieldData = $this->processMultiPartField($field, $entry, $fieldMapping);
-                $mappedFields = array_merge($mappedFields, $subFieldData);
-            } else {
-                // Single field processing
-                $fieldName = $this->getFieldName($field);
-                $ctmFieldName = $fieldMapping[$fieldId] ?? $fieldName;
-                $cleanValue = $this->sanitizeFieldValue($fieldValue, $field);
-                
-                if (!empty($cleanValue)) {
-                    $mappedFields[$ctmFieldName] = $cleanValue;
+            // Skip conditional fields not present in entry
+            if (!array_key_exists($fieldId, $entry)) {
+                $this->logDebug("Field {$fieldId} skipped (conditional or not present in entry)");
+                continue;
+            }
+            // File Uploads (already handled)
+            if ($this->normalizeFieldType($field->type) === 'file') {
+                if (!empty($fieldValue)) {
+                    // Gravity Forms stores file uploads as a string (single) or serialized array (multiple)
+                    $urls = is_array($fieldValue) ? $fieldValue : (is_serialized($fieldValue) ? unserialize($fieldValue) : [$fieldValue]);
+                    $urls = array_filter((array)$urls, function($url) { return filter_var($url, FILTER_VALIDATE_URL); });
+                    if (!empty($urls)) {
+                        $ctmFieldName = $fieldMapping[$fieldId] ?? $this->getFieldName($field);
+                        $mappedFields[$ctmFieldName] = count($urls) === 1 ? reset($urls) : array_values($urls);
+                    }
                 }
+                continue;
+            }
+            // Address Fields (already handled)
+            if ($this->normalizeFieldType($field->type) === 'address' && isset($field->inputs)) {
+                $address = [];
+                foreach ($field->inputs as $input) {
+                    $inputId = $input['id'];
+                    $inputValue = $entry[$inputId] ?? '';
+                    if (!empty($inputValue)) {
+                        $part = $input['label'] ?? $inputId;
+                        $address[$part] = $this->sanitizeFieldValue($inputValue, $field);
+                    }
+                }
+                if (!empty($address)) {
+                    $ctmFieldName = $fieldMapping[$fieldId] ?? $this->getFieldName($field);
+                    $mappedFields[$ctmFieldName] = $address;
+                }
+                continue;
+            }
+            // Checkboxes and Lists: send as arrays if possible
+            if (in_array($this->normalizeFieldType($field->type), ['checkbox', 'list'])) {
+                if (!empty($fieldValue)) {
+                    $ctmFieldName = $fieldMapping[$fieldId] ?? $this->getFieldName($field);
+                    $arrayValue = is_array($fieldValue) ? $fieldValue : (is_serialized($fieldValue) ? unserialize($fieldValue) : explode(',', $fieldValue));
+                    $arrayValue = array_filter((array)$arrayValue);
+                    $mappedFields[$ctmFieldName] = $arrayValue;
+                }
+                continue;
+            }
+            // Unsupported field types: skip and log
+            $supportedTypes = ['text','textarea','select','multiselect','number','phone','email','url','date','time','file','radio','checkbox','name','address','hidden','list','post_title','post_content','post_excerpt'];
+            if (!in_array($this->normalizeFieldType($field->type), $supportedTypes)) {
+                $this->logDebug("Field {$fieldId} ({$field->type}) skipped (unsupported type)");
+                continue;
+            }
+            // Single field processing
+            $fieldName = $this->getFieldName($field);
+            $ctmFieldName = $fieldMapping[$fieldId] ?? $fieldName;
+            $cleanValue = $this->sanitizeFieldValue($fieldValue, $field);
+            if (!empty($cleanValue)) {
+                $mappedFields[$ctmFieldName] = $cleanValue;
             }
         }
-        
         return $mappedFields;
     }
 
@@ -484,24 +611,6 @@ class GFService
         return trim($value);
     }
 
-    /**
-     * Extract metadata from GF entry
-     * 
-     * @since 1.0.0
-     * @param array $entry The GF entry data
-     * @return array Entry metadata
-     */
-    private function extractEntryMetadata(array $entry): array
-    {
-        return [
-            'payment_status' => $entry['payment_status'] ?? '',
-            'payment_amount' => $entry['payment_amount'] ?? '',
-            'currency' => $entry['currency'] ?? '',
-            'is_starred' => $entry['is_starred'] ?? false,
-            'is_read' => $entry['is_read'] ?? false,
-            'status' => $entry['status'] ?? 'active',
-        ];
-    }
 
     /**
      * Extract UTM parameters from GF entry
@@ -545,5 +654,12 @@ class GFService
     private function getClientIpAddress(): string
     {
         return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    }
+
+    // Add debug logging helper
+    private function logDebug($msg) {
+        if (function_exists('error_log')) {
+            error_log('[CTM GFService] ' . $msg);
+        }
     }
 } 

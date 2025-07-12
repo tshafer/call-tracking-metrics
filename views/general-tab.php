@@ -186,6 +186,11 @@
                         <span class="ml-2 text-xs text-red-600 font-medium">(Plugin required)</span>
                     <?php endif; ?>
                 </label>
+                <!-- Integration notes for Contact Form 7 -->
+                <div class="ml-6 text-xs text-gray-700 space-y-1 mb-3">
+                    <div><strong>Note:</strong> It is required to use a form that captures a telephone number (<code>input type=\"tel\"</code>) in order for Contact Form 7 to integrate properly with our FormReactor. For more information, see <a href=\"https://www.calltrackingmetrics.com/support/integrations/wordpress\" target=\"_blank\" rel=\"noopener\" class=\"underline text-blue-700\">Using the CallTrackingMetrics WordPress Plugin</a>.</div>
+                    <div><strong>Note:</strong> If you will request international (non-U.S.) phone numbers with your Contact Form 7 forms, we recommend using the plugin <a href=\"https://wordpress.org/plugins/cf7-international-telephone-input/\" target=\"_blank\" rel=\"noopener\" class=\"underline text-blue-700\">International Telephone Input for Contact Form 7</a> to avoid possible formatting issues with our FormReactor. Both <code>[tel]</code> and <code>[intl_tel]</code> are now supported as phone inputs.</div>
+                </div>
                 
                 <!-- Always show install link -->
                 <?php if (!class_exists('WPCF7_ContactForm')): ?>
@@ -222,6 +227,10 @@
                         <span class="ml-2 text-xs text-red-600 font-medium">(Plugin required)</span>
                     <?php endif; ?>
                 </label>
+                <!-- Integration notes for Gravity Forms -->
+                <div class="ml-6 text-xs text-gray-700 space-y-1 mb-3">
+                    <div><strong>Note:</strong> It is required to use a form that captures a telephone number (<code>input type=\"tel\"</code>) in order for Gravity Forms to integrate properly with our FormReactor. For more information, see <a href=\"https://www.calltrackingmetrics.com/support/integrations/wordpress\" target=\"_blank\" rel=\"noopener\" class=\"underline text-blue-700\">Using the CallTrackingMetrics WordPress Plugin</a>.</div>
+                </div>
                 
                 <!-- Always show install link -->
                 <?php if (!class_exists('GFAPI')): ?>

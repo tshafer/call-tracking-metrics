@@ -172,10 +172,48 @@ class CallTrackingMetrics
         add_action('admin_menu', [$this, 'attachDashboard']);
         
         // Form confirmation handlers
-        add_filter('gform_confirmation', [$this, 'gfConfirmation'], 10, 1);
         add_action('wp_footer', [$this, 'cf7Confirmation'], 10, 1);
 
-       
+        // Merge: Enqueue debug JS and localize export nonce for debug tab
+        add_action('admin_enqueue_scripts', function($hook) {
+            // Only enqueue on the CallTrackingMetrics debug/settings page
+            if (strpos($hook, 'call-tracking-metrics') === false) return;
+            
+            wp_enqueue_script(
+                'ctm-toast',
+                plugins_url('assets/js/toast.js', __FILE__),
+                [],
+                null,
+                true
+            );
+
+            // Enqueue debug JS if not already enqueued
+            wp_enqueue_script(
+                'ctm-debug-js',
+                plugins_url('assets/js/debug.js', __FILE__),
+                ['jquery'],
+                '2.0.0',
+                true
+            );
+            
+            // Localize export diagnostic report nonce
+            wp_localize_script('ctm-debug-js', 'ctmDebugVars', [
+                'ajaxurl' => admin_url('admin-ajax.php'),
+                'ctm_export_diagnostic_report_nonce' => wp_create_nonce('ctm_export_diagnostic_report'),
+            ]);
+        });
+
+        // Merge: Enqueue frontend tracking script if enabled
+        add_action('wp_enqueue_scripts', function() {
+            if (!get_option('ctm_auto_inject_tracking_script')) return;
+            $script = get_option('call_track_account_script');
+            if ($script && strpos($script, '<script') !== false) {
+                wp_register_script('ctm-tracking', '', [], null, false);
+                wp_add_inline_script('ctm-tracking', $script, 'before');
+                wp_enqueue_script('ctm-tracking');
+            }
+        }, 1);
+
     }
 
     /**
@@ -297,7 +335,7 @@ class CallTrackingMetrics
         $apiSecret = get_option('ctm_api_secret');
         
         if ($result && $apiKey && $apiSecret) {
-            $response = $this->apiService->submitFormReactor($result, $apiKey, $apiSecret);
+            $response = $this->apiService->submitFormReactor($result, $apiKey, $apiSecret, $form->id());
             
             // Log the submission for debugging and monitoring
             LoggingSystem::logDebug([
@@ -308,23 +346,32 @@ class CallTrackingMetrics
                 'response' => $response,
                 'timestamp' => current_time('mysql')
             ]);
-        }
-    }
 
-    /**
-     * Handle Gravity Forms confirmation (placeholder for future enhancement)
-     * 
-     * Currently returns the confirmation as-is. This method can be enhanced
-     * to modify the confirmation message or add tracking code.
-     * 
-     * @since 2.0.0
-     * @param string|array $confirmation The confirmation message or redirect
-     * @return string|array The potentially modified confirmation
-     */
-    public function gfConfirmation($confirmation)
-    {
-        // Future enhancement: Add custom confirmation tracking
-        return $confirmation;
+            // Check for API errors and surface to user
+            if (!$response || (isset($response['status']) && $response['status'] !== 'success')) {
+                $reason = $response['reason'] ?? 'Unknown error';
+                $userMessage = '';
+                if (stripos($reason, 'throttle') !== false || stripos($reason, 'rate limit') !== false) {
+                    $userMessage = 'You are submitting too quickly. Please wait a moment and try again.';
+                } elseif (stripos($reason, 'phone') !== false) {
+                    $userMessage = 'A valid phone number is required.';
+                } elseif (stripos($reason, 'email') !== false) {
+                    $userMessage = 'A valid email address is required.';
+                } elseif (stripos($reason, 'required') !== false) {
+                    $userMessage = 'Please fill out all required fields.';
+                } else {
+                    $userMessage = 'Submission failed: ' . esc_html($reason);
+                }
+                $abort = true;
+                // Show error to user using CF7 API
+                if (method_exists($form, 'set_invalid_fields')) {
+                    $form->set_invalid_fields([['name' => '', 'reason' => $userMessage]]);
+                } elseif (method_exists($form, 'set_invalid_field')) {
+                    $form->set_invalid_field('', $userMessage);
+                }
+                // No fallback: $abort = true will prevent mail send and CF7 will show a generic error
+            }
+        }
     }
 
     /**
@@ -340,9 +387,10 @@ class CallTrackingMetrics
      */
     public function submitGF($entry, $form): void
     {
+        
         // Process the submission through GF service
         $result = $this->gfService->processSubmission($entry, $form);
-        
+   
         // Skip if processing failed
         if ($result === null) {
             return;
@@ -353,7 +401,7 @@ class CallTrackingMetrics
         $apiSecret = get_option('ctm_api_secret');
         
         if ($result && $apiKey && $apiSecret) {
-            $response = $this->apiService->submitFormReactor($result, $apiKey, $apiSecret);
+            $response = $this->apiService->submitFormReactor($result, $apiKey, $apiSecret, $form['id']);
             
             // Log the submission for debugging and monitoring
             LoggingSystem::logDebug([
@@ -497,46 +545,80 @@ if (!defined('CTM_TESTING')) {
     new CallTrackingMetrics();
 }
 
+add_action('admin_init', function() {
+    global $wp_version;
+    $min_wp = '6.5';
+    $min_gf = '2.7';
+    $min_cf7 = '5.7';
+    $gf_active = class_exists('GFAPI');
+    $cf7_active = class_exists('WPCF7_ContactForm');
+    $notices = [];
+    if (version_compare($wp_version, $min_wp, '<')) {
+        $notices[] = 'CallTrackingMetrics requires WordPress ' . $min_wp . ' or higher. You are running ' . $wp_version . '.';
+    }
+    if ($gf_active) {
+        if (defined('GF_VERSION')) {
+            $gf_version = constant('GF_VERSION');
+            if (version_compare($gf_version, $min_gf, '<')) {
+                $notices[] = 'CallTrackingMetrics requires Gravity Forms ' . $min_gf . ' or higher. You are running ' . $gf_version . '.';
+            }
+        } // else: skip version check if GF_VERSION is not defined
+    }
+    if ($cf7_active && defined('WPCF7_VERSION') && version_compare(WPCF7_VERSION, $min_cf7, '<')) {
+        $notices[] = 'CallTrackingMetrics requires Contact Form 7 ' . $min_cf7 . ' or higher. You are running ' . WPCF7_VERSION . '.';
+    }
+    if (!empty($notices)) {
+        add_action('admin_notices', function() use ($notices) {
+            foreach ($notices as $msg) {
+                echo '<div class="notice notice-error"><p>' . esc_html($msg) . '</p></div>';
+            }
+        });
+        // Optionally, disable integrations if version is not met
+        update_option('ctm_api_gf_enabled', false);
+        update_option('ctm_api_cf7_enabled', false);
+    }
+});
+
 add_action('admin_footer', function() {
     echo '<div id="ctm-toast-container" style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 9999;"></div>';
 });
 
-
-add_action('wp_enqueue_scripts', function() {
-    if (!get_option('ctm_auto_inject_tracking_script')) return;
-    $script = get_option('call_track_account_script');
-    if ($script && strpos($script, '<script') !== false) {
-        wp_register_script('ctm-tracking', '', [], null, false);
-        wp_add_inline_script('ctm-tracking', $script, 'before');
-        wp_enqueue_script('ctm-tracking');
+// Add Gravity Forms API validation error handling
+add_filter('gform_validation', function($validation_result) {
+    // Only run if GF integration is enabled
+    if (!get_option('ctm_api_gf_enabled', true)) return $validation_result;
+    $form = $validation_result['form'];
+    $form_id = $form['id'];
+    // Build the API payload from the POST data and form structure
+    if (!class_exists('CTM\\Service\\GFService')) return $validation_result;
+    $gfService = new CTM\Service\GFService();
+    $entry = $_POST; // Gravity Forms raw POST data
+    // Remove sensitive or irrelevant keys
+    unset($entry['gform_submit'], $entry['gform_unique_id'], $entry['state_'. $form_id], $entry['gform_target_page_number_' . $form_id], $entry['gform_source_page_number_' . $form_id], $entry['is_submit_' . $form_id]);
+    $payload = $gfService->processSubmission($entry, $form);
+    $apiKey = get_option('ctm_api_key');
+    $apiSecret = get_option('ctm_api_secret');
+    $apiService = new CTM\Service\ApiService('https://api.calltrackingmetrics.com');
+    $response = $apiService->submitFormReactor($payload, $apiKey, $apiSecret, $form_id);
+    if (!$response || (isset($response['status']) && $response['status'] !== 'success')) {
+        $validation_result['is_valid'] = false;
+        $reason = $response['reason'] ?? 'Unknown error';
+        $userMessage = '';
+        if (stripos($reason, 'throttle') !== false || stripos($reason, 'rate limit') !== false) {
+            $userMessage = 'You are submitting too quickly. Please wait a moment and try again.';
+        } elseif (stripos($reason, 'phone') !== false) {
+            $userMessage = 'A valid phone number is required.';
+        } elseif (stripos($reason, 'email') !== false) {
+            $userMessage = 'A valid email address is required.';
+        } elseif (stripos($reason, 'required') !== false) {
+            $userMessage = 'Please fill out all required fields.';
+        } else {
+            $userMessage = 'Submission failed: ' . esc_html($reason);
+        }
+        add_filter('gform_validation_message', function($message) use ($userMessage) {
+            return '<div class="validation_error">' . $userMessage . '</div>';
+        });
     }
-}, 1);
-
-// Enqueue debug JS and localize export nonce for debug tab
-add_action('admin_enqueue_scripts', function($hook) {
-    // Only enqueue on the CallTrackingMetrics debug/settings page
-    if (strpos($hook, 'call-tracking-metrics') === false) return;
-    
-    wp_enqueue_script(
-        'ctm-toast',
-        plugins_url('assets/js/toast.js', __FILE__),
-        [],
-        null,
-        true
-    );
-
-    // Enqueue debug JS if not already enqueued
-    wp_enqueue_script(
-        'ctm-debug-js',
-        plugins_url('assets/js/debug.js', __FILE__),
-        ['jquery'],
-        '2.0.0',
-        true
-    );
-    
-    // Localize export diagnostic report nonce
-    wp_localize_script('ctm-debug-js', 'ctmDebugVars', [
-        'ajaxurl' => admin_url('admin-ajax.php'),
-        'ctm_export_diagnostic_report_nonce' => wp_create_nonce('ctm_export_diagnostic_report'),
-    ]);
+    $validation_result['form'] = $form;
+    return $validation_result;
 });

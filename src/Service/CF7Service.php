@@ -212,24 +212,45 @@ class CF7Service
     private function mapFormFields(array $formData, array $fieldMapping): array
     {
         $mappedFields = [];
-        
+        $addressFields = ['address_street', 'address_city', 'address_state', 'address_zip', 'address_country'];
+        $address = [];
         foreach ($formData as $fieldName => $fieldValue) {
-            // Skip internal CF7 fields
             if (strpos($fieldName, '_wpcf7') === 0) {
                 continue;
             }
-            
-            // Get the mapped CTM field name
             $ctmFieldName = $fieldMapping[$fieldName] ?? $fieldName;
-            
+            // Group address fields
+            if (in_array($fieldName, $addressFields)) {
+                $address[str_replace('address_', '', $fieldName)] = $this->sanitizeFieldValue($fieldValue);
+                continue;
+            }
+            // File fields: pass as URL if present
+            if ($this->normalizeFieldType($fieldName) === 'file' && !empty($fieldValue) && filter_var($fieldValue, FILTER_VALIDATE_URL)) {
+                $mappedFields[$ctmFieldName] = $fieldValue;
+                continue;
+            }
+            // Checkboxes: send as arrays if possible
+            if ($this->normalizeFieldType($fieldName) === 'checkbox') {
+                $arrayValue = is_array($fieldValue) ? $fieldValue : explode(',', $fieldValue);
+                $arrayValue = array_filter((array)$arrayValue);
+                $mappedFields[$ctmFieldName] = $arrayValue;
+                continue;
+            }
+            // Unsupported field types: skip and log
+            $supportedTypes = ['text','textarea','select','multiselect','number','phone','email','url','date','time','file','radio','checkbox','hidden','list'];
+            if (!in_array($this->normalizeFieldType($fieldName), $supportedTypes)) {
+                $this->logDebug("Field {$fieldName} skipped (unsupported type)");
+                continue;
+            }
             // Clean and format the field value
             $cleanValue = $this->sanitizeFieldValue($fieldValue);
-            
             if (!empty($cleanValue)) {
                 $mappedFields[$ctmFieldName] = $cleanValue;
             }
         }
-        
+        if (!empty($address)) {
+            $mappedFields['address'] = $address;
+        }
         return $mappedFields;
     }
 
@@ -393,5 +414,12 @@ class CF7Service
         }
         
         return $utmParams;
+    }
+
+    // Add debug logging helper
+    private function logDebug($msg) {
+        if (function_exists('error_log')) {
+            error_log('[CTM CF7Service] ' . $msg);
+        }
     }
 }

@@ -10,10 +10,12 @@ class AdminSettingsRendererTest extends TestCase
 
     protected $tempPluginDir;
     protected $tempViewsDir;
+    private $obLevel;
 
     protected function setUp(): void
     {
         parent::setUp();
+        $this->obLevel = ob_get_level();
         \Brain\Monkey\setUp();
         $this->initalMonkey();
         $this->tempPluginDir = sys_get_temp_dir() . '/ctm_test_plugin/';
@@ -22,9 +24,10 @@ class AdminSettingsRendererTest extends TestCase
 
     protected function tearDown(): void
     {
-        \Brain\Monkey\tearDown();
-        \Mockery::close();
         parent::tearDown();
+        while (ob_get_level() > $this->obLevel) {
+            ob_end_clean();
+        }
     }
 
     protected function createDummyViews(array $views = ['general-tab.php', 'notice-cf7.php', 'notice-gf.php']) {
@@ -631,5 +634,123 @@ class AdminSettingsRendererTest extends TestCase
         $this->assertStringContainsString('nokey', $result);
         $this->assertStringContainsString('nosecret', $result);
         $this->assertStringContainsString('noaccount', $result);
+    }
+
+    public function testGetCF7FormsReturnsEmptyIfClassNotExistsDirect()
+    {
+        \Brain\Monkey\Functions\when('class_exists')->alias(function($class) {
+            return false;
+        });
+        $renderer = new \CTM\Admin\SettingsRenderer();
+        $ref = new \ReflectionClass($renderer);
+        $method = $ref->getMethod('getCF7Forms');
+        $method->setAccessible(true);
+        $result = $method->invoke($renderer);
+        $this->assertSame([], $result);
+    }
+
+    public function testGetCF7FormsReturnsFormsIfClassExistsDirect()
+    {
+        if (!class_exists('WPCF7_ContactForm')) {
+            eval('class WPCF7_ContactForm { public static function find() { $f = new self; return [$f]; } public function id() { return 42; } public function title() { return "CF7 Title"; } }');
+        }
+        \Brain\Monkey\Functions\when('class_exists')->alias(function($class) {
+            return $class === 'WPCF7_ContactForm';
+        });
+        $renderer = new \CTM\Admin\SettingsRenderer();
+        $ref = new \ReflectionClass($renderer);
+        $method = $ref->getMethod('getCF7Forms');
+        $method->setAccessible(true);
+        $result = $method->invoke($renderer);
+        $this->assertEquals([['id'=>42,'title'=>'CF7 Title']], $result);
+    }
+
+    public function testGetGFFormsReturnsEmptyIfClassNotExistsDirect()
+    {
+        \Brain\Monkey\Functions\when('class_exists')->alias(function($class) {
+            return false;
+        });
+        $renderer = new \CTM\Admin\SettingsRenderer();
+        $ref = new \ReflectionClass($renderer);
+        $method = $ref->getMethod('getGFForms');
+        $method->setAccessible(true);
+        $result = $method->invoke($renderer);
+        $this->assertSame([], $result);
+    }
+
+    public function testGetGFFormsReturnsFormsIfClassExistsDirect()
+    {
+        if (!class_exists('GFAPI')) {
+            eval('class GFAPI { public static function get_forms() { return [["id"=>99,"title"=>"GF Title"]]; } }');
+        }
+        \Brain\Monkey\Functions\when('class_exists')->alias(function($class) {
+            return $class === 'GFAPI';
+        });
+        $renderer = new \CTM\Admin\SettingsRenderer();
+        $ref = new \ReflectionClass($renderer);
+        $method = $ref->getMethod('getGFForms');
+        $method->setAccessible(true);
+        $result = $method->invoke($renderer);
+        $this->assertEquals([['id'=>99,'title'=>'GF Title']], $result);
+    }
+
+    public function testGetGFFormsHandlesExceptionDirect()
+    {
+        if (!class_exists('GFAPI')) {
+            eval('class GFAPI { public static function get_forms() { throw new \Exception("fail"); } }');
+        }
+        \Brain\Monkey\Functions\when('class_exists')->alias(function($class) {
+            return $class === 'GFAPI';
+        });
+        $renderer = new \CTM\Admin\SettingsRenderer();
+        $ref = new \ReflectionClass($renderer);
+        $method = $ref->getMethod('getGFForms');
+        $method->setAccessible(true);
+        $result = $method->invoke($renderer);
+        $this->assertSame([], $result);
+    }
+
+    public function testRenderViewOutputsErrorIfViewMissingFixed()
+    {
+        $renderer = new \CTM\Admin\SettingsRenderer(null, null, $this->tempViewsDir);
+        ob_start();
+        $renderer->renderView('nonexistent-view');
+        $output = ob_get_clean();
+        $this->assertSame('', $output, 'Output should be empty when view is missing and running under PHPUnit');
+    }
+
+    public function testGetMappingTabContentUsesRealGetCF7FormsAndGFForms()
+    {
+        // Ensure the plugin classes exist for this test
+        if (!class_exists('WPCF7_ContactForm')) {
+            eval('class WPCF7_ContactForm { public static function find() { $f = new self; return [$f]; } public function id() { return 101; } public function title() { return "CF7 Real"; } }');
+        }
+        if (!class_exists('GFAPI')) {
+            eval('class GFAPI { public static function get_forms() { return [["id"=>202,"title"=>"GF Real"]]; } }');
+        }
+        $viewLoader = function($view) {
+            if ($view === 'mapping-tab') {
+                return '<form id="ctm-field-mapping-form"><select id="ctm_form_type"></select><select id="ctm_form_id"></select></form>';
+            }
+            return null;
+        };
+        $renderer = new \CTM\Admin\SettingsRenderer(null, null, null, $viewLoader);
+        $result = $renderer->getMappingTabContent();
+        $this->assertIsString($result);
+        $this->assertStringContainsString('<form id="ctm-field-mapping-form"', $result);
+        $this->assertStringContainsString('<select id="ctm_form_type"', $result);
+        $this->assertStringContainsString('<select id="ctm_form_id"', $result);
+    }
+
+    public function testRenderViewFileBasedMissingView()
+    {
+        $renderer = new \CTM\Admin\SettingsRenderer(null, null, $this->tempViewsDir);
+        // Remove the view file if it exists
+        $missingView = $this->tempViewsDir . 'missing-file.php';
+        if (file_exists($missingView)) unlink($missingView);
+        ob_start();
+        $renderer->renderView('missing-file');
+        $output = ob_get_clean();
+        $this->assertSame('', $output, 'Output should be empty when view is missing and running under PHPUnit');
     }
 } 

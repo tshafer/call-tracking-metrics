@@ -12,6 +12,16 @@
     "unlink",
     "headers_list",
     "class_exists",
-    "fileperms"
+    "fileperms",
+    "memory_get_usage",
+    "method_exists",
+    "function_exists",
+    "ini_get",
+    "memory_get_peak_usage",
+    "disk_free_space",
+    "glob",
+    "is_readable",
+    "count",
+    "sys_getloadavg"
   ]
 } 
