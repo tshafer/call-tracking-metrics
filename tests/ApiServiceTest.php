@@ -310,4 +310,77 @@ class ApiServiceTest extends TestCase
         $this->apiService->setTimeout(15);
         $this->assertEquals(15, $this->apiService->getTimeout());
     }
+
+    public function testGetTrackingScriptReturnsScriptOnSuccess()
+    {
+        \Brain\Monkey\Functions\when('wp_remote_request')->justReturn([
+            'response' => ['code' => 200],
+            'body' => json_encode(['scripts' => ['<script>test</script>']])
+        ]);
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_body')->justReturn(json_encode(['scripts' => ['<script>test</script>']]));
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_response_code')->justReturn(200);
+        $result = $this->apiService->getTrackingScript('123', 'valid', 'valid');
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('scripts', $result);
+        $this->assertEquals(['<script>test</script>'], $result['scripts']);
+    }
+
+    public function testGetTrackingScriptReturnsNullOnException()
+    {
+        \Brain\Monkey\Functions\when('wp_remote_request')->alias(function() {
+            throw new \Exception('Simulated exception');
+        });
+        $result = $this->apiService->getTrackingScript('123', 'valid', 'valid');
+        $this->assertNull($result, 'Should return null on exception');
+    }
+
+    public function testTrackApiCallUpdatesOption()
+    {
+        // We'll call a public method that triggers trackApiCall (e.g., getAccountInfo)
+        $calls = [];
+        \Brain\Monkey\Functions\when('get_option')->alias(function($key, $default = []) use (&$calls) {
+            if ($key === 'ctm_api_calls_24h') return $calls;
+            return $default;
+        });
+        \Brain\Monkey\Functions\when('update_option')->alias(function($key, $value) use (&$calls) {
+            if ($key === 'ctm_api_calls_24h') {
+                $calls = $value;
+                return true;
+            }
+            return false;
+        });
+        \Brain\Monkey\Functions\when('wp_remote_request')->justReturn([
+            'response' => ['code' => 200],
+            'body' => json_encode(['accounts' => [['id' => '123', 'name' => 'Test Account']]])
+        ]);
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_body')->justReturn(json_encode(['accounts' => [['id' => '123', 'name' => 'Test Account']]]));
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_response_code')->justReturn(200);
+        $this->apiService->getAccountInfo('valid', 'valid');
+        $this->assertNotEmpty($calls, 'ctm_api_calls_24h should be updated');
+        $this->assertGreaterThanOrEqual(1, count($calls));
+    }
+
+    public function testTrackApiResponseTimeUpdatesOption()
+    {
+        // We'll call a public method that triggers trackApiResponseTime (simulate via reflection if not called directly)
+        $response_times = [];
+        \Brain\Monkey\Functions\when('get_option')->alias(function($key, $default = []) use (&$response_times) {
+            if ($key === 'ctm_api_response_times') return $response_times;
+            return $default;
+        });
+        \Brain\Monkey\Functions\when('update_option')->alias(function($key, $value) use (&$response_times) {
+            if ($key === 'ctm_api_response_times') {
+                $response_times = $value;
+                return true;
+            }
+            return false;
+        });
+        // Use reflection to call private method
+        $ref = new \ReflectionClass($this->apiService);
+        $method = $ref->getMethod('trackApiResponseTime');
+        $method->setAccessible(true);
+        $method->invoke($this->apiService, 123.45);
+        $this->assertNotEmpty($response_times, 'ctm_api_response_times should be updated');
+        $this->assertContains(123.45, $response_times);
+    }
 } 

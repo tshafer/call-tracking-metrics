@@ -221,7 +221,7 @@ class GFService
                         'id' => $form['id'],
                         'title' => $form['title'],
                         'status' => $form['is_active'] ? 'active' : 'inactive',
-                        'field_count' => count($form['fields']),
+                        // 'field_count' => count($form['fields']),
                         'entries_count' => method_exists('\GFAPI', 'count_entries') ? \GFAPI::count_entries($form['id']) : 0,
                     ];
                 }

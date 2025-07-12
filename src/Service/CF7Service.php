@@ -60,6 +60,12 @@ class CF7Service
             
             // Get field mapping configuration for this form
             $fieldMapping = get_option("ctm_mapping_cf7_{$formId}", []);
+
+            // Build a field type map from getFormFields
+            $fieldTypeMap = [];
+            foreach ($this->getFormFields($form) as $fieldDef) {
+                $fieldTypeMap[$fieldDef['name']] = $fieldDef['type'];
+            }
             
             // Build the payload for CTM API
             $payload = [
@@ -70,7 +76,7 @@ class CF7Service
                 'timestamp' => current_time('mysql'),
                 'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
                 'ip_address' => $this->getClientIpAddress(),
-                'fields' => $this->mapFormFields($data, $fieldMapping),
+                'fields' => $this->mapFormFields($data, $fieldMapping, $fieldTypeMap),
                 'raw_data' => $data, // Keep original data for debugging
             ];
             
@@ -209,7 +215,7 @@ class CF7Service
      * @param array $fieldMapping The configured field mapping
      * @return array Mapped field data for CTM API
      */
-    private function mapFormFields(array $formData, array $fieldMapping): array
+    private function mapFormFields(array $formData, array $fieldMapping, array $fieldTypeMap = []): array
     {
         $mappedFields = [];
         $addressFields = ['address_street', 'address_city', 'address_state', 'address_zip', 'address_country'];
@@ -219,18 +225,19 @@ class CF7Service
                 continue;
             }
             $ctmFieldName = $fieldMapping[$fieldName] ?? $fieldName;
+            $type = $fieldTypeMap[$fieldName] ?? $this->normalizeFieldType($fieldName);
             // Group address fields
             if (in_array($fieldName, $addressFields)) {
                 $address[str_replace('address_', '', $fieldName)] = $this->sanitizeFieldValue($fieldValue);
                 continue;
             }
             // File fields: pass as URL if present
-            if ($this->normalizeFieldType($fieldName) === 'file' && !empty($fieldValue) && filter_var($fieldValue, FILTER_VALIDATE_URL)) {
+            if ($type === 'file' && !empty($fieldValue) && filter_var($fieldValue, FILTER_VALIDATE_URL)) {
                 $mappedFields[$ctmFieldName] = $fieldValue;
                 continue;
             }
             // Checkboxes: send as arrays if possible
-            if ($this->normalizeFieldType($fieldName) === 'checkbox') {
+            if ($type === 'checkbox') {
                 $arrayValue = is_array($fieldValue) ? $fieldValue : explode(',', $fieldValue);
                 $arrayValue = array_filter((array)$arrayValue);
                 $mappedFields[$ctmFieldName] = $arrayValue;
@@ -238,7 +245,7 @@ class CF7Service
             }
             // Unsupported field types: skip and log
             $supportedTypes = ['text','textarea','select','multiselect','number','phone','email','url','date','time','file','radio','checkbox','hidden','list'];
-            if (!in_array($this->normalizeFieldType($fieldName), $supportedTypes)) {
+            if (!in_array($type, $supportedTypes)) {
                 $this->logDebug("Field {$fieldName} skipped (unsupported type)");
                 continue;
             }

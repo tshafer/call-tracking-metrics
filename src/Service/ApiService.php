@@ -87,22 +87,21 @@ class ApiService
     public function getAccountInfo(string $apiKey, string $apiSecret): ?array
     {
         $endpoint = '/api/v1/accounts/';
-        
+        $start = microtime(true);
         try {
             $response = $this->makeRequest('GET', $endpoint, [], $apiKey, $apiSecret);
-            
+            $elapsed = (microtime(true) - $start) * 1000;
+            $this->trackApiCall();
+            $this->trackApiResponseTime($elapsed);
             // Return the first account if multiple accounts exist
             if (isset($response['accounts']) && is_array($response['accounts']) && !empty($response['accounts'])) {
                 return ['account' => $response['accounts'][0]];
             }
-            
             // Handle single account response
             if (isset($response['account'])) {
                 return $response;
             }
-            
             return null;
-            
         } catch (\Exception $e) {
             error_log('CTM API Error (getAccountInfo): ' . $e->getMessage());
             return null;
@@ -124,9 +123,12 @@ class ApiService
     public function getAccountById(string $accountId, string $apiKey, string $apiSecret): ?array
     {
         $endpoint = "/api/v1/accounts/{$accountId}";
-        
+        $start = microtime(true);
         try {
             $data = $this->makeRequest('GET', $endpoint, [], $apiKey, $apiSecret);
+            $elapsed = (microtime(true) - $start) * 1000;
+            $this->trackApiCall();
+            $this->trackApiResponseTime($elapsed);
             if (isset($data['error']) || (isset($data['status']) && $data['status'] === 'error')) {
                 return null;
             }
@@ -153,7 +155,7 @@ class ApiService
     public function submitFormReactor(array $formData, string $apiKey, string $apiSecret, $formId = null): ?array
     {
         $endpoint = '/api/v1/formreactor/'.$formId;
-        
+        $start = microtime(true);
         try {
             $data = $this->makeRequest(
                 method: 'POST', 
@@ -163,6 +165,9 @@ class ApiService
                 apiSecret: $apiSecret,
                 contentType: 'application/x-www-form-urlencoded'
             );
+            $elapsed = (microtime(true) - $start) * 1000;
+            $this->trackApiCall();
+            $this->trackApiResponseTime($elapsed);
             // Return null on non-2xx response
             if (isset($data['error']) || (isset($data['status']) && $data['status'] === 'error')) {
                 return null;
@@ -188,9 +193,12 @@ class ApiService
     public function getForms(string $apiKey, string $apiSecret): ?array
     {
         $endpoint = '/api/v1/forms';
-        
+        $start = microtime(true);
         try {
             $data = $this->makeRequest('GET', $endpoint, [], $apiKey, $apiSecret);
+            $elapsed = (microtime(true) - $start) * 1000;
+            $this->trackApiCall();
+            $this->trackApiResponseTime($elapsed);
             if (isset($data['error']) || (isset($data['status']) && $data['status'] === 'error')) {
                 return null;
             }
@@ -215,9 +223,12 @@ class ApiService
     public function getTrackingNumbers(string $apiKey, string $apiSecret): ?array
     {
         $endpoint = '/api/v1/tracking_numbers';
-        
+        $start = microtime(true);
         try {
             $data = $this->makeRequest('GET', $endpoint, [], $apiKey, $apiSecret);
+            $elapsed = (microtime(true) - $start) * 1000;
+            $this->trackApiCall();
+            $this->trackApiResponseTime($elapsed);
             if (isset($data['error']) || (isset($data['status']) && $data['status'] === 'error')) {
                 return null;
             }
@@ -243,9 +254,12 @@ class ApiService
     public function getCalls(string $apiKey, string $apiSecret, array $params = []): ?array
     {
         $endpoint = '/api/v1/calls';
-        
+        $start = microtime(true);
         try {
             $data = $this->makeRequest('GET', $endpoint, $params, $apiKey, $apiSecret);
+            $elapsed = (microtime(true) - $start) * 1000;
+            $this->trackApiCall();
+            $this->trackApiResponseTime($elapsed);
             if (isset($data['error']) || (isset($data['status']) && $data['status'] === 'error')) {
                 return null;
             }
@@ -266,8 +280,13 @@ class ApiService
      */
     public function getTrackingScript(string $accountId, string $apiKey, string $apiSecret): ?array
     {
+        $start = microtime(true);
         try {
-            return $this->makeRequest('GET', "/api/v1/accounts/{$accountId}/scripts", [], $apiKey, $apiSecret);
+            $result = $this->makeRequest('GET', "/api/v1/accounts/{$accountId}/scripts", [], $apiKey, $apiSecret);
+            $elapsed = (microtime(true) - $start) * 1000;
+            $this->trackApiCall();
+            $this->trackApiResponseTime($elapsed);
+            return $result;
         } catch (\Exception $e) {
             error_log('CTM API Error (getTrackingScript): ' . $e->getMessage());
             return null;
