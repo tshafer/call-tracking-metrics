@@ -94,10 +94,7 @@ class GFService
             // Extract basic form and entry information
             $formId = $form['id'];
             $formTitle = $form['title'];
-            $entryId = $entry['id'];
             
-            // Get field mapping configuration for this form
-            $fieldMapping = get_option("ctm_mapping_gf_{$formId}", []);
             
             // Build a mapping of entry keys to field labels
             $fieldLabels = [];

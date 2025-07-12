@@ -558,7 +558,7 @@ class AdminAjaxApiAjaxTest extends TestCase
                 update_option('ctm_api_secret', $apiSecret);
                 try {
                     $apiService = $this->getApiService();
-                    $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
+                    $apiService->getAccountInfo($apiKey, $apiSecret);
                 } catch (\Exception $e) {
                     wp_send_json_error(['message' => 'API error: ' . $e->getMessage()]);
                 }
@@ -923,5 +923,4 @@ class AdminAjaxApiAjaxTest extends TestCase
         $this->assertNotFalse($called);
         $this->assertEquals('API keys updated.', $called['message']);
     }
-    // END: Additional tests merged from root-level tests/AdminAjaxApiAjaxTest.php
 }

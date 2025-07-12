@@ -214,7 +214,6 @@ class AdminAjaxFormAjaxTest extends TestCase
         $this->assertEquals(['message' => 'Invalid notice type.'], $called);
     }
 
-    // Additional edge and negative tests for coverage
     public function testAjaxGetFormsNoPostType()
     {
         unset($_POST['form_type']);

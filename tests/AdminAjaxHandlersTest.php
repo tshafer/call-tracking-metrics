@@ -123,7 +123,7 @@ class AdminAjaxHandlersTest extends TestCase
         $loggingSystem = new class extends \CTM\Admin\LoggingSystem {};
         $settingsRenderer = new class extends \CTM\Admin\SettingsRenderer {};
         $systemPerformanceAjax = new class($loggingSystem, $settingsRenderer) extends \CTM\Admin\Ajax\SystemPerformanceAjax {};
-        $ajaxHandlers = new \CTM\Admin\AjaxHandlers(null, null, null, null, null, null, null, $systemPerformanceAjax);
+        $ajaxHandlers = new AjaxHandlers(null, null, null, null, null, null, null, $systemPerformanceAjax);
         $ref = new \ReflectionClass($ajaxHandlers);
         $prop = $ref->getProperty('systemPerformanceAjax');
         $prop->setAccessible(true);
