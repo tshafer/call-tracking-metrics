@@ -9,7 +9,7 @@
         </div>
         <div id="main-doc-tabs" class="mb-8">
             <nav class="flex flex-wrap border-b border-gray-200">
-                <button class="main-doc-tab px-4 py-2 -mb-px text-blue-700 border-b-2 border-blue-600 font-semibold focus:outline-none" data-tab="general">General</button>
+                <button class="main-doc-tab px-4 py-2 -mb-px text-white border-b-2 border-blue-600 font-semibold focus:outline-none" data-tab="general">General</button>
                 <button class="main-doc-tab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300" data-tab="debug">Debug</button>
                 <button class="main-doc-tab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300" data-tab="api">API</button>
                 <button class="main-doc-tab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300" data-tab="cti">CTI</button>
@@ -65,12 +65,35 @@
                     <li>Email: <a href="mailto:support@calltrackingmetrics.com" class="text-blue-600 underline">support@calltrackingmetrics.com</a></li>
                     <li>Website: <a href="https://www.calltrackingmetrics.com/" class="text-blue-600 underline" target="_blank">calltrackingmetrics.com</a></li>
                 </ul>
+                <h3 class="text-xl font-semibold text-blue-700 mt-6 mb-2">Plugin Overview</h3>
+                <p class="mb-4">The CallTrackingMetrics WordPress plugin connects your site to the CallTrackingMetrics platform, enabling advanced call tracking, form tracking, and analytics. It supports seamless integration with Contact Form 7 and Gravity Forms, and provides robust debugging and logging tools for administrators.</p>
+                <h3 class="text-xl font-semibold text-blue-700 mt-6 mb-2">Advanced Troubleshooting</h3>
+                <ul class="list-disc pl-6 mb-4">
+                    <li>If form submissions are not appearing in CallTrackingMetrics, ensure the plugin is connected and the correct API credentials are used.</li>
+                    <li>Check the Debug tab for recent errors or failed API calls.</li>
+                    <li>Make sure your forms include required fields (such as phone number for FormReactor integration).</li>
+                    <li>Clear any site caching plugins and test again.</li>
+                    <li>Review your browser console for JavaScript errors that may block script execution.</li>
+                </ul>
+                <h3 class="text-xl font-semibold text-blue-700 mt-6 mb-2">Best Practices</h3>
+                <ul class="list-disc pl-6 mb-4">
+                    <li>Keep your plugin and WordPress core up to date for security and compatibility.</li>
+                    <li>Use strong, unique API credentials and never share them publicly.</li>
+                    <li>Enable debugging only when needed to avoid excessive log growth.</li>
+                    <li>Regularly review logs and clear old entries to maintain performance.</li>
+                </ul>
+                <h3 class="text-xl font-semibold text-blue-700 mt-6 mb-2">Changelog</h3>
+                <ul class="list-disc pl-6 mb-4">
+                    <li><b>2.0.0</b> – Major refactor, improved UI, added debug tools, and enhanced API integration.</li>
+                    <li><b>1.5.0</b> – Added Gravity Forms support and field mapping UI.</li>
+                    <li><b>1.0.0</b> – Initial release with Contact Form 7 integration.</li>
+                </ul>
             </div>
             <div class="main-doc-tab-panel hidden" data-tab="debug">
                 <!-- Debug subtabs -->
                 <div id="debug-subtabs" class="mb-6">
                     <nav class="flex flex-wrap border-b border-gray-200">
-                        <button class="debug-subtab px-4 py-2 -mb-px text-blue-700 border-b-2 border-blue-600 font-semibold focus:outline-none" data-subtab="system-info">System Information</button>
+                        <button class="debug-subtab px-4 py-2 -mb-px text-white border-b-2 border-blue-600 font-semibold focus:outline-none" data-subtab="system-info">System Information</button>
                         <button class="debug-subtab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300" data-subtab="health-check">Health Check</button>
                         <button class="debug-subtab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300" data-subtab="performance-monitor">Performance Monitor</button>
                         <button class="debug-subtab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300" data-subtab="log-settings">Log Settings</button>
@@ -147,15 +170,28 @@
                 <div id="api-subtab-content">
                     <div class="api-subtab-panel" data-subtab="overview">
                         <h3 class="text-xl font-semibold text-blue-700 mt-6 mb-2">API Overview</h3>
-                        <p>This section will describe the API integration, usage, and best practices. (Placeholder)</p>
+                        <p>The CallTrackingMetrics API allows you to programmatically submit form data, retrieve call logs, and manage account settings. This plugin uses the API to send form submissions and fetch account information.</p>
+                        <ul class="list-disc pl-6 mb-4">
+                            <li>RESTful JSON API</li>
+                            <li>Requires API Key and Secret</li>
+                            <li>Supports form submission, call log retrieval, and more</li>
+                        </ul>
                     </div>
                     <div class="api-subtab-panel hidden" data-subtab="authentication">
                         <h3 class="text-xl font-semibold text-blue-700 mt-6 mb-2">API Authentication</h3>
-                        <p>How to authenticate with the API. (Placeholder)</p>
+                        <p>Authenticate using your API Key and Secret, which you can generate in your CallTrackingMetrics account settings. All requests must be made over HTTPS.</p>
+                        <ul class="list-disc pl-6 mb-4">
+                            <li>Send credentials as HTTP headers: <code>X-Api-Key</code> and <code>X-Api-Secret</code></li>
+                            <li>Never expose your credentials in client-side code</li>
+                        </ul>
                     </div>
                     <div class="api-subtab-panel hidden" data-subtab="endpoints">
                         <h3 class="text-xl font-semibold text-blue-700 mt-6 mb-2">API Endpoints</h3>
-                        <p>List of available API endpoints and their usage. (Placeholder)</p>
+                        <ul class="list-disc pl-6 mb-4">
+                            <li><b>POST /api/v1/formreactor/submit</b> – Submit form data to CallTrackingMetrics</li>
+                            <li><b>GET /api/v1/calls</b> – Retrieve recent call logs</li>
+                            <li><b>GET /api/v1/account</b> – Fetch account details</li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -171,86 +207,27 @@
                 <div id="cti-subtab-content">
                     <div class="cti-subtab-panel" data-subtab="overview">
                         <h3 class="text-xl font-semibold text-blue-700 mt-6 mb-2">CTI Overview</h3>
-                        <p>This section will describe the CTI (Computer Telephony Integration) features and setup. (Placeholder)</p>
+                        <p>Computer Telephony Integration (CTI) connects your website and phone system, allowing you to track calls, trigger workflows, and display caller information in real time. CTI is available for advanced users and enterprise accounts.</p>
                     </div>
                     <div class="cti-subtab-panel hidden" data-subtab="setup">
                         <h3 class="text-xl font-semibold text-blue-700 mt-6 mb-2">CTI Setup</h3>
-                        <p>How to set up CTI integration. (Placeholder)</p>
+                        <ol class="list-decimal pl-6 mb-4">
+                            <li>Contact CallTrackingMetrics support to enable CTI for your account.</li>
+                            <li>Configure your phone system to connect with the CTM API.</li>
+                            <li>Follow the integration guide provided by support for your specific PBX or VoIP system.</li>
+                        </ol>
                     </div>
                     <div class="cti-subtab-panel hidden" data-subtab="features">
                         <h3 class="text-xl font-semibold text-blue-700 mt-6 mb-2">CTI Features</h3>
-                        <p>List of CTI features and their usage. (Placeholder)</p>
+                        <ul class="list-disc pl-6 mb-4">
+                            <li>Real-time call tracking and analytics</li>
+                            <li>Screen pops with caller information</li>
+                            <li>Automated call logging and workflow triggers</li>
+                            <li>Integration with CRM and helpdesk platforms</li>
+                        </ul>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-<script>
-// Main tab switcher
-const mainTabButtons = document.querySelectorAll('.main-doc-tab');
-const mainTabPanels = document.querySelectorAll('.main-doc-tab-panel');
-mainTabButtons.forEach(btn => {
-    btn.addEventListener('click', function() {
-        mainTabButtons.forEach(b => b.classList.remove('text-blue-700', 'border-blue-600', 'font-semibold'));
-        mainTabButtons.forEach(b => b.classList.add('text-gray-700', 'border-transparent'));
-        this.classList.add('text-blue-700', 'border-blue-600', 'font-semibold');
-        this.classList.remove('text-gray-700', 'border-transparent');
-        const tab = this.getAttribute('data-tab');
-        mainTabPanels.forEach(panel => {
-            if (panel.getAttribute('data-tab') === tab) {
-                panel.classList.remove('hidden');
-            } else {
-                panel.classList.add('hidden');
-            }
-        });
-        // Reset subtabs to first for each main tab
-        if(tab === 'debug') {
-            showSubtab('debug', 'system-info');
-        } else if(tab === 'api') {
-            showSubtab('api', 'overview');
-        } else if(tab === 'cti') {
-            showSubtab('cti', 'overview');
-        }
-    });
-});
-// Debug subtab switcher
-function showSubtab(group, subtab) {
-    document.querySelectorAll('.' + group + '-subtab').forEach(btn => {
-        if(btn.getAttribute('data-subtab') === subtab) {
-            btn.classList.add('text-blue-700', 'border-blue-600', 'font-semibold');
-            btn.classList.remove('text-gray-700', 'border-transparent');
-        } else {
-            btn.classList.remove('text-blue-700', 'border-blue-600', 'font-semibold');
-            btn.classList.add('text-gray-700', 'border-transparent');
-        }
-    });
-    document.querySelectorAll('.' + group + '-subtab-panel').forEach(panel => {
-        if(panel.getAttribute('data-subtab') === subtab) {
-            panel.classList.remove('hidden');
-        } else {
-            panel.classList.add('hidden');
-        }
-    });
-}
-document.querySelectorAll('.debug-subtab').forEach(btn => {
-    btn.addEventListener('click', function() {
-        showSubtab('debug', this.getAttribute('data-subtab'));
-    });
-});
-document.querySelectorAll('.api-subtab').forEach(btn => {
-    btn.addEventListener('click', function() {
-        showSubtab('api', this.getAttribute('data-subtab'));
-    });
-});
-document.querySelectorAll('.cti-subtab').forEach(btn => {
-    btn.addEventListener('click', function() {
-        showSubtab('cti', this.getAttribute('data-subtab'));
-    });
-});
-// Default to General tab and first subtab for each group
-if(mainTabPanels.length) mainTabPanels[0].classList.remove('hidden');
-showSubtab('debug', 'system-info');
-showSubtab('api', 'overview');
-showSubtab('cti', 'overview');
-</script> 

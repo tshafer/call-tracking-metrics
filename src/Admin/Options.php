@@ -118,6 +118,9 @@ class Options
         register_setting("call-tracking-metrics", "ctm_api_gf_enabled");
         register_setting("call-tracking-metrics", "ctm_auto_inject_tracking_script");
         
+        // Debugging Option
+        register_setting("call-tracking-metrics", "ctm_debug_enabled");
+        
         // Logging Settings
         register_setting("call-tracking-metrics", "ctm_api_cf7_logs");
         register_setting("call-tracking-metrics", "ctm_api_gf_logs");
@@ -156,9 +159,15 @@ class Options
     {
         // Register all AJAX endpoint handlers
         $this->ajaxHandlers->registerHandlers();
+
+        // Get the tracking script from the API
+        $this->getTrackingScriptFromApi();
         
         // Enqueue JavaScript and CSS assets for field mapping
         $this->fieldMapping->enqueueMappingAssets();
+        
+        // Auto-disable integrations if required plugins are not available
+        $this->autoDisableUnavailableIntegrations();
     }
 
     /**
@@ -355,7 +364,36 @@ class Options
             $this->saveGeneralSettings();
         }
     }
-
+    /**
+     * Get the tracking script from the API
+     * 
+     * @since 2.0.0
+     * @return void
+     */
+    public function getTrackingScriptFromApi() 
+    {
+        $apiKey = get_option('ctm_api_key');
+        $apiSecret = get_option('ctm_api_secret');
+        if (!empty($apiKey) && !empty($apiSecret)) {
+            $apiService = new \CTM\Service\ApiService('https://api.calltrackingmetrics.com');
+            $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
+            $accountId = null;
+            if ($accountInfo && isset($accountInfo['account']['id'])) {
+                $accountId = $accountInfo['account']['id'];
+                update_option('ctm_api_auth_account', $accountId);
+            }
+            if ($accountId) {
+                try {
+                    $scripts = $apiService->getTrackingScript($accountId, $apiKey, $apiSecret);
+                    if ($scripts && isset($scripts['tracking']) && !empty($scripts['tracking'])) {
+                        update_option('call_track_account_script', $scripts['tracking']);
+                    }
+                } catch (\Exception $e) {
+                    // Optionally log error
+                }
+            }
+        }
+    }
     /**
      * Save general plugin settings
      * 
@@ -377,6 +415,17 @@ class Options
         $gfEnabled = isset($_POST['ctm_api_gf_enabled']);
         $dashboardEnabled = isset($_POST['ctm_api_dashboard_enabled']);
         $autoInjectTracking = isset($_POST['ctm_auto_inject_tracking_script']) ? 1 : 0;
+        
+        // Auto-disable integrations if required plugins are not available
+        if (!class_exists('WPCF7_ContactForm')) {
+            $cf7Enabled = false;
+            $this->loggingSystem->logActivity('Contact Form 7 integration auto-disabled - plugin not available', 'config');
+        }
+        
+        if (!class_exists('GFAPI')) {
+            $gfEnabled = false;
+            $this->loggingSystem->logActivity('Gravity Forms integration auto-disabled - plugin not available', 'config');
+        }
         
         // Log API key changes for security auditing
         $old_key = get_option('ctm_api_key');
@@ -401,27 +450,6 @@ class Options
             // Save as raw HTML, not entities
             $raw_script = wp_unslash($_POST['call_track_account_script']);
             update_option('call_track_account_script', wp_kses_post($raw_script));
-        } else {
-            // Auto-fetch tracking code from CTM API if credentials are present
-            if (!empty($apiKey) && !empty($apiSecret)) {
-                $apiService = new \CTM\Service\ApiService('https://api.calltrackingmetrics.com');
-                $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
-                $accountId = null;
-                if ($accountInfo && isset($accountInfo['account']['id'])) {
-                    $accountId = $accountInfo['account']['id'];
-                    update_option('ctm_api_auth_account', $accountId);
-                }
-                if ($accountId) {
-                    try {
-                        $scripts = $apiService->getTrackingScript($accountId, $apiKey, $apiSecret);
-                        if ($scripts && isset($scripts['tracking']) && !empty($scripts['tracking'])) {
-                            update_option('call_track_account_script', $scripts['tracking']);
-                        }
-                    } catch (\Exception $e) {
-                        // Optionally log error
-                    }
-                }
-            }
         }
         
         // Log the settings change
@@ -435,6 +463,40 @@ class Options
         // Redirect to prevent form resubmission
         wp_redirect(add_query_arg(['tab' => 'general'], wp_get_referer()));
         exit;
+    }
+
+    /**
+     * Auto-disable integrations if required plugins are not available
+     * 
+     * Checks if Contact Form 7 and Gravity Forms are installed and active.
+     * If not, automatically disables the corresponding integration settings
+     * to prevent confusion and ensure data integrity.
+     * 
+     * @since 2.0.0
+     * @return void
+     */
+    private function autoDisableUnavailableIntegrations(): void
+    {
+        $changes_made = false;
+        
+        // Check Contact Form 7 integration
+        if (!class_exists('WPCF7_ContactForm') && get_option('ctm_api_cf7_enabled', false)) {
+            update_option('ctm_api_cf7_enabled', false);
+            $this->loggingSystem->logActivity('Contact Form 7 integration auto-disabled - plugin not available', 'config');
+            $changes_made = true;
+        }
+        
+        // Check Gravity Forms integration
+        if (!class_exists('GFAPI') && get_option('ctm_api_gf_enabled', false)) {
+            update_option('ctm_api_gf_enabled', false);
+            $this->loggingSystem->logActivity('Gravity Forms integration auto-disabled - plugin not available', 'config');
+            $changes_made = true;
+        }
+        
+        // Log summary if any changes were made
+        if ($changes_made) {
+            $this->loggingSystem->logActivity('Integration settings auto-corrected on page load', 'system');
+        }
     }
 
     /**

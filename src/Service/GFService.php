@@ -54,122 +54,177 @@ class GFService
      */
     public function processSubmission(array $entry, array $form): ?array
     {
-        // File-based debug logging for troubleshooting
-        $logFile = WP_CONTENT_DIR . '/ctm-gf-debug.log';
-        // Build a mapping of entry keys to field labels
-        $fieldLabels = [];
-        if (isset($form['fields']) && is_array($form['fields'])) {
-            foreach ($form['fields'] as $field) {
-                // Single field
-                $fieldLabels[(string)$field->id] = $field->label ?? ('Field ' . $field->id);
-                // Multi-part fields (e.g., name, address)
-                if (isset($field->inputs) && is_array($field->inputs)) {
-                    foreach ($field->inputs as $input) {
-                        $fieldLabels[(string)$input['id']] = $input['label'] ?? ($field->label . ' ' . $input['id']);
-                    }
-                }
-            }
-        }
-        // Build a pretty entry with labels
-        $prettyEntry = [];
-        foreach ($entry as $key => $value) {
-            $label = $fieldLabels[(string)$key] ?? $key;
-            $prettyEntry[$label] = $value;
-        }
-        $logEntry = [
-            'timestamp' => date('Y-m-d H:i:s'),
-            'entry' => $entry,
-            'pretty_entry' => $prettyEntry,
-            'form' => $form,
-            'backtrace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10)
-        ];
-        file_put_contents($logFile, json_encode($logEntry, JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
+        // Optimized Gravity Forms submission processing for CTM API
 
         // Validate that Gravity Forms is available and data is valid
         if (!class_exists('GFAPI') || empty($entry) || empty($form)) {
             return null;
         }
 
+ 
         try {
-            // Extract basic form and entry information
-            $formId = $form['id'];
-            $formTitle = $form['title'];
-            
-            
-            // Build a mapping of entry keys to field labels
+            // File-based debug logging for troubleshooting
+            $logFile = WP_CONTENT_DIR . '/ctm-gf-debug.log';
+
+            // Build a mapping of entry keys to field labels (single pass)
             $fieldLabels = [];
-            if (isset($form['fields']) && is_array($form['fields'])) {
+            if (!empty($form['fields']) && is_array($form['fields'])) {
                 foreach ($form['fields'] as $field) {
-                    $fieldLabels[(string)$field->id] = $field->label ?? ('Field ' . $field->id);
-                    if (isset($field->inputs) && is_array($field->inputs)) {
+                    $fid = (string)$field->id;
+                    $flabel = $field->label ?? ('Field ' . $fid);
+                    $fieldLabels[$fid] = $flabel;
+                    if (!empty($field->inputs) && is_array($field->inputs)) {
                         foreach ($field->inputs as $input) {
-                            $fieldLabels[(string)$input['id']] = $input['label'] ?? ($field->label . ' ' . $input['id']);
+                            $iid = (string)$input['id'];
+                            $ilabel = $input['label'] ?? ($flabel . ' ' . $iid);
+                            $fieldLabels[$iid] = $ilabel;
                         }
                     }
                 }
             }
-            // Map form fields using labels as keys
+
+            // Helper function to slugify keys
+            $slugify = function($str) {
+                $str = strtolower($str);
+                $str = preg_replace('/[^a-z0-9]+/', '_', $str);
+                $str = trim($str, '_');
+                return $str;
+            };
+
+            // Map form fields using labels as keys, and build pretty entry
             $fieldsWithLabels = [];
+            $prettyEntry = [];
             foreach ($entry as $key => $value) {
                 $label = $fieldLabels[(string)$key] ?? $key;
-                $fieldsWithLabels[$label] = $value;
+                $slug = $slugify($label);
+                $fieldsWithLabels[$slug] = $value;
+                $prettyEntry[$slug] = $value;
             }
+
+
+            // Log entry for debugging
+            $logEntry = [
+                'timestamp' => date('Y-m-d H:i:s'),
+                'entry' => $entry,
+                'pretty_entry' => $prettyEntry,
+                'form' => $form,
+                'backtrace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10)
+            ];
+            file_put_contents($logFile, json_encode($logEntry, JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
+
+            // Extract basic form and entry information
+            $formId = $form['id'];
+            $formTitle = $form['title'];
+
             // Merge address fields into a single string
             $addressParts = [
                 'Street Address', 'Address Line 2', 'City', 'State / Province', 'ZIP / Postal Code', 'Country'
             ];
             $addressValues = [];
             foreach ($addressParts as $part) {
-                if (!empty($fieldsWithLabels[$part])) {
-                    $addressValues[] = $fieldsWithLabels[$part];
+                if (!empty($fieldsWithLabels[$slugify($part)])) {
+                    $addressValues[] = $fieldsWithLabels[$slugify($part)];
                 }
             }
-            if (!empty($addressValues)) {
+            if ($addressValues) {
                 $fieldsWithLabels['address'] = implode(', ', $addressValues);
             }
+
             // Merge name fields into a single string
             $nameParts = ['Prefix', 'First', 'Middle', 'Last', 'Suffix'];
             $nameValues = [];
             foreach ($nameParts as $part) {
-                if (!empty($fieldsWithLabels[$part])) {
-                    $nameValues[] = $fieldsWithLabels[$part];
+                if (!empty($fieldsWithLabels[$slugify($part)])) {
+                    $nameValues[] = $fieldsWithLabels[$slugify($part)];
                 }
             }
-            if (!empty($nameValues)) {
+            if ($nameValues) {
                 $fieldsWithLabels['name'] = implode(' ', $nameValues);
             }
+
             // Extract form_reactor fields (top 5)
-            $formReactor = [];
-            if (!empty($fieldsWithLabels['Phone'])) {
-                $formReactor['phone_number'] = $fieldsWithLabels['Phone'];
+            $formReactor = [
+                'form_id' => $formId
+            ];
+            if (!empty($fieldsWithLabels['phone'])) {
+                $formReactor['phone_number'] = $fieldsWithLabels['phone'];
             }
             if (!empty($fieldsWithLabels['name'])) {
                 $formReactor['caller_name'] = $fieldsWithLabels['name'];
             }
-            if (!empty($fieldsWithLabels['Email'])) {
-                $formReactor['email'] = $fieldsWithLabels['Email'];
+            // Map any field whose label contains 'email' (case-insensitive) to email
+            $emailField = null;
+            foreach ($fieldsWithLabels as $label => $value) {
+                if (stripos($label, 'email') !== false && !empty($value)) {
+                    $emailField = $value;
+                    break;
+                }
             }
-            if (!empty($fieldsWithLabels['Country'])) {
-                $formReactor['country_code'] = $fieldsWithLabels['Country'];
+            if ($emailField !== null) {
+                $formReactor['email'] = $emailField;
             }
-            $formReactor['form_id'] = $formId;
+            if (!empty($fieldsWithLabels['country'])) {
+                $formReactor['country_code'] = $fieldsWithLabels['country'];
+            }
+
+            // Add callback_number and delay_calling_by if present (case-insensitive search)
+            $callbackNumber = '';
+            $delayCallingBy = '';
+            foreach ($fieldsWithLabels as $label => $value) {
+                $l = strtolower($label);
+                if ($l === 'callback number' || $l === 'callback_number') {
+                    $callbackNumber = $value;
+                } elseif ($l === 'delay calling by' || $l === 'delay_calling_by') {
+                    $delayCallingBy = $value;
+                }
+            }
+            if ($callbackNumber !== '') {
+                $formReactor['callback_number'] = $callbackNumber;
+            }
+            if ($delayCallingBy !== '') {
+                $formReactor['delay_calling_by'] = $delayCallingBy;
+            }
+
             // Remove these from the field array to avoid duplication
             $customFields = $fieldsWithLabels;
-            unset($customFields['Phone'], $customFields['name'], $customFields['Email'], $customFields['Country']);
-            // Prefix all custom fields with 'custom_'
-            $customPrefixed = [];
-            foreach ($customFields as $k => $v) {
-                $customPrefixed['custom_' . $k] = $v;
+            unset(
+                $customFields['phone'],
+                $customFields['name'],
+                $customFields['email'],
+                $customFields['country']
+            );
+            if ($callbackNumber !== '') {
+                unset($customFields['callback number'], $customFields['callback_number']);
             }
-            // Build the payload with top-level fields and custom fields
+            if ($delayCallingBy !== '') {
+                unset($customFields['delay calling by'], $customFields['delay_calling_by']);
+            }
+
+            // When building mappedCustomFields, ensure keys are slugified
+            $mappedCustomFields = $this->mapFormFields($entry, $form, []);
+            $normalizedCustomFields = [];
+            foreach ($mappedCustomFields as $k => $v) {
+                $normalizedCustomFields[$slugify($k)] = $v;
+            }
+            // Remove any top-level fields from normalizedCustomFields
+            foreach ([
+                'phone', 'name', 'email', 'country',
+                'callback_number', 'delay_calling_by'
+            ] as $removeKey) {
+                unset($normalizedCustomFields[$removeKey]);
+            }
+
+            // Build the payload with top-level fields and mapped custom fields
             $payload = [
-                'phone_number' => $formReactor['phone_number'] ?? '',
-                'country_code' => $formReactor['country_code'] ?? '',
-                'type' => 'API',
-                'caller_name' => $formReactor['caller_name'] ?? '',
-                'email' => $formReactor['email'] ?? '',
+                'phone_number'      => $formReactor['phone_number'] ?? '',
+                'country_code'      => $formReactor['country_code'] ?? '',
+                'type'              => 'API',
+                'caller_name'       => $formReactor['caller_name'] ?? '',
+                'email'             => $formReactor['email'] ?? '',
+                'callback_number'   => $formReactor['callback_number'] ?? '',
+                'delay_calling_by'  => $formReactor['delay_calling_by'] ?? '',
             ];
-            foreach ($customFields as $k => $v) {
+            foreach ($normalizedCustomFields as $k => $v) {
                 $payload['custom_' . $k] = $v;
             }
             $payload['form_reactor'] = $formReactor;
@@ -179,9 +234,9 @@ class GFService
             $payload['visitor_sid'] = $_COOKIE['__ctmid'] ?? '';
             $payload['domain'] = $_SERVER['HTTP_HOST'] ?? '';
             $payload['raw_data'] = $entry;
-            // dd('payload', $payload);
+
+            error_log(print_r($payload, true));
             return $payload;
-            
         } catch (\Exception $e) {
             // Log error but don't break the form submission
             error_log('CTM GF Processing Error: ' . $e->getMessage());

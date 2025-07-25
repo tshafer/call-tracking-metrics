@@ -76,6 +76,7 @@
                         <div class="flex gap-2">
                             <span id="test-duration" class="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded hidden"></span>
                             <button type="button" onclick="clearTestLogs()" class="text-xs text-gray-500 hover:text-gray-700 bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded transition">Clear</button>
+                            <span id="api-test-countdown" class="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded ml-2" style="display:inline;"></span>
                         </div>
                     </div>
                     
@@ -126,23 +127,23 @@
         <input type="hidden" name="ctm_api_key" value="<?= esc_attr($apiKey) ?>">
         <input type="hidden" name="ctm_api_secret" value="<?= esc_attr($apiSecret) ?>">
         <div class="mb-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2">
-                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded flex items-center gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                <div class="bg-blue-50 border-l-2 border-blue-400 p-2 rounded flex items-center gap-2 text-sm">
                     <span class="font-semibold">API Connection:</span>
-                    <span class="bg-green-100 text-green-700 px-2 py-1 rounded">Connected</span>
+                    <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-medium">Connected</span>
                 </div>
-                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded flex items-center gap-4">
+                <div class="bg-blue-50 border-l-2 border-blue-400 p-2 rounded flex items-center gap-2 text-sm">
                     <span class="font-semibold">Integrations:</span>
-                    <?php if ($cf7Enabled): ?><span class="bg-green-100 text-green-700 px-2 py-1 rounded">CF7</span><?php else: ?><span class="bg-gray-100 text-gray-700 px-2 py-1 rounded">CF7</span><?php endif; ?>
-                    <?php if ($gfEnabled): ?><span class="bg-green-100 text-green-700 px-2 py-1 rounded ml-2">GF</span><?php else: ?><span class="bg-gray-100 text-gray-700 px-2 py-1 rounded ml-2">GF</span><?php endif; ?>
+                    <?php if ($cf7Enabled): ?><span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-medium">CF7</span><?php else: ?><span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-medium">CF7</span><?php endif; ?>
+                    <?php if ($gfEnabled): ?><span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-medium ml-1">GF</span><?php else: ?><span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-medium ml-1">GF</span><?php endif; ?>
                 </div>
-                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded flex items-center gap-4">
+                <div class="bg-blue-50 border-l-2 border-blue-400 p-2 rounded flex items-center gap-2 text-sm">
                     <span class="font-semibold">Dashboard Widget:</span>
-                    <?php if ($dashboardEnabled): ?><span class="bg-green-100 text-green-700 px-2 py-1 rounded">Enabled</span><?php else: ?><span class="bg-gray-100 text-gray-700 px-2 py-1 rounded">Disabled</span><?php endif; ?>
+                    <?php if ($dashboardEnabled): ?><span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-medium">Enabled</span><?php else: ?><span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-medium">Disabled</span><?php endif; ?>
                 </div>
-                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded flex items-center gap-4">
+                <div class="bg-blue-50 border-l-2 border-blue-400 p-2 rounded flex items-center gap-2 text-sm">
                     <span class="font-semibold">Debug Mode:</span>
-                    <?php if ($debugEnabled): ?><span class="bg-green-100 text-green-700 px-2 py-1 rounded">Enabled</span><?php else: ?><span class="bg-gray-100 text-gray-700 px-2 py-1 rounded">Disabled</span><?php endif; ?>
+                    <?php if ($debugEnabled): ?><span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-medium">Enabled</span><?php else: ?><span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-medium">Disabled</span><?php endif; ?>
                 </div>
             </div>
 
@@ -151,7 +152,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             <!-- Tracking Script Section -->
-            <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6 shadow-sm max-w-2xl">
+            <div class="bg-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm max-w-2xl">
                 <label for="ctm_tracking_script" class="text-xl font-semibold mb-4 text-gray-700">Tracking Script</label>
                 <p class="text-gray-500 text-sm mb-4">This script is automatically fetched from CallTrackingMetrics. You can override it if needed, but we recommend using the auto-fetched version for accuracy.</p>
                 <div class="flex flex-col md:flex-row md:items-center gap-4 mb-4">
@@ -169,6 +170,23 @@
                     <label for="ctm_auto_inject_tracking_script" class="text-gray-700 select-none cursor-pointer font-medium">Auto-inject tracking script into site &lt;head&gt;</label>
                 </div>
                 <p class="text-gray-500 text-xs mt-1 ml-6">If enabled, the tracking script above will be automatically inserted into your site's &lt;head&gt; on every page.</p>
+            </div>
+            <!-- Debug Mode Section -->
+            <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Debugging</h2>
+                <div class="flex items-center gap-2 mb-2">
+                    <input type="checkbox" id="ctm_debug_enabled" name="ctm_debug_enabled" value="1" class="mr-2" <?= checked(get_option('ctm_debug_enabled'), 1, false) ?>>
+                    <label for="ctm_debug_enabled" class="text-gray-700 select-none cursor-pointer font-medium">Enable Debugging (show Debug tab)</label>
+                </div>
+                <p class="text-gray-500 text-xs ml-6">If enabled, the Debug tab will be visible and additional logging will be available for troubleshooting.</p>
+            </div>
+            <!-- Dashboard Widget Section -->
+            <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Dashboard</h2>
+                <label class="flex items-center mb-2">
+                    <input type="checkbox" name="ctm_api_dashboard_enabled" value="1"<?= checked($dashboardEnabled, 1, false) ?> class="mr-2 rounded border-gray-300 focus:ring-blue-500" />
+                    Enable Dashboard Widget
+                </label>
             </div>
             <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
                 <h2 class="text-xl font-semibold mb-4 text-gray-700">Integrations</h2>
@@ -192,22 +210,15 @@
                     <div><strong>Note:</strong> If you will request international (non-U.S.) phone numbers with your Contact Form 7 forms, we recommend using the plugin <a href=\"https://wordpress.org/plugins/cf7-international-telephone-input/\" target=\"_blank\" rel=\"noopener\" class=\"underline text-blue-700\">International Telephone Input for Contact Form 7</a> to avoid possible formatting issues with our FormReactor. Both <code>[tel]</code> and <code>[intl_tel]</code> are now supported as phone inputs.</div>
                 </div>
                 
-                <!-- Always show install link -->
-                <?php if (!class_exists('WPCF7_ContactForm')): ?>
-                    <div class="mb-3">
-                        <a href="<?= esc_url(admin_url('plugin-install.php?s=contact+form+7&tab=search&type=term')) ?>" class="text-blue-600 hover:text-blue-800 text-sm underline transition">Install Contact Form 7 →</a>
-                    </div>
-                <?php endif; ?>
-                
                 <!-- Dismissible warning banner -->
-                <?php if (!class_exists('WPCF7_ContactForm') && !get_option('ctm_cf7_notice_dismissed', false)): ?>
-                    <div id="cf7-notice" class="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-2 rounded flex items-center justify-between gap-2 mb-4 mt-2 text-sm">
-                        <div class="flex items-center gap-2">
+                <?php if (!class_exists('WPCF7_ContactForm')): ?>
+                    <div id="cf7-notice" class="bg-yellow-50 border-l-2 border-yellow-400 text-yellow-800 p-1.5 rounded flex items-center justify-between gap-1 mb-3 mt-2 text-xs ml-6">
+                        <div class="flex items-center justify-between w-full gap-1">
                             <span class="font-semibold">Contact Form 7 is not installed or activated.</span>
-                            <a href="<?= esc_url(admin_url('plugin-install.php?s=contact+form+7&tab=search&type=term')) ?>" class="ml-2 bg-blue-600 hover:bg-blue-700 hover:text-white! text-white px-4 py-2 rounded shadow transition text-sm font-medium">Install Contact Form 7</a>
+                            <a href="<?= esc_url(admin_url('plugin-install.php?s=contact+form+7&tab=search&type=term')) ?>" class="ml-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded shadow transition text-xs font-medium hover:text-white!">Install Contact Form 7</a>
                         </div>
-                        <button type="button" onclick="dismissNotice('cf7')" class="text-yellow-600 hover:text-yellow-800 ml-2 p-1 rounded hover:bg-yellow-100 transition" title="I don't use this plugin">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <button type="button" onclick="dismissNotice('cf7')" class="text-yellow-600 hover:text-yellow-800 ml-1 p-1 rounded hover:bg-yellow-100 transition" title="I don't use this plugin">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                         </button>
@@ -232,31 +243,20 @@
                     <div><strong>Note:</strong> It is required to use a form that captures a telephone number (<code>input type=\"tel\"</code>) in order for Gravity Forms to integrate properly with our FormReactor. For more information, see <a href=\"https://www.calltrackingmetrics.com/support/integrations/wordpress\" target=\"_blank\" rel=\"noopener\" class=\"underline text-blue-700\">Using the CallTrackingMetrics WordPress Plugin</a>.</div>
                 </div>
                 
-                <!-- Always show install link -->
-                <?php if (!class_exists('GFAPI')): ?>
-                    <div class="mb-3">
-                        <a href="https://www.gravityforms.com/" target="_blank" rel="noopener" class="text-blue-600 hover:text-blue-800 text-sm underline transition">Get Gravity Forms →</a>
-                    </div>
-                <?php endif; ?>
-                
                 <!-- Dismissible warning banner -->
-                <?php if (!class_exists('GFAPI') && !get_option('ctm_gf_notice_dismissed', false)): ?>
-                    <div id="gf-notice" class="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-2 rounded flex items-center justify-between gap-2 mb-2 mt-2 text-sm">
-                        <div class="flex items-center gap-2">
+                <?php if (!class_exists('GFAPI')): ?>
+                    <div id="gf-notice" class="bg-yellow-50 border-l-2 border-yellow-400 text-yellow-800 p-1.5 rounded flex items-center justify-between gap-1 mb-3 mt-2 text-xs ml-6">
+                        <div class="flex items-center justify-between w-full gap-1">
                             <span class="font-semibold">Gravity Forms is not installed or activated.</span>
-                            <a href="https://www.gravityforms.com/" target="_blank" rel="noopener" class="ml-2 bg-blue-600 hover:bg-blue-700 hover:text-white! text-white px-4 py-2 rounded shadow transition text-sm font-medium">Get Gravity Forms</a>
+                            <a href="https://www.gravityforms.com/" target="_blank" rel="noopener" class="ml-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded shadow transition text-xs font-medium hover:text-white!">Install Gravity Forms</a>
                         </div>
-                        <button type="button" onclick="dismissNotice('gf')" class="text-yellow-600 hover:text-yellow-800 ml-2 p-1 rounded hover:bg-yellow-100 transition" title="I don't use this plugin">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <button type="button" onclick="dismissNotice('gf')" class="text-yellow-600 hover:text-yellow-800 ml-1 p-1 rounded hover:bg-yellow-100 transition" title="I don't use this plugin">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                         </button>
                     </div>
                 <?php endif; ?>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
-                <h2 class="text-xl font-semibold mb-4 text-gray-700">Dashboard</h2>
-                <label class="flex items-center mb-2"><input type="checkbox" name="ctm_api_dashboard_enabled" value="1"<?= checked($dashboardEnabled, 1, false) ?> class="mr-2 rounded border-gray-300 focus:ring-blue-500" />Enable Dashboard Widget</label>
             </div>
         </div>
         <div class="mt-8">
@@ -264,512 +264,3 @@
         </div>
     <?php endif; ?>
 </form>
-
-<script>
-function dismissNotice(type) {
-    // Hide the notice immediately
-    const noticeId = type + '-notice';
-    const notice = document.getElementById(noticeId);
-    if (notice) {
-        notice.style.transition = 'opacity 0.3s ease';
-        notice.style.opacity = '0';
-        setTimeout(() => {
-            notice.style.display = 'none';
-        }, 300);
-    }
-    
-    // Send AJAX request to save dismiss preference
-    const formData = new FormData();
-    formData.append('action', 'ctm_dismiss_notice');
-    formData.append('notice_type', type);
-    formData.append('nonce', '<?= wp_create_nonce('ctm_dismiss_notice') ?>');
-    
-    fetch('<?= admin_url('admin-ajax.php') ?>', {
-        method: 'POST',
-        body: formData
-    }).catch(error => {
-        console.error('Error dismissing notice:', error);
-    });
-}
-
- function testApiConnection() {
-     const apiKey = document.getElementById('ctm_api_key').value;
-     const apiSecret = document.getElementById('ctm_api_secret').value;
-     const testBtn = document.getElementById('test-api-btn');
-     const testBtnText = document.getElementById('test-btn-text');
-     const testBtnSpinner = document.getElementById('test-btn-spinner');
-     const apiTestLogs = document.getElementById('api-test-logs');
-     const apiLogContent = document.getElementById('api-log-content');
-     const testDuration = document.getElementById('test-duration');
-     const testProgress = document.getElementById('test-progress');
-     const progressBar = document.getElementById('progress-bar');
-     const progressText = document.getElementById('progress-text');
-     const accountSummary = document.getElementById('account-summary');
-     const accountDetails = document.getElementById('account-details');
-     const technicalDetails = document.getElementById('technical-details');
-     const techDetailsContent = document.getElementById('tech-details-content');
- 
-     if (!apiKey || !apiSecret) {
-         alert('Please enter both API Key and API Secret.');
-         return;
-     }
- 
-     // Initialize test state
-     const startTime = Date.now();
-     let currentStep = 0;
-     const totalSteps = 5;
-     
-     testBtn.disabled = true;
-     testBtnText.classList.add('hidden');
-     testBtnSpinner.classList.remove('hidden');
-     apiTestLogs.classList.remove('hidden');
-     apiLogContent.innerHTML = '';
-     testDuration.classList.add('hidden');
-     testProgress.classList.remove('hidden');
-     accountSummary.classList.add('hidden');
-     technicalDetails.classList.add('hidden');
-     
-     // Step 1: Validation
-     updateProgress(++currentStep, totalSteps, 'Validating credentials...');
-     appendLog('info', 'Starting API connection test...');
-     appendLog('info', `API Key: ${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)}`);
-     appendLog('info', `Target: https://api.calltrackingmetrics.com`);
-     
-     setTimeout(() => {
-         // Step 2: Connection
-         updateProgress(++currentStep, totalSteps, 'Establishing connection...');
-         appendLog('info', 'Connecting to CTM API endpoint...');
-         appendLog('info', 'Endpoint: /api/v1/accounts/current.json');
-         
-         const requestStart = Date.now();
-         
-         fetch('<?= admin_url('admin-ajax.php') ?>', {
-             method: 'POST',
-             headers: {
-                 'Content-Type': 'application/x-www-form-urlencoded',
-             },
-             body: 'action=ctm_test_api_connection&api_key=' + encodeURIComponent(apiKey) + '&api_secret=' + encodeURIComponent(apiSecret) + '&nonce=<?= wp_create_nonce('ctm_test_api_connection') ?>'
-         })
-         .then(response => {
-             const requestTime = Date.now() - requestStart;
-             
-             // Step 3: Response
-             updateProgress(++currentStep, totalSteps, 'Processing response...');
-             appendLog('info', `Response received in ${requestTime}ms`);
-             appendLog('info', `HTTP Status: ${response.status} ${response.statusText}`);
-             
-             return response.json();
-         })
-         .then(data => {
-             // Step 4: Analysis
-             updateProgress(++currentStep, totalSteps, 'Analyzing account data...');
-             
-             const totalTime = Date.now() - startTime;
-             testDuration.textContent = `${totalTime}ms`;
-             testDuration.classList.remove('hidden');
-             
-             testBtn.disabled = false;
-             testBtnText.classList.remove('hidden');
-             testBtnSpinner.classList.add('hidden');
- 
-             if (data.success) {
-                 // Step 5: Success
-                 updateProgress(++currentStep, totalSteps, 'Connection successful!');
-                 
-                 appendLog('success', '✓ API Connection Successful!');
-                 appendLog('success', `Total test duration: ${totalTime}ms`);
-                 
-                 // Show performance metrics
-                 if (data.performance) {
-                     displayPerformanceMetrics(data.performance, data.connection_quality);
-                 }
-                 
-                 // Show detailed account information
-                 if (data.account_info && data.account_info.account) {
-                     displayAccountSummary(data.account_info.account, data.account_details?.account, data.capabilities);
-                 }
-                 
-                 // Show technical details
-                 displayTechnicalDetails(data);
-                 
-                 appendLog('success', 'All tests completed successfully!');
-                 
-                 // Auto-refresh countdown
-                 let countdown = 3;
-                 const countdownInterval = setInterval(() => {
-                     appendLog('info', `Refreshing page in ${countdown} seconds...`);
-                     countdown--;
-                     if (countdown < 0) {
-                         clearInterval(countdownInterval);
-                         window.location.reload();
-                     }
-                 }, 1000);
-             } else {
-                 updateProgress(totalSteps, totalSteps, 'Connection failed');
-                 progressBar.classList.remove('bg-blue-600');
-                 progressBar.classList.add('bg-red-600');
-                 
-                 appendLog('error', '✗ Failed to connect to CTM API: ' + data.message);
-                 appendLog('error', `Total test duration: ${totalTime}ms`);
-                 
-                 if (data.message) appendLog('error', `Error: ${data.message}`);
-                 if (data.details && Array.isArray(data.details)) {
-                     data.details.forEach(detail => appendLog('warning', `• ${detail}`));
-                 }
-                 
-                 // Show technical details for debugging
-                 displayTechnicalDetails(data);
-                 
-                 appendLog('warning', 'Please check your API credentials and try again.');
-             }
-         })
-         .catch(error => {
-             const totalTime = Date.now() - startTime;
-             testDuration.textContent = `${totalTime}ms`;
-             testDuration.classList.remove('hidden');
-             
-             updateProgress(totalSteps, totalSteps, 'Network error');
-             progressBar.classList.remove('bg-blue-600');
-             progressBar.classList.add('bg-red-600');
-             
-             testBtn.disabled = false;
-             testBtnText.classList.remove('hidden');
-             testBtnSpinner.classList.add('hidden');
-             
-             appendLog('error', '✗ Network Error: ' + error.message);
-             appendLog('error', `Total test duration: ${totalTime}ms`);
-             appendLog('warning', 'Please check your internet connection and try again.');
-         });
-     }, 800); // Small delay to show initial progress
- }
- 
-  function updateProgress(step, total, message) {
-     const progressBar = document.getElementById('progress-bar');
-     const progressText = document.getElementById('progress-text');
-     
-     const percentage = Math.round((step / total) * 100);
-     progressBar.style.width = percentage + '%';
-     progressText.textContent = `${percentage}% - ${message}`;
- }
-
- function appendLog(type, message) {
-     const apiLogContent = document.getElementById('api-log-content');
-     const timestamp = new Date().toLocaleTimeString();
-     let colorClass = 'text-gray-600';
-     let bgClass = 'bg-gray-50';
-     let icon = '•';
-     
-     switch(type) {
-         case 'success':
-             colorClass = 'text-green-700';
-             bgClass = 'bg-green-50';
-             icon = '✓';
-             break;
-         case 'error':
-             colorClass = 'text-red-700';
-             bgClass = 'bg-red-50';
-             icon = '✗';
-             break;
-         case 'warning':
-             colorClass = 'text-yellow-700';
-             bgClass = 'bg-yellow-50';
-             icon = '⚠';
-             break;
-         case 'info':
-         default:
-             colorClass = 'text-blue-700';
-             bgClass = 'bg-blue-50';
-             icon = 'ⓘ';
-             break;
-     }
-     
-     const logEntry = document.createElement('div');
-     logEntry.className = `${colorClass} ${bgClass} p-2 rounded border-l-2 border-current flex gap-2 items-start`;
-     logEntry.innerHTML = `
-         <span class="text-gray-400 text-xs font-mono mt-0.5">[${timestamp}]</span>
-         <span class="font-bold mt-0.5">${icon}</span>
-         <span class="flex-1 font-medium">${message}</span>
-     `;
-     
-     apiLogContent.appendChild(logEntry);
-     apiLogContent.scrollTop = apiLogContent.scrollHeight;
- }
-
- function displayPerformanceMetrics(performance, quality) {
-     if (quality) {
-         const qualityColor = quality.color === 'green' ? 'text-green-600' : 
-                             quality.color === 'blue' ? 'text-blue-600' :
-                             quality.color === 'yellow' ? 'text-yellow-600' : 'text-red-600';
-         
-         appendLog('info', `${quality.description}`);
-         appendLog('info', `API Response: ${performance.api_response_time}ms`);
-         
-         if (performance.details_response_time) {
-             appendLog('info', `Details Response: ${performance.details_response_time}ms`);
-         }
-         
-         if (performance.network_overhead > 0) {
-             appendLog('info', `Network Overhead: ${performance.network_overhead.toFixed(1)}ms`);
-         }
-     }
- }
-
- function displayAccountSummary(account, details, capabilities) {
-     const accountSummary = document.getElementById('account-summary');
-     const accountDetails = document.getElementById('account-details');
-     
-     accountSummary.classList.remove('hidden');
-     
-     let summaryHTML = '';
-     
-     // Basic account info
-     summaryHTML += `<div class="bg-white p-2 rounded border"><strong>Name:</strong> ${account.name || 'N/A'}</div>`;
-     summaryHTML += `<div class="bg-white p-2 rounded border"><strong>Account ID:</strong> <code class="bg-gray-100 px-1 rounded">${account.id || 'N/A'}</code></div>`;
-     
-     if (account.email) {
-         summaryHTML += `<div class="bg-white p-2 rounded border"><strong>Email:</strong> ${account.email}</div>`;
-     }
-     
-     // API Capabilities
-     if (capabilities) {
-         const accessIcon = capabilities.account_access ? '✓' : '✗';
-         const detailsIcon = capabilities.details_access ? '✓' : '✗';
-         summaryHTML += `<div class="bg-white p-2 rounded border"><strong>API Access:</strong> <span class="text-green-600">${accessIcon}</span> Account, <span class="${capabilities.details_access ? 'text-green-600' : 'text-yellow-600'}">${detailsIcon}</span> Details</div>`;
-         summaryHTML += `<div class="bg-white p-2 rounded border"><strong>API Version:</strong> ${capabilities.api_version}</div>`;
-     }
-     
-     // Additional details if available
-     if (details) {
-         if (details.status) {
-             const statusColor = details.status === 'active' ? 'text-green-600' : 'text-yellow-600';
-             summaryHTML += `<div class="bg-white p-2 rounded border"><strong>Status:</strong> <span class="${statusColor} font-semibold">${details.status}</span></div>`;
-         }
-         if (details.timezone) {
-             summaryHTML += `<div class="bg-white p-2 rounded border"><strong>Timezone:</strong> ${details.timezone}</div>`;
-         }
-         if (details.created_at) {
-             const date = new Date(details.created_at).toLocaleDateString();
-             summaryHTML += `<div class="bg-white p-2 rounded border"><strong>Created:</strong> ${date}</div>`;
-         }
-         if (details.phone) {
-             summaryHTML += `<div class="bg-white p-2 rounded border"><strong>Phone:</strong> ${details.phone}</div>`;
-         }
-         if (details.website) {
-             summaryHTML += `<div class="bg-white p-2 rounded border"><strong>Website:</strong> <a href="${details.website}" target="_blank" class="text-blue-600 underline">${details.website}</a></div>`;
-         }
-         if (details.plan || details.subscription) {
-             summaryHTML += `<div class="bg-white p-2 rounded border"><strong>Plan:</strong> ${details.plan || details.subscription || 'Not specified'}</div>`;
-         }
-     }
-     
-     accountDetails.innerHTML = summaryHTML;
-     
-     appendLog('success', `Account verified: ${account.name} (${account.id})`);
- }
-
- function displayTechnicalDetails(data) {
-     const technicalDetails = document.getElementById('technical-details');
-     const techDetailsContent = document.getElementById('tech-details-content');
-     
-     technicalDetails.classList.remove('hidden');
-     
-     let detailsHTML = '';
-     
-     // Metadata Section
-     if (data.metadata) {
-         detailsHTML += `
-             <div class="mb-4">
-                 <h6 class="font-semibold text-gray-700 mb-2 flex items-center gap-1">
-                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                     </svg>
-                     Request Metadata
-                 </h6>
-                 <div class="grid grid-cols-2 gap-2 text-xs">
-                     <div><strong>Request ID:</strong> <code class="bg-gray-200 px-1 rounded">${data.metadata.request_id?.substring(0, 8) || 'N/A'}</code></div>
-                     <div><strong>Timestamp:</strong> ${data.metadata.timestamp || 'N/A'}</div>
-                     <div><strong>WordPress:</strong> ${data.metadata.wordpress_version || 'N/A'}</div>
-                     <div><strong>PHP:</strong> ${data.metadata.php_version || 'N/A'}</div>
-                     <div><strong>Plugin:</strong> ${data.metadata.plugin_version || 'N/A'}</div>
-                     <div><strong>Auth Method:</strong> ${data.metadata.auth_method || 'N/A'}</div>
-                 </div>
-             </div>
-         `;
-     }
-     
-     // Performance Section
-     if (data.performance) {
-         detailsHTML += `
-             <div class="mb-4">
-                 <h6 class="font-semibold text-gray-700 mb-2 flex items-center gap-1">
-                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                     </svg>
-                     Performance Metrics
-                 </h6>
-                 <div class="grid grid-cols-2 gap-2 text-xs">
-                     <div><strong>Total Time:</strong> ${data.performance.total_execution_time}ms</div>
-                     <div><strong>API Response:</strong> ${data.performance.api_response_time}ms</div>
-                     <div><strong>Details Response:</strong> ${data.performance.details_response_time || 'N/A'}ms</div>
-                     <div><strong>Network Overhead:</strong> ${data.performance.network_overhead?.toFixed(1) || 'N/A'}ms</div>
-                 </div>
-             </div>
-         `;
-     }
-     
-     // API Endpoints Section
-     if (data.metadata) {
-         detailsHTML += `
-             <div class="mb-4">
-                 <h6 class="font-semibold text-gray-700 mb-2 flex items-center gap-1">
-                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
-                     </svg>
-                     API Endpoints
-                 </h6>
-                 <div class="space-y-1 text-xs">
-                     <div><strong>Base URL:</strong> <code class="bg-gray-200 px-1 rounded">${data.metadata.api_endpoint || 'N/A'}</code></div>
-                     <div><strong>Account:</strong> <code class="bg-gray-200 px-1 rounded">${data.metadata.account_endpoint || 'N/A'}</code></div>
-                     ${data.metadata.details_endpoint ? `<div><strong>Details:</strong> <code class="bg-gray-200 px-1 rounded">${data.metadata.details_endpoint}</code></div>` : ''}
-                 </div>
-             </div>
-         `;
-     }
-     
-     // Connection Quality
-     if (data.connection_quality) {
-         const quality = data.connection_quality;
-         const qualityBadgeColor = quality.color === 'green' ? 'bg-green-100 text-green-800' :
-                                   quality.color === 'blue' ? 'bg-blue-100 text-blue-800' :
-                                   quality.color === 'yellow' ? 'bg-yellow-100 text-yellow-800' : 
-                                   'bg-red-100 text-red-800';
-         
-         detailsHTML += `
-             <div class="mb-4">
-                 <h6 class="font-semibold text-gray-700 mb-2 flex items-center gap-1">
-                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                     </svg>
-                     Connection Quality
-                 </h6>
-                 <div class="flex items-center gap-2 text-xs">
-                     <span class="px-2 py-1 rounded ${qualityBadgeColor} font-semibold">${quality.rating.toUpperCase()}</span>
-                     <span>${quality.total_time}ms total response time</span>
-                 </div>
-             </div>
-         `;
-     }
-     
-     // Raw Response Data (collapsible)
-     const sanitizedData = JSON.parse(JSON.stringify(data));
-     
-     // Remove sensitive information
-     if (sanitizedData.account_info?.account) {
-         delete sanitizedData.account_info.account.api_key;
-         delete sanitizedData.account_info.account.api_secret;
-     }
-     
-     const jsonString = JSON.stringify(sanitizedData, null, 2);
-     
-     detailsHTML += `
-         <div class="mb-2">
-             <button type="button" onclick="toggleRawData()" class="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-800 transition">
-                 <svg id="raw-data-icon" class="w-3 h-3 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                 </svg>
-                 Raw API Response (JSON)
-             </button>
-             <div id="raw-data-content" class="hidden mt-2 p-2 bg-gray-50 rounded border">
-                 <div class="mb-1 text-gray-600 text-xs"><strong>Complete API Response:</strong> (sensitive data removed)</div>
-                 <pre class="whitespace-pre-wrap text-xs overflow-x-auto">${escapeHtml(jsonString)}</pre>
-             </div>
-         </div>
-     `;
-     
-     techDetailsContent.innerHTML = detailsHTML;
- }
-
- function escapeHtml(text) {
-     const div = document.createElement('div');
-     div.textContent = text;
-     return div.innerHTML;
- }
- 
- function clearTestLogs() {
-     document.getElementById('api-log-content').innerHTML = '';
-     document.getElementById('test-progress').classList.add('hidden');
-     document.getElementById('account-summary').classList.add('hidden');
-     document.getElementById('technical-details').classList.add('hidden');
-     document.getElementById('test-duration').classList.add('hidden');
-     
-     // Reset progress bar
-     const progressBar = document.getElementById('progress-bar');
-     progressBar.style.width = '0%';
-     progressBar.classList.remove('bg-red-600');
-     progressBar.classList.add('bg-blue-600');
- }
- 
- function toggleTechnicalDetails() {
-     const techDetailsContent = document.getElementById('tech-details-content');
-     const techDetailsIcon = document.getElementById('tech-details-icon');
-     
-     techDetailsContent.classList.toggle('hidden');
-     techDetailsIcon.classList.toggle('rotate-90');
- }
- 
- function toggleRawData() {
-     const rawDataContent = document.getElementById('raw-data-content');
-     const rawDataIcon = document.getElementById('raw-data-icon');
-     
-     rawDataContent.classList.toggle('hidden');
-     rawDataIcon.classList.toggle('rotate-90');
- }
-
-// Ensure ctmShowToast is available
-if (typeof window.ctmShowToast !== 'function') {
-    window.ctmShowToast = function(message, type = 'info') {
-        let container = document.getElementById('ctm-toast-container');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'ctm-toast-container';
-            container.style.position = 'fixed';
-            container.style.top = '1.5rem';
-            container.style.right = '1.5rem';
-            container.style.zIndex = '9999';
-            document.body.appendChild(container);
-        }
-        // Remove any existing toasts after a short delay
-        Array.from(container.children).forEach(child => {
-            child.style.opacity = 0;
-            setTimeout(() => child.remove(), 500);
-        });
-        // Toast color based on type
-        let bg = 'bg-blue-600';
-        if (type === 'success') bg = 'bg-green-600';
-        if (type === 'error') bg = 'bg-red-600';
-        if (type === 'warning') bg = 'bg-yellow-600';
-        // Create toast element
-        const toast = document.createElement('div');
-        toast.className = `${bg} text-white px-4 py-2 rounded shadow mb-2 transition-opacity duration-500`;
-        toast.style.opacity = 1;
-        toast.textContent = message;
-        container.appendChild(toast);
-        // Fade out and remove after 3 seconds
-        setTimeout(() => {
-            toast.style.opacity = 0;
-            setTimeout(() => toast.remove(), 500);
-        }, 3000);
-    };
-}
-
-// Only keep the override checkbox logic for readOnly, remove any fetch/update tracking script JS
-    document.addEventListener('DOMContentLoaded', function() {
-        const overrideCheckbox = document.getElementById('ctm_tracking_override_checkbox');
-        const trackingTextarea = document.getElementById('ctm_tracking_script');
-        if (overrideCheckbox && trackingTextarea) {
-            overrideCheckbox.addEventListener('change', function() {
-                trackingTextarea.readOnly = !this.checked;
-            });
-        }
-    });
-</script> 

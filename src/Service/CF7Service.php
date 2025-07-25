@@ -78,7 +78,17 @@ class CF7Service
                 'ip_address' => $this->getClientIpAddress(),
                 'fields' => $this->mapFormFields($data, $fieldMapping, $fieldTypeMap),
                 'raw_data' => $data, // Keep original data for debugging
+                'callback_number' => '',
+                'delay_calling_by' => '',
             ];
+            foreach ($data as $key => $value) {
+                if (strtolower($key) === 'callback_number' || strtolower($key) === 'callback number') {
+                    $payload['callback_number'] = $value;
+                }
+                if (strtolower($key) === 'delay_calling_by' || strtolower($key) === 'delay calling by') {
+                    $payload['delay_calling_by'] = $value;
+                }
+            }
             
             // Add referrer information if available
             if (!empty($_SERVER['HTTP_REFERER'])) {

@@ -44,23 +44,9 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
                                     <span class="font-mono text-gray-800"><?= esc_html($account['id'] ?? 'N/A') ?></span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-gray-600">Email:</span>
-                                    <span class="text-gray-800"><?= esc_html($account['email'] ?? 'N/A') ?></span>
-                                </div>
-                                <div class="flex justify-between">
                                     <span class="text-gray-600">Status:</span>
                                     <span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">
                                         <?= esc_html(ucfirst($account['status'] ?? 'active')) ?>
-                                    </span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Timezone:</span>
-                                    <span class="text-gray-800"><?= esc_html($account['timezone'] ?? 'N/A') ?></span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Created:</span>
-                                    <span class="text-gray-800">
-                                        <?= isset($account['created_at']) ? esc_html(date('M j, Y', strtotime($account['created_at']))) : 'N/A' ?>
                                     </span>
                                 </div>
                                 <?php if (!empty($account['phone'])): ?>
@@ -117,14 +103,6 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
                                 <span class="text-gray-600">Last Connected:</span>
                                 <span class="text-gray-800"><?= date('M j, Y g:i A') ?></span>
                             </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Response Format:</span>
-                                <span class="text-gray-800">JSON</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Authentication:</span>
-                                <span class="text-gray-800">HTTP Basic Auth</span>
-                            </div>
                         </div>
                         <!-- Add Change API Keys and Disable API buttons -->
                         <!-- Change API Keys Modal -->
@@ -175,7 +153,7 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
                         <span id="ctm-status-badge" class="ml-2 px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">Connected</span>
                     </div>
                     <div class="text-right">
-                        <div id="ctm-countdown" class="text-sm text-gray-600">Next test in 10s</div>
+                        <div id="ctm-countdown" class="text-sm text-gray-600">Next test in 10m</div>
                         <div id="ctm-last-test" class="text-xs text-gray-500"><?= date('g:i:s A') ?></div>
                     </div>
                 </div>
@@ -213,7 +191,27 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
                 
                 <!-- Test Logs -->
                 <div id="ctm-test-logs" class="bg-gray-50 border border-gray-200 rounded-lg p-4 h-64 overflow-y-auto font-mono text-sm">
-                    <div class="text-gray-500 italic">Click "Test API Connection" to see real-time logs...</div>
+                    <div class="text-gray-500 italic">Click "Test Now" to see real-time logs...</div>
+                </div>
+                <!-- Account Summary (shown after successful connection) -->
+                <div id="ctm-account-summary" class="hidden mt-4 p-3 bg-green-50 border border-green-200 rounded">
+                    <h5 class="font-semibold text-green-800 mb-2 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        Account Summary
+                    </h5>
+                    <div id="ctm-account-details" class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs"></div>
+                </div>
+                <!-- Technical Details (collapsible) -->
+                <div id="ctm-technical-details" class="hidden mt-4">
+                    <button type="button" onclick="jQuery('#ctm-tech-details-content').toggleClass('hidden'); jQuery('#ctm-tech-details-icon').toggleClass('rotate-90');" class="flex items-center gap-2 text-xs text-gray-600 hover:text-gray-800 transition">
+                        <svg id="ctm-tech-details-icon" class="w-3 h-3 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                        View Technical Details
+                    </button>
+                    <div id="ctm-tech-details-content" class="hidden mt-2 p-3 bg-gray-100 rounded text-xs font-mono overflow-x-auto"></div>
                 </div>
             </div>
         </div>
@@ -239,14 +237,6 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
                         <div class="text-2xl font-bold text-purple-600">247</div>
                         <div class="text-sm text-gray-600">Tests Today</div>
                     </div>
-                </div>
-                
-                <div class="text-center py-8 text-gray-500">
-                    <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                    </svg>
-                    <p class="text-sm">Real-time metrics updating every 10 seconds</p>
-                    <p class="text-xs text-gray-400 mt-1">Live monitoring ensures optimal API performance</p>
                 </div>
             </div>
         </div>
@@ -301,262 +291,13 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
 </div>
 
 <script>
-jQuery(document).ready(function($) {
-    let autoTestEnabled = true;
-    let countdownTimer = null;
-    let countdownValue = 10;
-    let isTestInProgress = false;
-    
-    // Update status indicators
-    function updateStatus(success, message = '') {
-        const indicator = $('#ctm-status-indicator');
-        const badge = $('#ctm-status-badge');
-        const lastTest = $('#ctm-last-test');
-        
-        if (success) {
-            indicator.removeClass('bg-red-500 bg-yellow-500').addClass('bg-green-500');
-            badge.removeClass('bg-red-100 text-red-800 bg-yellow-100 text-yellow-800').addClass('bg-green-100 text-green-800').text('Connected');
-        } else {
-            indicator.removeClass('bg-green-500 bg-yellow-500').addClass('bg-red-500');
-            badge.removeClass('bg-green-100 text-green-800 bg-yellow-100 text-yellow-800').addClass('bg-red-100 text-red-800').text('Failed');
-        }
-        
-        lastTest.text('Last test: ' + new Date().toLocaleTimeString());
-    }
-    
-    // Start countdown
-    function startCountdown() {
-        if (!autoTestEnabled || isTestInProgress) return;
-        
-        countdownValue = 10;
-        const countdown = $('#ctm-countdown');
-        
-        countdownTimer = setInterval(() => {
-            countdown.text(`Next test in ${countdownValue}s`);
-            countdownValue--;
-            
-            if (countdownValue < 0) {
-                clearInterval(countdownTimer);
-                countdown.text('Testing...');
-                performApiTest(true); // Auto test
-            }
-        }, 1000);
-    }
-    
-    // Perform API test
-    function performApiTest(isAutoTest = false) {
-        if (isTestInProgress) return;
-        
-        isTestInProgress = true;
-        const button = $('#ctm-test-api-btn');
-        const logs = $('#ctm-test-logs');
-        const progressContainer = $('#ctm-progress-container');
-        const progressBar = $('#ctm-progress-bar');
-        const progressPercent = $('#ctm-progress-percent');
-        const countdown = $('#ctm-countdown');
-        
-        // Update button state (only if manual test)
-        if (!isAutoTest) {
-            button.prop('disabled', true).html('<svg class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Testing...');
-        }
-        
-        // Show testing status
-        countdown.text('Testing...');
-        
-        // Add test log if not auto test
-        if (!isAutoTest) {
-            logs.html('<div class="text-blue-600">Starting API connection test...</div>');
-            progressContainer.removeClass('hidden');
-        }
-        
-        // AJAX call to test API
-        $.ajax({
-            url: ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'ctm_test_api_connection',
-                api_key: '<?= esc_js($apiKey ?? '') ?>',
-                api_secret: '<?= esc_js($apiSecret ?? '') ?>',
-                nonce: '<?= wp_create_nonce('ctm_test_api_connection') ?>'
-            },
-            success: function(response) {
-                if (response.success) {
-                    updateStatus(true);
-                    
-                    // Show detailed logs only for manual tests
-                    if (!isAutoTest) {
-                        progressBar.css('width', '100%');
-                        progressPercent.text('100%');
-                        
-                        let logHtml = '';
-                        if (response.data.logs) {
-                            response.data.logs.forEach(log => {
-                                let bgClass = 'bg-gray-50';
-                                let textClass = 'text-gray-700';
-                                let icon = '•';
-                                
-                                if (log.includes('✓') || log.includes('Success')) {
-                                    bgClass = 'bg-green-50 border-l-4 border-green-500';
-                                    textClass = 'text-green-700';
-                                    icon = '✓';
-                                } else if (log.includes('✗') || log.includes('Error')) {
-                                    bgClass = 'bg-red-50 border-l-4 border-red-500';
-                                    textClass = 'text-red-700';
-                                    icon = '✗';
-                                } else if (log.includes('→') || log.includes('Sending')) {
-                                    bgClass = 'bg-blue-50 border-l-4 border-blue-500';
-                                    textClass = 'text-blue-700';
-                                    icon = '→';
-                                }
-                                
-                                logHtml += `<div class="mb-2 p-2 rounded ${bgClass}"><span class="${textClass}">${icon} ${log}</span></div>`;
-                            });
-                        }
-                        logs.html(logHtml);
-                        
-                        // Show duration if available
-                        if (response.data.duration) {
-                            logs.append(`<div class="mt-3 p-2 bg-gray-100 rounded text-center"><span class="text-gray-600">Total test duration: ${response.data.duration}ms</span></div>`);
-                        }
-                    } else {
-                        // For auto tests, just add a simple success log
-                        const timestamp = new Date().toLocaleTimeString();
-                        logs.prepend(`<div class="mb-2 p-2 rounded bg-green-50 border-l-4 border-green-500"><span class="text-green-700">✓ [${timestamp}] Auto-test successful</span></div>`);
-                    }
-                } else {
-                    updateStatus(false, response.data || 'Test failed');
-                    
-                    if (!isAutoTest) {
-                        logs.html(`<div class="text-red-600">❌ ${response.data || 'Test failed'}</div>`);
-                    } else {
-                        const timestamp = new Date().toLocaleTimeString();
-                        logs.prepend(`<div class="mb-2 p-2 rounded bg-red-50 border-l-4 border-red-500"><span class="text-red-700">✗ [${timestamp}] Auto-test failed</span></div>`);
-                    }
-                }
-            },
-            error: function() {
-                updateStatus(false, 'AJAX request failed');
-                
-                if (!isAutoTest) {
-                    logs.html('<div class="text-red-600">❌ AJAX request failed</div>');
-                } else {
-                    const timestamp = new Date().toLocaleTimeString();
-                    logs.prepend(`<div class="mb-2 p-2 rounded bg-red-50 border-l-4 border-red-500"><span class="text-red-700">✗ [${timestamp}] Auto-test failed - AJAX error</span></div>`);
-                }
-            },
-            complete: function() {
-                isTestInProgress = false;
-                
-                if (!isAutoTest) {
-                    button.prop('disabled', false).html('<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>Test Now');
-                }
-                
-                // Restart countdown if auto-test is enabled
-                if (autoTestEnabled) {
-                    setTimeout(startCountdown, 1000);
-                }
-            }
-        });
-    }
-    
-    // Manual Test API Connection Button
-    $('#ctm-test-api-btn').on('click', function() {
-        clearInterval(countdownTimer);
-        performApiTest(false);
-    });
-    
-    // Toggle Auto-Test Button
-    $('#ctm-toggle-auto-test').on('click', function() {
-        const button = $(this);
-        autoTestEnabled = !autoTestEnabled;
-        
-        if (autoTestEnabled) {
-            button.removeClass('bg-gray-600').addClass('bg-green-600').html('<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Auto-Test: ON');
-            startCountdown();
-        } else {
-            button.removeClass('bg-green-600').addClass('bg-gray-600').html('<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Auto-Test: OFF');
-            clearInterval(countdownTimer);
-            $('#ctm-countdown').text('Auto-test disabled');
-        }
-    });
-    
-    // Clear Logs Button
-    $('#ctm-clear-logs-btn').on('click', function() {
-        $('#ctm-test-logs').html('<div class="text-gray-500 italic">Auto-testing every 10 seconds. Click "Test Now" for manual test...</div>');
-        $('#ctm-progress-container').addClass('hidden');
-        $('#ctm-progress-bar').css('width', '0%');
-        $('#ctm-progress-percent').text('0%');
-    });
-    
-    // Modal logic for Change API Keys
-    $('#ctm-change-api-btn').on('click', function() {
-        $('#ctm-change-api-modal').removeClass('hidden');
-    });
-    $('#ctm-close-change-api, #ctm-cancel-change-api').on('click', function() {
-        $('#ctm-change-api-modal').addClass('hidden');
-    });
-    // AJAX submit for Change API Keys
-    $('#ctm-change-api-form').on('submit', function(e) {
-        e.preventDefault();
-        var apiKey = $('#ctm_new_api_key').val();
-        var apiSecret = $('#ctm_new_api_secret').val();
-        var nonce = '<?php echo esc_js($ctm_change_api_nonce); ?>';
-        var $modal = $('#ctm-change-api-modal');
-        var $saveBtn = $(this).find('button[type=submit]');
-        $saveBtn.prop('disabled', true).text('Saving...');
-        $.post(ajaxurl, {
-            action: 'ctm_change_api_keys',
-            api_key: apiKey,
-            api_secret: apiSecret,
-            nonce: nonce
-        }, function(resp) {
-            $saveBtn.prop('disabled', false).text('Save');
-            if (resp.success) {
-                $modal.addClass('hidden');
-                alert('API keys updated successfully.');
-                location.reload();
-            } else {
-                alert(resp.data && resp.data.message ? resp.data.message : 'Failed to update API keys.');
-            }
-        });
-    });
-    // Modal logic for Disable API
-    $('#ctm-disable-api-btn').on('click', function() {
-        $('#ctm-disable-api-modal').removeClass('hidden');
-    });
-    $('#ctm-close-disable-api, #ctm-cancel-disable-api').on('click', function() {
-        $('#ctm-disable-api-modal').addClass('hidden');
-    });
-    // AJAX for Disable API
-    $('#ctm-confirm-disable-api').on('click', function() {
-        var nonce = '<?php echo esc_js($ctm_disable_api_nonce); ?>';
-        var $modal = $('#ctm-disable-api-modal');
-        var $btn = $(this);
-        $btn.prop('disabled', true).text('Disabling...');
-        $.post(ajaxurl, {
-            action: 'ctm_disable_api',
-            nonce: nonce
-        }, function(resp) {
-            $btn.prop('disabled', false).text('Disable API');
-            if (resp.success) {
-                $modal.addClass('hidden');
-                alert('API credentials cleared.');
-                location.reload();
-            } else {
-                alert(resp.data && resp.data.message ? resp.data.message : 'Failed to disable API.');
-            }
-        });
-    });
-    
-    // Initialize
-    $('#ctm-test-logs').html('<div class="text-gray-500 italic">Auto-testing every 10 seconds. Click "Test Now" for manual test...</div>');
-    
-    // Add initial connection status
-    <?php if ($api_connected && !empty($accountInfo)): ?>
-        $('#ctm-test-logs').prepend('<div class="mb-2 p-2 rounded bg-green-50 border-l-4 border-green-500"><span class="text-green-700">✓ [' + new Date().toLocaleTimeString() + '] API connection verified</span></div>');
-    <?php endif; ?>
-    
-    // Start auto-testing
-    setTimeout(startCountdown, 2000); // Wait 2 seconds before starting
-});
+// Localize script data for API tab
+var ctmApiData = {
+    api_key: '<?= esc_js($apiKey ?? '') ?>',
+    api_secret: '<?= esc_js($apiSecret ?? '') ?>',
+    nonce: '<?= wp_create_nonce('ctm_test_api_connection') ?>',
+    change_api_nonce: '<?= wp_create_nonce('ctm_change_api_keys') ?>',
+    disable_api_nonce: '<?= wp_create_nonce('ctm_disable_api') ?>',
+    initial_connected: <?= ($api_connected && !empty($accountInfo)) ? 'true' : 'false' ?>
+};
 </script> 
