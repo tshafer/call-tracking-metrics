@@ -73,18 +73,20 @@
 </div>
 
 <script>
+const ctmClearLogsConfirm = "<?php echo esc_js(__('Are you sure you want to clear all %s logs? This action cannot be undone.', 'call-tracking-metrics')); ?>";
+const ctmNoLogsMsg = "<?php echo esc_js(__('No %s logs found.', 'call-tracking-metrics')); ?>";
 function clearLogs(logType) {
     const button = document.getElementById(`clear-${logType}-btn`);
     const originalText = button.textContent;
     
     // Confirm action
-    if (!confirm(<?php echo sprintf(__('Are you sure you want to clear all %s logs? This action cannot be undone.', 'call-tracking-metrics'), '${logType.toUpperCase()}'); ?>)) {
+    if (!confirm(ctmClearLogsConfirm.replace('%s', logType.toUpperCase()))) {
         return;
     }
     
     // Disable button and show loading state
     button.disabled = true;
-    button.textContent = <?php _e('Clearing...', 'call-tracking-metrics'); ?>;
+    button.textContent = '<?php _e('Clearing...', 'call-tracking-metrics'); ?>';
     
     // Prepare form data
     const formData = new FormData();
@@ -114,16 +116,15 @@ function clearLogs(logType) {
                 logTable.parentElement.style.display = 'none';
                 const noLogsDiv = document.createElement('div');
                 noLogsDiv.className = 'text-gray-500';
-                noLogsDiv.textContent = <?php echo sprintf(__('No %s logs found.', 'call-tracking-metrics'), '${logType.toUpperCase()}'); ?>;
+                noLogsDiv.textContent = ctmNoLogsMsg.replace('%s', logType.toUpperCase());
                 logTable.parentElement.parentElement.appendChild(noLogsDiv);
             }
         } else {
-            ctmShowToast(data.data.message || <?php _e('Failed to clear logs', 'call-tracking-metrics'); ?>, 'error');
+            ctmShowToast(data.data.message || '<?php _e('Failed to clear logs', 'call-tracking-metrics'); ?>', 'error');
         }
     })
     .catch(error => {
-        console.error('Error clearing logs:', error);
-        ctmShowToast(<?php _e('Network error occurred while clearing logs', 'call-tracking-metrics'); ?>, 'error');
+        ctmShowToast('<?php _e('Network error occurred while clearing logs', 'call-tracking-metrics'); ?>', 'error');
     })
     .finally(() => {
         // Re-enable button
