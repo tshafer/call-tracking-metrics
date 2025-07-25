@@ -83,6 +83,7 @@ class AdminFieldMappingTest extends TestCase
     {
         global $wpdb;
         $wpdb = new class {
+            public $options = 'wp_options';
             public function get_results($query) {
                 return [
                     (object)['option_name' => 'ctm_mapping_gf_1', 'option_value' => serialize(['a'=>'b'])],
@@ -166,6 +167,7 @@ class AdminFieldMappingTest extends TestCase
     {
         global $wpdb;
         $wpdb = new class {
+            public $options = 'wp_options';
             public function get_results($query) { return []; }
             public function prepare($query, $pattern = null) { return $query; }
         };
@@ -179,6 +181,7 @@ class AdminFieldMappingTest extends TestCase
     {
         global $wpdb;
         $wpdb = new class {
+            public $options = 'wp_options';
             public function get_results($query) {
                 return [
                     (object)['option_name' => 'ctm_mapping_gf_1', 'option_value' => serialize(['a'=>'b'])],

@@ -37,6 +37,7 @@ class CallTrackingMetricsTest extends TestCase
         \Brain\Monkey\Functions\when('is_admin')->justReturn(false);
         \Brain\Monkey\Functions\when('get_option')->alias(function($key) {
             if ($key === 'call_track_account_script') return '<script>console.log("test")</script>';
+            if ($key === 'ctm_auto_inject_tracking_script') return true;
             return null;
         });
         ob_start();

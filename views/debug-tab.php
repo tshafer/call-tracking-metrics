@@ -57,8 +57,6 @@ if ($debugEnabled) {
     // Include debug header component
     include plugin_dir_path(__FILE__) . 'debug-includes/debug-header.php';
     ?>
-
-    <?php if ($debugEnabled): ?>
     <!-- Advanced Debug Features -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         <?php include plugin_dir_path(__FILE__) . 'debug-includes/system-info-panel.php'; ?>
@@ -68,9 +66,6 @@ if ($debugEnabled) {
     </div>
 
     <?php include plugin_dir_path(__FILE__) . 'debug-includes/daily-logs.php'; ?>
-    <?php else: ?>
-    <?php include plugin_dir_path(__FILE__) . 'debug-includes/debug-disabled.php'; ?>
-    <?php endif; ?>
 </div>
 
 <?php include plugin_dir_path(__FILE__) . 'debug-includes/debug-modals.php'; ?>

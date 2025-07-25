@@ -99,6 +99,14 @@ class CallTrackingMetrics
     private Options $adminOptions;
 
     /**
+     * Logging system for debugging and monitoring
+     * 
+     * @since 2.0.0
+     * @var LoggingSystem
+     */
+    private LoggingSystem $loggingSystem;
+
+    /**
      * CTM API host URL
      * 
      * @since 2.0.0
@@ -116,14 +124,18 @@ class CallTrackingMetrics
      */
     public function __construct()
     {
+        // Load plugin translations
+        /** @noinspection PhpUndefinedFunctionInspection */
+        add_action('init', function() {
+            \load_plugin_textdomain('call-tracking-metrics', false, dirname(\plugin_basename(__FILE__)) . '/languages');
+        });
         // Initialize core services
         $this->apiService = new ApiService($this->ctmHost);
         $this->cf7Service = new CF7Service();
         $this->gfService = new GFService();
         $this->adminOptions = new Options();
-
-        // Initialize logging system (must be done early)
-        LoggingSystem::initializeLoggingSystem();
+        $this->loggingSystem = new \CTM\Admin\LoggingSystem();
+        $this->loggingSystem->initializeLoggingSystem();
 
         // Initialize admin components (AJAX handlers, mapping assets, etc.)
         $this->adminOptions->initialize();

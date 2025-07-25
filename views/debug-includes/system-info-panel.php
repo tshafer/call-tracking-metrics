@@ -110,11 +110,11 @@ $system_info_report = ctm_get_system_info_report();
             <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
             </svg>
-            <h3 class="text-2xl font-extrabold text-gray-900">System Information Panel</h3>
+            <h3 class="text-2xl font-extrabold text-gray-900"><?php _e('System Information Panel', 'call-tracking-metrics'); ?></h3>
         </div>
         <div class="flex justify-center my-4">
             <button id="ctm-export-system-info" class="bg-gray-600 hover:bg-gray-700 text-white font-medium px-6 py-2 rounded-xl transition  gap-2 whitespace-nowrap" type="button">
-                <span>Export System Info</span>
+                <span><?php _e('Export System Info', 'call-tracking-metrics'); ?></span>
             </button>
         </div>
     </div>
@@ -123,19 +123,19 @@ $system_info_report = ctm_get_system_info_report();
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center" data-metric="php_version">
             <div class="text-2xl font-bold text-blue-600" data-field="php_version"><?= esc_html($system_info['php_version']) ?></div>
-            <div class="text-xs text-blue-700">PHP Version</div>
+            <div class="text-xs text-blue-700"><?php _e('PHP Version', 'call-tracking-metrics'); ?></div>
         </div>
         <div class="bg-green-50 border border-green-200 rounded-lg p-3 text-center" data-metric="wp_version">
             <div class="text-2xl font-bold text-green-600" data-field="wp_version"><?= esc_html($system_info['wp_version']) ?></div>
-            <div class="text-xs text-green-700">WordPress</div>
+            <div class="text-xs text-green-700"><?php _e('WordPress', 'call-tracking-metrics'); ?></div>
         </div>
         <div class="bg-purple-50 border border-purple-200 rounded-lg p-3 text-center" data-metric="memory_usage">
             <div class="text-2xl font-bold text-purple-600" data-field="memory_usage"><?= esc_html($system_info['memory_usage']) ?></div>
-            <div class="text-xs text-purple-700">Memory Usage</div>
+            <div class="text-xs text-purple-700"><?php _e('Memory Usage', 'call-tracking-metrics'); ?></div>
         </div>
         <div class="bg-orange-50 border border-orange-200 rounded-lg p-3 text-center" data-metric="db_queries">
             <div class="text-2xl font-bold text-orange-600" data-field="db_queries"><?= esc_html($system_info['db_queries']) ?></div>
-            <div class="text-xs text-orange-700">DB Queries</div>
+            <div class="text-xs text-orange-700"><?php _e('DB Queries', 'call-tracking-metrics'); ?></div>
         </div>
     </div>
 
@@ -149,34 +149,34 @@ $system_info_report = ctm_get_system_info_report();
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path>
                     </svg>
-                    <h4 class="text-lg font-bold text-gray-900">WordPress Environment</h4>
+                    <h4 class="text-lg font-bold text-gray-900"><?php _e('WordPress Environment', 'call-tracking-metrics'); ?></h4>
                 </div>
             </div>
             <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Version:</span>
+                    <span class="text-gray-600"><?php _e('Version:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium" data-field="version"><?= esc_html($system_info['wordpress_env']['version']) ?></span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Language:</span>
+                    <span class="text-gray-600"><?php _e('Language:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium" data-field="language"><?= esc_html($system_info['wordpress_env']['language']) ?></span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Debug Mode:</span>
+                    <span class="text-gray-600"><?php _e('Debug Mode:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium <?= WP_DEBUG ? 'text-yellow-600' : 'text-green-600' ?>" data-field="debug_mode">
                         <?= esc_html($system_info['wordpress_env']['debug_mode']) ?>
                     </span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Memory Limit:</span>
+                    <span class="text-gray-600"><?php _e('Memory Limit:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium" data-field="memory_limit"><?= esc_html($system_info['wordpress_env']['memory_limit']) ?></span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Multisite:</span>
+                    <span class="text-gray-600"><?php _e('Multisite:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium" data-field="multisite"><?= esc_html($system_info['wordpress_env']['multisite']) ?></span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Timezone:</span>
+                    <span class="text-gray-600"><?php _e('Timezone:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium" data-field="timezone"><?= esc_html($system_info['wordpress_env']['timezone']) ?></span>
                 </div>
             </div>
@@ -189,32 +189,32 @@ $system_info_report = ctm_get_system_info_report();
                     <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path>
                     </svg>
-                    <h4 class="text-lg font-bold text-gray-900">Server Environment</h4>
+                    <h4 class="text-lg font-bold text-gray-900"><?php _e('Server Environment', 'call-tracking-metrics'); ?></h4>
                 </div>
             </div>
             <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div class="flex justify-between">
-                    <span class="text-gray-600">PHP Version:</span>
+                    <span class="text-gray-600"><?php _e('PHP Version:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium" data-field="php_version"><?= esc_html($system_info['server_env']['php_version']) ?></span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Server Software:</span>
+                    <span class="text-gray-600"><?php _e('Server Software:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium text-xs" data-field="server_software"><?= esc_html($system_info['server_env']['server_software']) ?></span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Operating System:</span>
+                    <span class="text-gray-600"><?php _e('Operating System:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium" data-field="os"><?= esc_html($system_info['server_env']['os']) ?></span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Memory Limit:</span>
+                    <span class="text-gray-600"><?php _e('Memory Limit:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium" data-field="memory_limit"><?= esc_html($system_info['server_env']['memory_limit']) ?></span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Max Execution Time:</span>
+                    <span class="text-gray-600"><?php _e('Max Execution Time:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium" data-field="max_execution_time"><?= esc_html($system_info['server_env']['max_execution_time']) ?></span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Upload Max Size:</span>
+                    <span class="text-gray-600"><?php _e('Upload Max Size:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium" data-field="upload_max_size"><?= esc_html($system_info['server_env']['upload_max_size']) ?></span>
                 </div>
             </div>
@@ -227,32 +227,32 @@ $system_info_report = ctm_get_system_info_report();
                     <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
                     </svg>
-                    <h4 class="text-lg font-bold text-gray-900">Database Information</h4>
+                    <h4 class="text-lg font-bold text-gray-900"><?php _e('Database Information', 'call-tracking-metrics'); ?></h4>
                 </div>
             </div>
             <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Database Version:</span>
+                    <span class="text-gray-600"><?php _e('Database Version:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium" data-field="db_version"><?= esc_html($system_info['database_info']['db_version']) ?></span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Database Host:</span>
+                    <span class="text-gray-600"><?php _e('Database Host:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium text-xs" data-field="db_host"><?= esc_html($system_info['database_info']['db_host']) ?></span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Database Name:</span>
+                    <span class="text-gray-600"><?php _e('Database Name:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium" data-field="db_name"><?= esc_html($system_info['database_info']['db_name']) ?></span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Table Prefix:</span>
+                    <span class="text-gray-600"><?php _e('Table Prefix:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium" data-field="table_prefix"><?= esc_html($system_info['database_info']['table_prefix']) ?></span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Database Charset:</span>
+                    <span class="text-gray-600"><?php _e('Database Charset:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium" data-field="db_charset"><?= esc_html($system_info['database_info']['db_charset']) ?></span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Current Queries:</span>
+                    <span class="text-gray-600"><?php _e('Current Queries:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium" data-field="current_queries"><?= esc_html($system_info['database_info']['current_queries']) ?></span>
                 </div>
             </div>
@@ -265,7 +265,7 @@ $system_info_report = ctm_get_system_info_report();
                     <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                     </svg>
-                    <h4 class="text-lg font-bold text-gray-900">PHP Extensions</h4>
+                    <h4 class="text-lg font-bold text-gray-900"><?php _e('PHP Extensions', 'call-tracking-metrics'); ?></h4>
                 </div>
             </div>
             <div class="p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -299,52 +299,52 @@ $system_info_report = ctm_get_system_info_report();
                     <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m0 0V1a1 1 0 011-1h2a1 1 0 011 1v3M7 4H5a1 1 0 00-1 1v3m0 0v8a2 2 0 002 2h10a2 2 0 002-2V8m0 0V5a1 1 0 00-1-1h-2M7 4h10"/>
                     </svg>
-                    <h4 class="text-lg font-bold text-gray-900">CallTrackingMetrics Plugin</h4>
+                    <h4 class="text-lg font-bold text-gray-900"><?php _e('CallTrackingMetrics Plugin', 'call-tracking-metrics'); ?></h4>
                 </div>
             </div>
             <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Plugin Version:</span>
+                    <span class="text-gray-600"><?php _e('Plugin Version:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium">2.0</span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Debug Mode:</span>
+                    <span class="text-gray-600"><?php _e('Debug Mode:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium <?= get_option('ctm_debug_enabled') ? 'text-green-600' : 'text-gray-600' ?>">
                         <?= get_option('ctm_debug_enabled') ? 'Enabled' : 'Disabled' ?>
                     </span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">API Key:</span>
+                    <span class="text-gray-600"><?php _e('API Key:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium <?= get_option('ctm_api_key') ? 'text-green-600' : 'text-red-600' ?>">
                         <?= get_option('ctm_api_key') ? 'Configured' : 'Not Set' ?>
                     </span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">CF7 Integration:</span>
+                    <span class="text-gray-600"><?php _e('CF7 Integration:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium <?= get_option('ctm_api_cf7_enabled') ? 'text-green-600' : 'text-gray-600' ?>">
                         <?= get_option('ctm_api_cf7_enabled') ? 'Enabled' : 'Disabled' ?>
                     </span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">GF Integration:</span>
+                    <span class="text-gray-600"><?php _e('GF Integration:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium <?= get_option('ctm_api_gf_enabled') ? 'text-green-600' : 'text-gray-600' ?>">
                         <?= get_option('ctm_api_gf_enabled') ? 'Enabled' : 'Disabled' ?>
                     </span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Contact Form 7:</span>
+                    <span class="text-gray-600"><?php _e('Contact Form 7:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium <?= class_exists('WPCF7_ContactForm') ? 'text-green-600' : 'text-gray-600' ?>">
                         <?= class_exists('WPCF7_ContactForm') ? 'Installed' : 'Not Installed' ?>
                     </span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Gravity Forms:</span>
+                    <span class="text-gray-600"><?php _e('Gravity Forms:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium <?= class_exists('GFAPI') ? 'text-green-600' : 'text-gray-600' ?>">
                         <?= class_exists('GFAPI') ? 'Installed' : 'Not Installed' ?>
                     </span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Active Plugins:</span>
+                    <span class="text-gray-600"><?php _e('Active Plugins:', 'call-tracking-metrics'); ?></span>
                     <span class="font-medium"><?= count(get_option('active_plugins', [])) ?></span>
                 </div>
             </div>
@@ -357,19 +357,19 @@ $system_info_report = ctm_get_system_info_report();
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
             </svg>
-            Copy to Clipboard
+            <?php _e('Copy to Clipboard', 'call-tracking-metrics'); ?>
         </button>
         <button onclick="emailSystemInfo()" class="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-lg transition duration-200 flex items-center">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
             </svg>
-            Email Report
+            <?php _e('Email Report', 'call-tracking-metrics'); ?>
         </button>
         <button onclick="refreshSystemInfo()" id="refresh-system-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-medium px-4 py-2 rounded-lg transition duration-200 flex items-center">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
             </svg>
-            Refresh Data
+            <?php _e('Refresh Data', 'call-tracking-metrics'); ?>
         </button>
     </div>
 </div>

@@ -15,7 +15,8 @@ class AdminLoggingSystemTest extends TestCase
 
     public function testIsDebugEnabledReturnsBool()
     {
-        $result = LoggingSystem::isDebugEnabled();
+        $log = new LoggingSystem();
+        $result = $log->isDebugEnabled();
         $this->assertIsBool($result);
     }
 
@@ -25,12 +26,14 @@ class AdminLoggingSystemTest extends TestCase
             if ($key === 'ctm_debug_enabled') return true;
             return $default;
         });
-        $this->assertTrue(LoggingSystem::isDebugEnabled());
+        $log = new LoggingSystem();
+        $this->assertTrue($log->isDebugEnabled());
         \Brain\Monkey\Functions\when('get_option')->alias(function($key, $default = false) {
             if ($key === 'ctm_debug_enabled') return false;
             return $default;
         });
-        $this->assertFalse(LoggingSystem::isDebugEnabled());
+        $log = new LoggingSystem();
+        $this->assertFalse($log->isDebugEnabled());
     }
 
     public function testLogActivityLogsWhenEnabled()
@@ -193,28 +196,93 @@ class AdminLoggingSystemTest extends TestCase
             if ($hook === 'ctm_daily_log_cleanup') $action = true;
             return true;
         });
-        LoggingSystem::initializeLoggingSystem();
+        $log = new LoggingSystem();
+        $log->initializeLoggingSystem();
         $this->assertTrue($scheduled && $action);
     }
 
     public function testOnPluginActivationSetsDefaultsAndLogs()
     {
-        $this->markTestSkipped('Patchwork is not available for static method patching.');
+        $updated = [];
+        \Brain\Monkey\Functions\when('get_option')->alias(function($key) {
+            if ($key === 'ctm_log_retention_days' || $key === 'ctm_log_auto_cleanup' || $key === 'ctm_log_email_notifications' || $key === 'ctm_log_notification_email') return false;
+            if ($key === 'admin_email') return 'admin@example.com';
+            return null;
+        });
+        \Brain\Monkey\Functions\when('update_option')->alias(function($key, $value) use (&$updated) {
+            $updated[$key] = $value;
+            return true;
+        });
+        \Brain\Monkey\Functions\when('get_bloginfo')->alias(function($key) { return '6.0.0'; });
+        \Brain\Monkey\Functions\when('ini_get')->alias(function($key) { return '128M'; });
+        $spy = new class extends LoggingSystem {
+            public $logActivityCalled = false;
+            public $logActivityArgs = [];
+            public $initCalled = false;
+            public function logActivity(string $message, string $type = 'info', array $context = []): void {
+                $this->logActivityCalled = true;
+                $this->logActivityArgs = [$message, $type, $context];
+            }
+            public function initializeLoggingSystem(): void {
+                $this->initCalled = true;
+            }
+        };
+        $spy->onPluginActivation();
+        $this->assertTrue($spy->logActivityCalled);
+        $this->assertTrue($spy->initCalled);
+        $this->assertArrayHasKey('ctm_log_retention_days', $updated);
+        $this->assertArrayHasKey('ctm_log_auto_cleanup', $updated);
+        $this->assertArrayHasKey('ctm_log_email_notifications', $updated);
+        $this->assertArrayHasKey('ctm_log_notification_email', $updated);
     }
 
     public function testOnPluginDeactivationClearsScheduledHookAndLogs()
     {
-        $this->markTestSkipped('Patchwork is not available for static method patching.');
+        $cleared = false;
+        \Brain\Monkey\Functions\when('wp_clear_scheduled_hook')->alias(function($hook) use (&$cleared) {
+            if ($hook === 'ctm_daily_log_cleanup') $cleared = true;
+        });
+        $spy = new class extends LoggingSystem {
+            public $logActivityCalled = false;
+            public $logActivityArgs = [];
+            public function logActivity(string $message, string $type = 'info', array $context = []): void {
+                $this->logActivityCalled = true;
+                $this->logActivityArgs = [$message, $type, $context];
+            }
+        };
+        $spy->onPluginDeactivation();
+        $this->assertTrue($spy->logActivityCalled);
+        $this->assertTrue($cleared);
     }
 
     public function testPerformScheduledLogCleanupCallsInstanceMethod()
     {
-        $this->markTestSkipped('Patchwork is not available for static method patching.');
+        $spy = new class extends LoggingSystem {
+            public $called = false;
+            public function performInstanceLogCleanup(): void {
+                $this->called = true;
+            }
+        };
+        $spy->performScheduledLogCleanup();
+        $this->assertTrue($spy->called);
     }
 
     public function testLogDebugCallsLogActivity()
     {
-        $this->markTestSkipped('Patchwork is not available for static method patching.');
+        $spy = new class extends LoggingSystem {
+            public $called = false;
+            public $message = null;
+            public $type = null;
+            public function logActivity(string $message, string $type = 'info', array $context = []): void {
+                $this->called = true;
+                $this->message = $message;
+                $this->type = $type;
+            }
+        };
+        $spy->logDebug('debug message');
+        $this->assertTrue($spy->called);
+        $this->assertStringContainsString('debug', $spy->type);
+        $this->assertStringContainsString('debug', $spy->message);
     }
 
     // For brevity, static methods like initializeLoggingSystem, onPluginActivation, onPluginDeactivation, performScheduledLogCleanup, logDebug are not tested here, but could be with further mocking.

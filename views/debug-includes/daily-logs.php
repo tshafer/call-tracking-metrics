@@ -13,7 +13,7 @@ $available_dates = $available_dates ?? [];
         <svg class="inline-block w-6 h-6 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
         </svg>
-        Daily Debug Logs
+        <?php _e('Daily Debug Logs', 'call-tracking-metrics'); ?>
     </h3>
 
     <?php if (empty($available_dates)): ?>
@@ -21,8 +21,8 @@ $available_dates = $available_dates ?? [];
             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
             </svg>
-            <h3 class="mt-4 text-lg font-medium text-gray-900">No debug logs found</h3>
-            <p class="mt-2 text-gray-500">Enable debug mode to start logging plugin activity.</p>
+            <h3 class="mt-4 text-lg font-medium text-gray-900"><?php _e('No debug logs found', 'call-tracking-metrics'); ?></h3>
+            <p class="mt-2 text-gray-500"><?php _e('Enable debug mode to start logging plugin activity.', 'call-tracking-metrics'); ?></p>
         </div>
     <?php else: ?>
         <div class="space-y-4">
@@ -39,28 +39,22 @@ $available_dates = $available_dates ?? [];
                             <div class="flex items-center space-x-4">
                                 <h4 class="text-lg font-medium text-gray-900"><?= date('M j, Y', strtotime($date)) ?></h4>
                                 <div class="flex space-x-3 text-sm ml-4">
-                                    <span class="text-gray-600"><?= $log_count ?> entries</span>
+                                    <span class="text-gray-600"><?php _e('entries', 'call-tracking-metrics'); ?></span>
                                     <?php if ($error_count > 0): ?>
-                                        <span class="text-red-600"><?= $error_count ?> errors</span>
+                                        <span class="text-red-600"><?php _e('errors', 'call-tracking-metrics'); ?></span>
                                     <?php endif; ?>
                                     <?php if ($warning_count > 0): ?>
-                                        <span class="text-yellow-600"><?= $warning_count ?> warnings</span>
+                                        <span class="text-yellow-600"><?php _e('warnings', 'call-tracking-metrics'); ?></span>
                                     <?php endif; ?>
                                 </div>
                             </div>
                             
                             <div class="flex space-x-2">
-                                <button onclick="toggleLogView('<?= $date ?>')" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                                    View Details
-                                </button>
+                                <button onclick="toggleLogView('<?= $date ?>')" class="text-blue-600 hover:text-blue-800 text-sm font-medium"><?php _e('View Details', 'call-tracking-metrics'); ?></button>
                                 
-                                <button onclick="showEmailForm('<?= $date ?>')" class="text-green-600 hover:text-green-800 text-sm font-medium">
-                                    Email Log
-                                </button>
+                                <button onclick="showEmailForm('<?= $date ?>')" class="text-green-600 hover:text-green-800 text-sm font-medium"><?php _e('Email Log', 'call-tracking-metrics'); ?></button>
                                 
-                                <button type="button" onclick="clearDebugLogs('debug_single', '<?= $date ?>')" class="text-red-600 hover:text-red-800 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed" id="clear-single-<?= $date ?>-btn">
-                                    Clear
-                                </button>
+                                <button type="button" onclick="clearDebugLogs('debug_single', '<?= $date ?>')" class="text-red-600 hover:text-red-800 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed" id="clear-single-<?= $date ?>-btn"><?php _e('Clear', 'call-tracking-metrics'); ?></button>
                             </div>
                         </div>
                     </div>
@@ -105,7 +99,7 @@ $available_dates = $available_dates ?? [];
             
             <?php if (count($available_dates) > 10): ?>
                 <div class="text-center py-4">
-                    <p class="text-gray-500">Showing latest 10 days. <?= count($available_dates) - 10 ?> more days available.</p>
+                    <p class="text-gray-500"><?php printf(__('Showing latest 10 days. %d more days available.', 'call-tracking-metrics'), count($available_dates) - 10); ?></p>
                 </div>
             <?php endif; ?>
         </div>
@@ -120,14 +114,14 @@ $available_dates = $available_dates ?? [];
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
         </button>
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Email Debug Log</h3>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4"><?php _e('Email Debug Log', 'call-tracking-metrics'); ?></h3>
         <form id="email-log-form" onsubmit="submitEmailLog(event)">
             <input type="hidden" id="email-log-date" name="log_date" value="">
-            <label for="email-log-to" class="block text-sm font-medium text-gray-700 mb-1">Send to</label>
+            <label for="email-log-to" class="block text-sm font-medium text-gray-700 mb-1"><?php _e('Send to', 'call-tracking-metrics'); ?></label>
             <input type="email" id="email-log-to" name="to" class="w-full border border-gray-300 rounded px-3 py-2 mb-4" required>
             <div class="flex justify-end space-x-2">
-                <button type="button" onclick="hideEmailForm()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded">Cancel</button>
-                <button type="submit" id="email-log-send-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Send</button>
+                <button type="button" onclick="hideEmailForm()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded"><?php _e('Cancel', 'call-tracking-metrics'); ?></button>
+                <button type="submit" id="email-log-send-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"><?php _e('Send', 'call-tracking-metrics'); ?></button>
             </div>
         </form>
     </div>

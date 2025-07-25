@@ -311,15 +311,18 @@ class AdminOptionsTest extends TestCase
     public function testLogDebugWritesToErrorLog()
     {
         $this->expectNotToPerformAssertions();
-        Options::logDebug('test message');
+        $options = new Options();
+        $options->logDebug('test message');
     }
 
     public function testIsDebugEnabledReturnsBool()
     {
         \Brain\Monkey\Functions\when('get_option')->justReturn(true);
-        $this->assertTrue(Options::isDebugEnabled());
+        $options = new Options();
+        $this->assertTrue($options->isDebugEnabled());
         \Brain\Monkey\Functions\when('get_option')->justReturn(false);
-        $this->assertFalse(Options::isDebugEnabled());
+        $options = new Options();
+        $this->assertFalse($options->isDebugEnabled());
   
     }
 

@@ -5,17 +5,17 @@
     <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mb-8">
         <div class="flex items-center mb-6 border-b border-blue-100 pb-4">
             <svg class="w-7 h-7 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 014-4h3m4 4v1a3 3 0 01-3 3H7a3 3 0 01-3-3v-1a9 9 0 0118 0z" /></svg>
-            <h2 class="text-2xl font-bold text-blue-800 tracking-tight">CF7 Logs</h2>
+            <h2 class="text-2xl font-bold text-blue-800 tracking-tight"><?php _e('CF7 Logs', 'call-tracking-metrics'); ?></h2>
         </div>
         <div class="mb-6">
-            <button type="button" onclick="clearLogs('cf7')" class="bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 text-white font-bold px-6 py-2 rounded-lg shadow transition-transform transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed" id="clear-cf7-btn">Clear CF7 Logs</button>
+            <button type="button" onclick="clearLogs('cf7')" class="bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 text-white font-bold px-6 py-2 rounded-lg shadow transition-transform transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed" id="clear-cf7-btn"><?php _e('Clear CF7 Logs', 'call-tracking-metrics'); ?></button>
         </div>
         <?php if (empty($cf7Logs)): ?>
-            <div class="text-gray-500">No CF7 logs found.</div>
+            <div class="text-gray-500"><?php _e('No CF7 logs found.', 'call-tracking-metrics'); ?></div>
         <?php else: ?>
             <div class="overflow-x-auto"><table class="min-w-full bg-white border border-gray-200 rounded-xl shadow-sm text-sm">
                 <thead class="sticky top-0 z-10 bg-blue-50 text-blue-800 font-semibold">
-                    <tr><th class="px-4 py-2 border-b text-left">Date</th><th class="px-4 py-2 border-b text-left">Status</th><th class="px-4 py-2 border-b text-left">Message</th></tr>
+                    <tr><th class="px-4 py-2 border-b text-left"><?php _e('Date', 'call-tracking-metrics'); ?></th><th class="px-4 py-2 border-b text-left"><?php _e('Status', 'call-tracking-metrics'); ?></th><th class="px-4 py-2 border-b text-left"><?php _e('Message', 'call-tracking-metrics'); ?></th></tr>
                 </thead>
                 <tbody>
                 <?php $rowAlt = false; foreach ($cf7Logs as $log):
@@ -39,17 +39,17 @@
     <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mb-8">
         <div class="flex items-center mb-6 border-b border-blue-100 pb-4">
             <svg class="w-7 h-7 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v4a1 1 0 001 1h3m10-5v4a1 1 0 001 1h3m-7 4v4m0 0H7m5 0h5" /></svg>
-            <h2 class="text-2xl font-bold text-blue-800 tracking-tight">Gravity Forms Logs</h2>
+            <h2 class="text-2xl font-bold text-blue-800 tracking-tight"><?php _e('Gravity Forms Logs', 'call-tracking-metrics'); ?></h2>
         </div>
         <div class="mb-6">
-            <button type="button" onclick="clearLogs('gf')" class="bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 text-white font-bold px-6 py-2 rounded-lg shadow transition-transform transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed" id="clear-gf-btn">Clear GF Logs</button>
+            <button type="button" onclick="clearLogs('gf')" class="bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 text-white font-bold px-6 py-2 rounded-lg shadow transition-transform transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed" id="clear-gf-btn"><?php _e('Clear GF Logs', 'call-tracking-metrics'); ?></button>
         </div>
         <?php if (empty($gfLogs)): ?>
-            <div class="text-gray-500">No Gravity Forms logs found.</div>
+            <div class="text-gray-500"><?php _e('No Gravity Forms logs found.', 'call-tracking-metrics'); ?></div>
         <?php else: ?>
             <div class="overflow-x-auto"><table class="min-w-full bg-white border border-gray-200 rounded-xl shadow-sm text-sm">
                 <thead class="sticky top-0 z-10 bg-blue-50 text-blue-800 font-semibold">
-                    <tr><th class="px-4 py-2 border-b text-left">Date</th><th class="px-4 py-2 border-b text-left">Status</th><th class="px-4 py-2 border-b text-left">Message</th></tr>
+                    <tr><th class="px-4 py-2 border-b text-left"><?php _e('Date', 'call-tracking-metrics'); ?></th><th class="px-4 py-2 border-b text-left"><?php _e('Status', 'call-tracking-metrics'); ?></th><th class="px-4 py-2 border-b text-left"><?php _e('Message', 'call-tracking-metrics'); ?></th></tr>
                 </thead>
                 <tbody>
                 <?php $rowAlt = false; foreach ($gfLogs as $log):
@@ -78,13 +78,13 @@ function clearLogs(logType) {
     const originalText = button.textContent;
     
     // Confirm action
-    if (!confirm(`Are you sure you want to clear all ${logType.toUpperCase()} logs? This action cannot be undone.`)) {
+    if (!confirm(<?php echo sprintf(__('Are you sure you want to clear all %s logs? This action cannot be undone.', 'call-tracking-metrics'), '${logType.toUpperCase()}'); ?>)) {
         return;
     }
     
     // Disable button and show loading state
     button.disabled = true;
-    button.textContent = 'Clearing...';
+    button.textContent = <?php _e('Clearing...', 'call-tracking-metrics'); ?>;
     
     // Prepare form data
     const formData = new FormData();
@@ -114,16 +114,16 @@ function clearLogs(logType) {
                 logTable.parentElement.style.display = 'none';
                 const noLogsDiv = document.createElement('div');
                 noLogsDiv.className = 'text-gray-500';
-                noLogsDiv.textContent = `No ${logType.toUpperCase()} logs found.`;
+                noLogsDiv.textContent = <?php echo sprintf(__('No %s logs found.', 'call-tracking-metrics'), '${logType.toUpperCase()}'); ?>;
                 logTable.parentElement.parentElement.appendChild(noLogsDiv);
             }
         } else {
-            ctmShowToast(data.data.message || 'Failed to clear logs', 'error');
+            ctmShowToast(data.data.message || <?php _e('Failed to clear logs', 'call-tracking-metrics'); ?>, 'error');
         }
     })
     .catch(error => {
         console.error('Error clearing logs:', error);
-        ctmShowToast('Network error occurred while clearing logs', 'error');
+        ctmShowToast(<?php _e('Network error occurred while clearing logs', 'call-tracking-metrics'); ?>, 'error');
     })
     .finally(() => {
         // Re-enable button

@@ -11,13 +11,13 @@
             <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
             </svg>
-            <h3 class="text-2xl font-extrabold text-gray-900">Performance Monitor</h3>
+            <h3 class="text-2xl font-extrabold text-gray-900"><?php _e('Performance Monitor', 'call-tracking-metrics'); ?></h3>
         </div>
         <div class="flex justify-center my-4 gap-2">
-            <button onclick="toggleAutoRefresh()" id="auto-refresh-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-4 py-2 rounded-xl transition text-sm">Auto-refresh: OFF</button>
+            <button onclick="toggleAutoRefresh()" id="auto-refresh-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-4 py-2 rounded-xl transition text-sm"><?php _e('Auto-refresh: OFF', 'call-tracking-metrics'); ?></button>
             <button onclick="refreshPerformance()" id="refresh-performance-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-medium px-6 py-2 rounded-xl flex items-center gap-2 transition text-sm">
                 <span class="text-lg">&rarr;</span>
-                <span>Refresh</span>
+                <span><?php _e('Refresh', 'call-tracking-metrics'); ?></span>
             </button>
         </div>
     </div>
@@ -27,25 +27,25 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-3 text-center min-h-[100px] flex flex-col justify-center">
                 <div id="memory-usage" class="text-xl font-bold text-blue-600 mb-1">--</div>
-                <div class="text-xs text-blue-700 font-medium">Memory Usage</div>
+                <div class="text-xs text-blue-700 font-medium"><?php _e('Memory Usage', 'call-tracking-metrics'); ?></div>
                 <div id="memory-percentage" class="text-xs text-blue-600 mt-1 break-words">--</div>
             </div>
             
             <div class="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-3 text-center min-h-[100px] flex flex-col justify-center">
                 <div id="page-load-time" class="text-xl font-bold text-green-600 mb-1">--</div>
-                <div class="text-xs text-green-700 font-medium">Page Load Time</div>
+                <div class="text-xs text-green-700 font-medium"><?php _e('Page Load Time', 'call-tracking-metrics'); ?></div>
                 <div id="load-time-status" class="text-xs text-green-600 mt-1 break-words">--</div>
             </div>
             
             <div class="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-3 text-center min-h-[100px] flex flex-col justify-center">
                 <div id="db-queries" class="text-xl font-bold text-purple-600 mb-1">--</div>
-                <div class="text-xs text-purple-700 font-medium">Database Queries</div>
+                <div class="text-xs text-purple-700 font-medium"><?php _e('Database Queries', 'call-tracking-metrics'); ?></div>
                 <div id="query-time" class="text-xs text-purple-600 mt-1 break-words">--</div>
             </div>
             
             <div class="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-lg p-3 text-center min-h-[100px] flex flex-col justify-center">
                 <div id="api-calls" class="text-xl font-bold text-orange-600 mb-1">--</div>
-                <div class="text-xs text-orange-700 font-medium">API Calls (24h)</div>
+                <div class="text-xs text-orange-700 font-medium"><?php _e('API Calls (24h)', 'call-tracking-metrics'); ?></div>
                 <div id="api-response-time" class="text-xs text-orange-600 mt-1 break-words">--</div>
             </div>
         </div>
@@ -53,7 +53,7 @@
         <!-- Detailed Performance Metrics -->
         <div class="max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
             <div class="bg-gray-50 px-4 py-3 border-b border-gray-200 sticky top-0">
-                <h4 class="font-semibold text-gray-800">Detailed Metrics</h4>
+                <h4 class="font-semibold text-gray-800"><?php _e('Detailed Metrics', 'call-tracking-metrics'); ?></h4>
             </div>
             <div id="detailed-metrics" class="p-4 space-y-4">
                 <!-- Memory & Processing -->
@@ -62,31 +62,31 @@
                         <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
                         </svg>
-                        <h5 class="text-lg font-bold text-gray-900">Memory & Processing</h5>
+                        <h5 class="text-lg font-bold text-gray-900"><?php _e('Memory & Processing', 'call-tracking-metrics'); ?></h5>
                     </div>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-sm">
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Current Memory:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Current Memory:', 'call-tracking-metrics'); ?></span>
                             <span id="current-memory" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Peak Memory:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Peak Memory:', 'call-tracking-metrics'); ?></span>
                             <span id="peak-memory" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Memory Limit:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Memory Limit:', 'call-tracking-metrics'); ?></span>
                             <span id="memory-limit" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">CPU Usage:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('CPU Usage:', 'call-tracking-metrics'); ?></span>
                             <span id="cpu-usage" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Execution Time:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Execution Time:', 'call-tracking-metrics'); ?></span>
                             <span id="execution-time" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Time Limit:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Time Limit:', 'call-tracking-metrics'); ?></span>
                             <span id="time-limit" class="font-medium text-right break-words">--</span>
                         </div>
                     </div>
@@ -98,31 +98,31 @@
                         <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
                         </svg>
-                        <h5 class="text-lg font-bold text-gray-900">Database Performance</h5>
+                        <h5 class="text-lg font-bold text-gray-900"><?php _e('Database Performance', 'call-tracking-metrics'); ?></h5>
                     </div>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-sm">
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Total Queries:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Total Queries:', 'call-tracking-metrics'); ?></span>
                             <span id="total-queries" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Query Time:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Query Time:', 'call-tracking-metrics'); ?></span>
                             <span id="total-query-time" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Slow Queries:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Slow Queries:', 'call-tracking-metrics'); ?></span>
                             <span id="slow-queries" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Cache Hits:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Cache Hits:', 'call-tracking-metrics'); ?></span>
                             <span id="cache-hits" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Cache Misses:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Cache Misses:', 'call-tracking-metrics'); ?></span>
                             <span id="cache-misses" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">DB Version:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('DB Version:', 'call-tracking-metrics'); ?></span>
                             <span id="db-version" class="font-medium text-right break-words">--</span>
                         </div>
                     </div>
@@ -134,31 +134,31 @@
                         <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        <h5 class="text-lg font-bold text-gray-900">Page Load Performance</h5>
+                        <h5 class="text-lg font-bold text-gray-900"><?php _e('Page Load Performance', 'call-tracking-metrics'); ?></h5>
                     </div>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-sm">
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">TTFB:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('TTFB:', 'call-tracking-metrics'); ?></span>
                             <span id="ttfb" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">DOM Ready:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('DOM Ready:', 'call-tracking-metrics'); ?></span>
                             <span id="dom-ready" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Load Complete:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Load Complete:', 'call-tracking-metrics'); ?></span>
                             <span id="load-complete" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Scripts Loaded:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Scripts Loaded:', 'call-tracking-metrics'); ?></span>
                             <span id="scripts-loaded" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Styles Loaded:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Styles Loaded:', 'call-tracking-metrics'); ?></span>
                             <span id="styles-loaded" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Images Loaded:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Images Loaded:', 'call-tracking-metrics'); ?></span>
                             <span id="images-loaded" class="font-medium text-right break-words">--</span>
                         </div>
                     </div>
@@ -171,31 +171,31 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path>
                         </svg>
-                        <h5 class="text-lg font-bold text-gray-900">WordPress Performance</h5>
+                        <h5 class="text-lg font-bold text-gray-900"><?php _e('WordPress Performance', 'call-tracking-metrics'); ?></h5>
                     </div>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-sm">
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Active Plugins:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Active Plugins:', 'call-tracking-metrics'); ?></span>
                             <span id="active-plugins" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Theme Load Time:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Theme Load Time:', 'call-tracking-metrics'); ?></span>
                             <span id="theme-load-time" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Plugin Load Time:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Plugin Load Time:', 'call-tracking-metrics'); ?></span>
                             <span id="plugin-load-time" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Admin Queries:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Admin Queries:', 'call-tracking-metrics'); ?></span>
                             <span id="admin-queries" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Frontend Queries:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Frontend Queries:', 'call-tracking-metrics'); ?></span>
                             <span id="frontend-queries" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Cron Jobs:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Cron Jobs:', 'call-tracking-metrics'); ?></span>
                             <span id="cron-jobs" class="font-medium text-right break-words">--</span>
                         </div>
                     </div>
@@ -207,31 +207,31 @@
                         <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                         </svg>
-                        <h5 class="text-lg font-bold text-gray-900">Real-time Metrics</h5>
+                        <h5 class="text-lg font-bold text-gray-900"><?php _e('Real-time Metrics', 'call-tracking-metrics'); ?></h5>
                     </div>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-sm">
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Server Load:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Server Load:', 'call-tracking-metrics'); ?></span>
                             <span id="server-load" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Disk Usage:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Disk Usage:', 'call-tracking-metrics'); ?></span>
                             <span id="disk-usage" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Network I/O:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Network I/O:', 'call-tracking-metrics'); ?></span>
                             <span id="network-io" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Active Sessions:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Active Sessions:', 'call-tracking-metrics'); ?></span>
                             <span id="active-sessions" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Error Rate:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Error Rate:', 'call-tracking-metrics'); ?></span>
                             <span id="error-rate" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs">Last Updated:</span>
+                            <span class="text-gray-600 text-xs"><?php _e('Last Updated:', 'call-tracking-metrics'); ?></span>
                             <span id="last-updated" class="font-medium text-right break-words">--</span>
                         </div>
                     </div>
@@ -242,12 +242,7 @@
         <!-- Performance Alerts -->
         <div id="performance-alerts" class="hidden">
             <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <h5 class="font-semibold text-yellow-800 mb-2 flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.08 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                    </svg>
-                    Performance Alerts
-                </h5>
+                <h5 class="font-semibold text-yellow-800 mb-2 flex items-center"><?php _e('Performance Alerts', 'call-tracking-metrics'); ?></h5>
                 <ul id="alerts-list" class="text-sm text-yellow-700 space-y-1"></ul>
             </div>
         </div>

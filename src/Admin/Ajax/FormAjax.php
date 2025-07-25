@@ -24,7 +24,7 @@ class FormAjax {
         if ($type === 'gf' && $this->gfapi && class_exists($this->gfapi)) {
             $gf_forms = call_user_func([$this->gfapi, 'get_forms']);
             foreach ($gf_forms as $form) {
-                $forms[] = ['id' => $form['id'], 'title' => $form['title']];
+                $forms[] = ['id' => $form['id'], 'title' => $form['title'] ?? ''];
             }
         } elseif ($type === 'cf7' && $this->wpcf7_contact_form && class_exists($this->wpcf7_contact_form)) {
             $cf7_forms = call_user_func([$this->wpcf7_contact_form, 'find']);

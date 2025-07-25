@@ -719,9 +719,11 @@ class Options
      * @param mixed $message The message to log
      * @return void
      */
-    public static function logDebug($message): void
+    public function logDebug($message): void
     {
-        LoggingSystem::logDebug($message);
+        if (isset($this->loggingSystem)) {
+            $this->loggingSystem->logDebug($message);
+        }
     }
 
     /**
@@ -730,8 +732,8 @@ class Options
      * @since 2.0.0
      * @return bool True if debug mode is enabled
      */
-    public static function isDebugEnabled(): bool
+    public function isDebugEnabled(): bool
     {
-        return LoggingSystem::isDebugEnabled();
+        return isset($this->loggingSystem) ? $this->loggingSystem->isDebugEnabled() : false;
     }
 } 

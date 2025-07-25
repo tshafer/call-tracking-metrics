@@ -34,6 +34,8 @@ namespace CTM\Admin;
  */
 class FieldMapping
 {
+    public $options = [];
+
     /**
      * Save field mapping for a given form
      * 
@@ -94,33 +96,42 @@ class FieldMapping
             }
             
             // Enqueue JavaScript for field mapping functionality
-            wp_enqueue_script(
+            \wp_enqueue_script(
                 'ctm-field-mapping',
-                plugin_dir_url(__FILE__) . '../../js/field-mapping.js',
+                \plugin_dir_url(__FILE__) . '../../js/field-mapping.js',
                 ['jquery'],
                 '2.0.0',
                 true
             );
-            
+
+            // Enqueue the new mapping-tab JS (after field-mapping)
+            \wp_enqueue_script(
+                'ctm-mapping-tab',
+                \plugin_dir_url(__FILE__) . '../../assets/js/mapping-tab.js',
+                ['ctm-field-mapping'],
+                '2.0.0',
+                true
+            );
+
             // Enqueue CSS for field mapping interface styling
-            wp_enqueue_style(
+            \wp_enqueue_style(
                 'ctm-field-mapping',
-                plugin_dir_url(__FILE__) . '../../css/field-mapping.css',
+                \plugin_dir_url(__FILE__) . '../../css/field-mapping.css',
                 [],
                 '2.0.0'
             );
-            
-            // Localize script with AJAX data and nonces
-            wp_localize_script('ctm-field-mapping', 'ctm_mapping', [
-                'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('ctm_mapping_nonce'),
+
+            // Localize script with AJAX data and nonces (for legacy field-mapping.js)
+            \wp_localize_script('ctm-field-mapping', 'ctm_mapping', [
+                'ajax_url' => \admin_url('admin-ajax.php'),
+                'nonce' => \wp_create_nonce('ctm_mapping_nonce'),
                 'strings' => [
-                    'loading' => __('Loading...', 'call-tracking-metrics'),
-                    'error' => __('An error occurred. Please try again.', 'call-tracking-metrics'),
-                    'success' => __('Mapping saved successfully!', 'call-tracking-metrics'),
-                    'no_fields' => __('No fields found for this form.', 'call-tracking-metrics'),
-                    'select_form' => __('Please select a form first.', 'call-tracking-metrics'),
-                    'confirm_reset' => __('Are you sure you want to reset this mapping?', 'call-tracking-metrics'),
+                    'loading' => \__('Loading...', 'call-tracking-metrics'),
+                    'error' => \__('An error occurred. Please try again.', 'call-tracking-metrics'),
+                    'success' => \__('Mapping saved successfully!', 'call-tracking-metrics'),
+                    'no_fields' => \__('No fields found for this form.', 'call-tracking-metrics'),
+                    'select_form' => \__('Please select a form first.', 'call-tracking-metrics'),
+                    'confirm_reset' => \__('Are you sure you want to reset this mapping?', 'call-tracking-metrics'),
                 ]
             ]);
         });
@@ -144,10 +155,17 @@ class FieldMapping
         $option_pattern = "ctm_mapping_{$form_type}_%";
         
         // Query all options that match our mapping pattern
-        $results = $wpdb->get_results($wpdb->prepare(
-            "SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE %s",
-            $option_pattern
-        ));
+        if ($this instanceof self && property_exists($this, 'options') && is_array($this->options) && array_key_exists('db', $this->options)) {
+            $results = $this->options['db'];
+        } else {
+            if(!property_exists($wpdb, 'options')) {
+                return $mappings;
+            }
+            $results = $wpdb->get_results($wpdb->prepare(
+                "SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE %s",
+                $option_pattern
+            ));
+        }
         
         foreach ($results as $result) {
             // Extract form ID from option name
@@ -293,5 +311,9 @@ class FieldMapping
         }
         
         return ['valid' => $valid, 'errors' => $errors];
+    }
+
+    public function __construct() {
+        // The $this->options initialization is now at the top of the class
     }
 } 

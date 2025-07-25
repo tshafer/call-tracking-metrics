@@ -141,7 +141,7 @@ class SettingsRenderer
         // --- END FIX ---
         
         // Get debug mode status for the general tab
-        $debugEnabled = $this->loggingSystem && method_exists($this->loggingSystem, 'isDebugEnabled') ? $this->loggingSystem::isDebugEnabled() : false;
+        $debugEnabled = $this->loggingSystem && method_exists($this->loggingSystem, 'isDebugEnabled') ? $this->loggingSystem->isDebugEnabled() : false;
         
         // Start output buffering
         ob_start();
@@ -316,7 +316,7 @@ class SettingsRenderer
     public function getDebugTabContent(): string
     {
         // Get debug settings
-        $debugEnabled = $this->loggingSystem && method_exists($this->loggingSystem, 'isDebugEnabled') ? $this->loggingSystem::isDebugEnabled() : false;
+        $debugEnabled = $this->loggingSystem && method_exists($this->loggingSystem, 'isDebugEnabled') ? $this->loggingSystem->isDebugEnabled() : false;
         $retentionDays = get_option('ctm_log_retention_days', 7);
         $autoCleanup = get_option('ctm_log_auto_cleanup', false);
         $emailNotifications = get_option('ctm_log_email_notifications', false);
@@ -386,7 +386,7 @@ class SettingsRenderer
                 foreach ($gf_forms as $form) {
                     $forms[] = [
                         'id' => $form['id'],
-                        'title' => $form['title'],
+                        'title' => $form['title'] ?? '',
                     ];
                 }
             }

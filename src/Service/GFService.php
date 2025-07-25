@@ -114,7 +114,7 @@ class GFService
 
             // Extract basic form and entry information
             $formId = $form['id'];
-            $formTitle = $form['title'];
+            $formTitle = $form['title'] ?? '';
 
             // Merge address fields into a single string
             $addressParts = [
@@ -271,8 +271,8 @@ class GFService
                 foreach ($gf_forms as $form) {
                     $forms[] = [
                         'id' => $form['id'],
-                        'title' => $form['title'],
-                        'status' => $form['is_active'] ? 'active' : 'inactive',
+                        'title' => $form['title'] ?? '',
+                        'status' => isset($form['is_active']) ? ($form['is_active'] ? 'active' : 'inactive') : 'inactive',
                         // 'field_count' => count($form['fields']),
                         'entries_count' => method_exists('\GFAPI', 'count_entries') ? \GFAPI::count_entries($form['id']) : 0,
                     ];

@@ -107,3 +107,26 @@ Integrate your WordPress site with [CallTrackingMetrics](https://calltrackingmet
 ## License
 
 GPL-2.0-or-later
+
+## Internationalization (i18n) / Multi-language Support
+
+This plugin supports multiple languages using standard WordPress translation functions (`__()`, `_e()`).
+
+### How to Add a New Language
+1. **Extract translatable strings:**
+   - All user-facing strings use the `call-tracking-metrics` text domain.
+   - The `.pot` template file is located at `/languages/call-tracking-metrics.pot`.
+2. **Create a translation:**
+   - Use a tool like [Poedit](https://poedit.net/) or [Loco Translate](https://wordpress.org/plugins/loco-translate/) to create `.po` and `.mo` files for your language (e.g., `call-tracking-metrics-fr_FR.po`, `call-tracking-metrics-fr_FR.mo`).
+   - Place these files in the `/languages` directory.
+3. **Load translations:**
+   - WordPress will automatically load the correct translation based on the site language settings.
+
+### Regenerating the .pot File
+Run the following command from the plugin root:
+
+```sh
+wp i18n make-pot . languages/call-tracking-metrics.pot
+```
+
+For more details, see the [WordPress Plugin Handbook: Internationalization](https://developer.wordpress.org/plugins/internationalization/).

@@ -243,14 +243,14 @@ class SystemAjax {
             $diagnostic_results['categories']['api_credentials'] = [
                 'title' => 'API Credentials',
                 'description' => 'Validation of CallTrackingMetrics API connectivity and authentication',
-                'status' => $api_analysis['status'],
+                'status' => isset($api_analysis['status']) ? $api_analysis['status'] : 'unknown',
                 'score' => $api_score,
                 'issues' => $api_analysis['issues'] ?? [],
                 'recommendations' => $api_analysis['recommendations'] ?? []
             ];
-            if ($api_analysis['status'] === 'healthy') {
+            if ((isset($api_analysis['status']) ? $api_analysis['status'] : 'unknown') === 'healthy') {
                 $diagnostic_results['passed_checks']++;
-            } elseif ($api_analysis['status'] === 'warning') {
+            } elseif ((isset($api_analysis['status']) ? $api_analysis['status'] : 'unknown') === 'warning') {
                 $diagnostic_results['warning_checks']++;
             } else {
                 $diagnostic_results['failed_checks']++;
@@ -268,14 +268,14 @@ class SystemAjax {
             $diagnostic_results['categories']['form_integration'] = [
                 'title' => 'Form Integration',
                 'description' => 'Analysis of Contact Form 7 and Gravity Forms integration status',
-                'status' => $form_analysis['status'],
+                'status' => isset($form_analysis['status']) ? $form_analysis['status'] : 'unknown',
                 'score' => $form_score,
                 'issues' => $form_analysis['issues'] ?? [],
                 'recommendations' => $form_analysis['recommendations'] ?? []
             ];
-            if ($form_analysis['status'] === 'healthy') {
+            if ((isset($form_analysis['status']) ? $form_analysis['status'] : 'unknown') === 'healthy') {
                 $diagnostic_results['passed_checks']++;
-            } elseif ($form_analysis['status'] === 'warning') {
+            } elseif ((isset($form_analysis['status']) ? $form_analysis['status'] : 'unknown') === 'warning') {
                 $diagnostic_results['warning_checks']++;
             } else {
                 $diagnostic_results['failed_checks']++;
@@ -285,14 +285,14 @@ class SystemAjax {
             $diagnostic_results['categories']['network_connectivity'] = [
                 'title' => 'Network Connectivity',
                 'description' => 'Testing network connectivity and DNS resolution for CTM services',
-                'status' => $network_analysis['status'],
+                'status' => isset($network_analysis['status']) ? $network_analysis['status'] : 'unknown',
                 'score' => $network_score,
                 'issues' => $network_analysis['issues'] ?? [],
                 'recommendations' => $network_analysis['recommendations'] ?? []
             ];
-            if ($network_analysis['status'] === 'healthy') {
+            if ((isset($network_analysis['status']) ? $network_analysis['status'] : 'unknown') === 'healthy') {
                 $diagnostic_results['passed_checks']++;
-            } elseif ($network_analysis['status'] === 'warning') {
+            } elseif ((isset($network_analysis['status']) ? $network_analysis['status'] : 'unknown') === 'warning') {
                 $diagnostic_results['warning_checks']++;
             } else {
                 $diagnostic_results['failed_checks']++;
@@ -522,16 +522,16 @@ class SystemAjax {
             $diagnostic_results['categories']['api_credentials'] = [
                 'title' => 'API Credentials',
                 'description' => 'Validation of CallTrackingMetrics API connectivity and authentication',
-                'status' => $api_analysis['status'],
+                'status' => isset($api_analysis['status']) ? $api_analysis['status'] : 'unknown',
                 'score' => $api_score,
                 'issues' => $api_analysis['issues'] ?? [],
                 'recommendations' => $api_analysis['recommendations'] ?? []
             ];
             
             // Update counters based on API analysis
-            if ($api_analysis['status'] === 'healthy') {
+            if ((isset($api_analysis['status']) ? $api_analysis['status'] : 'unknown') === 'healthy') {
                 $diagnostic_results['passed_checks']++;
-            } elseif ($api_analysis['status'] === 'warning') {
+            } elseif ((isset($api_analysis['status']) ? $api_analysis['status'] : 'unknown') === 'warning') {
                 $diagnostic_results['warning_checks']++;
             } else {
                 $diagnostic_results['failed_checks']++;
@@ -551,16 +551,16 @@ class SystemAjax {
             $diagnostic_results['categories']['form_integration'] = [
                 'title' => 'Form Integration',
                 'description' => 'Analysis of Contact Form 7 and Gravity Forms integration status',
-                'status' => $form_analysis['status'],
+                'status' => isset($form_analysis['status']) ? $form_analysis['status'] : 'unknown',
                 'score' => $form_score,
                 'issues' => $form_analysis['issues'] ?? [],
                 'recommendations' => $form_analysis['recommendations'] ?? []
             ];
             
             // Update counters based on form analysis
-            if ($form_analysis['status'] === 'healthy') {
+            if ((isset($form_analysis['status']) ? $form_analysis['status'] : 'unknown') === 'healthy') {
                 $diagnostic_results['passed_checks']++;
-            } elseif ($form_analysis['status'] === 'warning') {
+            } elseif ((isset($form_analysis['status']) ? $form_analysis['status'] : 'unknown') === 'warning') {
                 $diagnostic_results['warning_checks']++;
             } else {
                 $diagnostic_results['failed_checks']++;
@@ -572,16 +572,16 @@ class SystemAjax {
             $diagnostic_results['categories']['network_connectivity'] = [
                 'title' => 'Network Connectivity',
                 'description' => 'Testing network connectivity and DNS resolution for CTM services',
-                'status' => $network_analysis['status'],
+                'status' => isset($network_analysis['status']) ? $network_analysis['status'] : 'unknown',
                 'score' => $network_score,
                 'issues' => $network_analysis['issues'] ?? [],
                 'recommendations' => $network_analysis['recommendations'] ?? []
             ];
             
             // Update counters based on network analysis
-            if ($network_analysis['status'] === 'healthy') {
+            if ((isset($network_analysis['status']) ? $network_analysis['status'] : 'unknown') === 'healthy') {
                 $diagnostic_results['passed_checks']++;
-            } elseif ($network_analysis['status'] === 'warning') {
+            } elseif ((isset($network_analysis['status']) ? $network_analysis['status'] : 'unknown') === 'warning') {
                 $diagnostic_results['warning_checks']++;
             } else {
                 $diagnostic_results['failed_checks']++;

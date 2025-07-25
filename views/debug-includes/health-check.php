@@ -11,11 +11,11 @@
             <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
-            <h3 class="text-2xl font-extrabold text-gray-900">Plugin Health Check</h3>
+            <h3 class="text-2xl font-extrabold text-gray-900"><?php _e('Plugin Health Check', 'call-tracking-metrics'); ?></h3>
         </div>
         <div class="flex justify-center my-4">
             <button onclick="exportHealthReport()" class="bg-gray-600 hover:bg-gray-700 text-white font-medium px-6 py-2 rounded-xl flex items-center gap-2 justify-center transition" type="button">
-                <span>Export Report</span>
+                <span><?php _e('Export Report', 'call-tracking-metrics'); ?></span>
             </button>
         </div>
     </div>
@@ -25,12 +25,12 @@
         <div class="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-4">
             <div class="flex items-center justify-between">
                 <div>
-                    <h4 class="text-lg font-semibold text-green-800">Overall Health Score</h4>
-                    <p class="text-sm text-green-600">System status assessment</p>
+                    <h4 class="text-lg font-semibold text-green-800"><?php _e('Overall Health Score', 'call-tracking-metrics'); ?></h4>
+                    <p class="text-sm text-green-600"><?php _e('System status assessment', 'call-tracking-metrics'); ?></p>
                 </div>
                 <div class="text-right">
                     <div id="health-score" class="text-3xl font-bold text-green-600">--</div>
-                    <div class="text-sm text-green-700">out of 100</div>
+                    <div class="text-sm text-green-700"><?php _e('out of 100', 'call-tracking-metrics'); ?></div>
                 </div>
             </div>
         </div>
@@ -43,19 +43,19 @@
                     <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                     </svg>
-                    <h5 class="text-lg font-bold text-gray-900">API Configuration</h5>
+                    <h5 class="text-lg font-bold text-gray-900"><?php _e('API Configuration', 'call-tracking-metrics'); ?></h5>
                 </div>
                 <div id="health-api" class="space-y-2">
                     <div class="flex items-center justify-between text-sm">
-                        <span>API Key Configured</span>
+                        <span><?php _e('API Key Configured', 'call-tracking-metrics'); ?></span>
                         <span id="check-api-key" class="health-indicator">⏳</span>
                     </div>
                     <div class="flex items-center justify-between text-sm">
-                        <span>API Connection</span>
+                        <span><?php _e('API Connection', 'call-tracking-metrics'); ?></span>
                         <span id="check-api-connection" class="health-indicator">⏳</span>
                     </div>
                     <div class="flex items-center justify-between text-sm">
-                        <span>Account Access</span>
+                        <span><?php _e('Account Access', 'call-tracking-metrics'); ?></span>
                         <span id="check-account-access" class="health-indicator">⏳</span>
                     </div>
                 </div>
@@ -67,19 +67,19 @@
                     <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
-                    <h5 class="text-lg font-bold text-gray-900">Form Integration</h5>
+                    <h5 class="text-lg font-bold text-gray-900"><?php _e('Form Integration', 'call-tracking-metrics'); ?></h5>
                 </div>
                 <div id="health-forms" class="space-y-2">
                     <div class="flex items-center justify-between text-sm">
-                        <span>Contact Form 7</span>
+                        <span><?php _e('Contact Form 7', 'call-tracking-metrics'); ?></span>
                         <span id="check-cf7" class="health-indicator">⏳</span>
                     </div>
                     <div class="flex items-center justify-between text-sm">
-                        <span>Gravity Forms</span>
+                        <span><?php _e('Gravity Forms', 'call-tracking-metrics'); ?></span>
                         <span id="check-gf" class="health-indicator">⏳</span>
                     </div>
                     <div class="flex items-center justify-between text-sm">
-                        <span>Field Mappings</span>
+                        <span><?php _e('Field Mappings', 'call-tracking-metrics'); ?></span>
                         <span id="check-field-mappings" class="health-indicator">⏳</span>
                     </div>
                 </div>
@@ -91,23 +91,23 @@
                     <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path>
                     </svg>
-                    <h5 class="text-lg font-bold text-gray-900">Server Requirements</h5>
+                    <h5 class="text-lg font-bold text-gray-900"><?php _e('Server Requirements', 'call-tracking-metrics'); ?></h5>
                 </div>
                 <div id="health-server" class="space-y-2">
                     <div class="flex items-center justify-between text-sm">
-                        <span>PHP Version (7.4+)</span>
+                        <span><?php _e('PHP Version (7.4+)', 'call-tracking-metrics'); ?></span>
                         <span id="check-php-version" class="health-indicator">⏳</span>
                     </div>
                     <div class="flex items-center justify-between text-sm">
-                        <span>cURL Extension</span>
+                        <span><?php _e('cURL Extension', 'call-tracking-metrics'); ?></span>
                         <span id="check-curl" class="health-indicator">⏳</span>
                     </div>
                     <div class="flex items-center justify-between text-sm">
-                        <span>SSL Support</span>
+                        <span><?php _e('SSL Support', 'call-tracking-metrics'); ?></span>
                         <span id="check-ssl" class="health-indicator">⏳</span>
                     </div>
                     <div class="flex items-center justify-between text-sm">
-                        <span>Memory Limit</span>
+                        <span><?php _e('Memory Limit', 'call-tracking-metrics'); ?></span>
                         <span id="check-memory" class="health-indicator">⏳</span>
                     </div>
                 </div>
@@ -119,23 +119,23 @@
                     <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m0 0V1a1 1 0 011-1h2a1 1 0 011 1v3M7 4H5a1 1 0 00-1 1v3m0 0v8a2 2 0 002 2h10a2 2 0 002-2V8m0 0V5a1 1 0 00-1-1h-2M7 4h10"/>
                     </svg>
-                    <h5 class="text-lg font-bold text-gray-900">Plugin Status</h5>
+                    <h5 class="text-lg font-bold text-gray-900"><?php _e('Plugin Status', 'call-tracking-metrics'); ?></h5>
                 </div>
                 <div id="health-plugin" class="space-y-2">
                     <div class="flex items-center justify-between text-sm">
-                        <span>Plugin Version</span>
+                        <span><?php _e('Plugin Version', 'call-tracking-metrics'); ?></span>
                         <span id="check-plugin-version" class="health-indicator">⏳</span>
                     </div>
                     <div class="flex items-center justify-between text-sm">
-                        <span>Database Tables</span>
+                        <span><?php _e('Database Tables', 'call-tracking-metrics'); ?></span>
                         <span id="check-database-tables" class="health-indicator">⏳</span>
                     </div>
                     <div class="flex items-center justify-between text-sm">
-                        <span>File Permissions</span>
+                        <span><?php _e('File Permissions', 'call-tracking-metrics'); ?></span>
                         <span id="check-file-permissions" class="health-indicator">⏳</span>
                     </div>
                     <div class="flex items-center justify-between text-sm">
-                        <span>Debug Mode</span>
+                        <span><?php _e('Debug Mode', 'call-tracking-metrics'); ?></span>
                         <span id="check-debug-mode" class="health-indicator">⏳</span>
                     </div>
                 </div>
@@ -148,13 +148,13 @@
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                Run Health Check
+                <span><?php _e('Run Health Check', 'call-tracking-metrics'); ?></span>
             </button>
         </div>
 
         <!-- Health Recommendations -->
         <div id="health-recommendations" class="hidden mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <h5 class="font-semibold text-blue-800 mb-2">Recommendations</h5>
+            <h5 class="font-semibold text-blue-800 mb-2"><?php _e('Recommendations', 'call-tracking-metrics'); ?></h5>
             <ul id="recommendations-list" class="text-sm text-blue-700 space-y-1"></ul>
         </div>
     </div>
