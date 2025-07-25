@@ -173,20 +173,15 @@
             </div>
             <!-- Debug Mode Section -->
             <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
-                <h2 class="text-xl font-semibold mb-4 text-gray-700">Debugging</h2>
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Options</h2>
                 <div class="flex items-center gap-2 mb-2">
                     <input type="checkbox" id="ctm_debug_enabled" name="ctm_debug_enabled" value="1" class="mr-2" <?= checked(get_option('ctm_debug_enabled'), 1, false) ?>>
                     <label for="ctm_debug_enabled" class="text-gray-700 select-none cursor-pointer font-medium">Enable Debugging (show Debug tab)</label>
                 </div>
-                <p class="text-gray-500 text-xs ml-6">If enabled, the Debug tab will be visible and additional logging will be available for troubleshooting.</p>
-            </div>
-            <!-- Dashboard Widget Section -->
-            <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
-                <h2 class="text-xl font-semibold mb-4 text-gray-700">Dashboard</h2>
-                <label class="flex items-center mb-2">
-                    <input type="checkbox" name="ctm_api_dashboard_enabled" value="1"<?= checked($dashboardEnabled, 1, false) ?> class="mr-2 rounded border-gray-300 focus:ring-blue-500" />
-                    Enable Dashboard Widget
-                </label>
+                <div class="flex items-center gap-2 mb-2">
+                    <input type="checkbox" id="ctm_dashboard_enabled" name="ctm_dashboard_enabled" value="1" class="mr-2" <?= checked(get_option('ctm_dashboard_enabled'), 1, false) ?>>
+                    <label for="ctm_dashboard_enabled" class="text-gray-700 select-none cursor-pointer font-medium">Enable Dashboard Widget</label>
+                </div>
             </div>
             <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
                 <h2 class="text-xl font-semibold mb-4 text-gray-700">Integrations</h2>
@@ -215,13 +210,8 @@
                     <div id="cf7-notice" class="bg-yellow-50 border-l-2 border-yellow-400 text-yellow-800 p-1.5 rounded flex items-center justify-between gap-1 mb-3 mt-2 text-xs ml-6">
                         <div class="flex items-center justify-between w-full gap-1">
                             <span class="font-semibold">Contact Form 7 is not installed or activated.</span>
-                            <a href="<?= esc_url(admin_url('plugin-install.php?s=contact+form+7&tab=search&type=term')) ?>" class="ml-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded shadow transition text-xs font-medium hover:text-white!">Install Contact Form 7</a>
+                            <a href="<?= esc_url(admin_url('plugin-install.php?s=contact+form+7&tab=search&type=term')) ?>" target="_blank" rel="noopener" class="ml-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded shadow transition text-xs font-medium hover:text-white! text-white!">Install Contact Form 7</a>
                         </div>
-                        <button type="button" onclick="dismissNotice('cf7')" class="text-yellow-600 hover:text-yellow-800 ml-1 p-1 rounded hover:bg-yellow-100 transition" title="I don't use this plugin">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
                     </div>
                 <?php endif; ?>
                 
@@ -248,13 +238,8 @@
                     <div id="gf-notice" class="bg-yellow-50 border-l-2 border-yellow-400 text-yellow-800 p-1.5 rounded flex items-center justify-between gap-1 mb-3 mt-2 text-xs ml-6">
                         <div class="flex items-center justify-between w-full gap-1">
                             <span class="font-semibold">Gravity Forms is not installed or activated.</span>
-                            <a href="https://www.gravityforms.com/" target="_blank" rel="noopener" class="ml-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded shadow transition text-xs font-medium hover:text-white!">Install Gravity Forms</a>
+                            <a href="<?= esc_url(admin_url('plugin-install.php?s=gravity+forms&tab=search&type=term')) ?>" target="_blank" rel="noopener" class="ml-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded shadow transition text-xs font-medium hover:text-white! text-white!">Install Gravity Forms</a>
                         </div>
-                        <button type="button" onclick="dismissNotice('gf')" class="text-yellow-600 hover:text-yellow-800 ml-1 p-1 rounded hover:bg-yellow-100 transition" title="I don't use this plugin">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
                     </div>
                 <?php endif; ?>
             </div>

@@ -6,19 +6,18 @@
 ?>
 
 <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-    <div class="flex items-center justify-between mb-4">
-        <h3 class="text-xl font-semibold text-gray-800 flex items-center">
-            <svg class="w-6 h-6 text-indigo-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="flex items-center justify-between mb-4 gap-4">
+        <div class="flex items-center gap-2">
+            <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
             </svg>
-            Performance Monitor
-        </h3>
-        <div class="flex items-center gap-3">
-            <button onclick="toggleAutoRefresh()" id="auto-refresh-btn" class="text-sm bg-indigo-100 hover:bg-indigo-200 text-indigo-800 px-3 py-1 rounded">
-                Auto-refresh: OFF
-            </button>
-            <button onclick="refreshPerformance()" id="refresh-performance-btn" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded flex">
-                Refresh
+            <h3 class="text-2xl font-extrabold text-gray-900">Performance Monitor</h3>
+        </div>
+        <div class="flex justify-center my-4 gap-2">
+            <button onclick="toggleAutoRefresh()" id="auto-refresh-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-4 py-2 rounded-xl transition text-sm">Auto-refresh: OFF</button>
+            <button onclick="refreshPerformance()" id="refresh-performance-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-medium px-6 py-2 rounded-xl flex items-center gap-2 transition text-sm">
+                <span class="text-lg">&rarr;</span>
+                <span>Refresh</span>
             </button>
         </div>
     </div>
@@ -59,12 +58,12 @@
             <div id="detailed-metrics" class="p-4 space-y-4">
                 <!-- Memory & Processing -->
                 <div class="border-b border-gray-100 pb-4">
-                    <h5 class="font-medium text-gray-700 mb-3 flex items-center">
-                        <svg class="w-4 h-4 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="flex items-center gap-1 mb-2">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
                         </svg>
-                        Memory & Processing
-                    </h5>
+                        <h5 class="text-lg font-bold text-gray-900">Memory & Processing</h5>
+                    </div>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-sm">
                         <div class="flex justify-between items-center py-1">
                             <span class="text-gray-600 text-xs">Current Memory:</span>
@@ -95,12 +94,12 @@
 
                 <!-- Database Performance -->
                 <div class="border-b border-gray-100 pb-4">
-                    <h5 class="font-medium text-gray-700 mb-3 flex items-center">
-                        <svg class="w-4 h-4 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="flex items-center gap-1 mb-2">
+                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
                         </svg>
-                        Database Performance
-                    </h5>
+                        <h5 class="text-lg font-bold text-gray-900">Database Performance</h5>
+                    </div>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-sm">
                         <div class="flex justify-between items-center py-1">
                             <span class="text-gray-600 text-xs">Total Queries:</span>
@@ -131,12 +130,12 @@
 
                 <!-- Page Load Performance -->
                 <div class="border-b border-gray-100 pb-4">
-                    <h5 class="font-medium text-gray-700 mb-3 flex items-center">
-                        <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="flex items-center gap-1 mb-2">
+                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        Page Load Performance
-                    </h5>
+                        <h5 class="text-lg font-bold text-gray-900">Page Load Performance</h5>
+                    </div>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-sm">
                         <div class="flex justify-between items-center py-1">
                             <span class="text-gray-600 text-xs">TTFB:</span>
@@ -167,13 +166,13 @@
 
                 <!-- WordPress Performance -->
                 <div class="border-b border-gray-100 pb-4">
-                    <h5 class="font-medium text-gray-700 mb-3 flex items-center">
-                        <svg class="w-4 h-4 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="flex items-center gap-1 mb-2">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path>
                         </svg>
-                        WordPress Performance
-                    </h5>
+                        <h5 class="text-lg font-bold text-gray-900">WordPress Performance</h5>
+                    </div>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-sm">
                         <div class="flex justify-between items-center py-1">
                             <span class="text-gray-600 text-xs">Active Plugins:</span>
@@ -204,12 +203,12 @@
 
                 <!-- Real-time Metrics -->
                 <div>
-                    <h5 class="font-medium text-gray-700 mb-3 flex items-center">
-                        <svg class="w-4 h-4 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="flex items-center gap-1 mb-2">
+                        <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                         </svg>
-                        Real-time Metrics
-                    </h5>
+                        <h5 class="text-lg font-bold text-gray-900">Real-time Metrics</h5>
+                    </div>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-sm">
                         <div class="flex justify-between items-center py-1">
                             <span class="text-gray-600 text-xs">Server Load:</span>

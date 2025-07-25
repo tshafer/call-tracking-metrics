@@ -174,6 +174,18 @@ class CallTrackingMetrics
         // Form confirmation handlers
         add_action('wp_footer', [$this, 'cf7Confirmation'], 10, 1);
 
+        // Enqueue Tailwind CSS for admin pages (settings, debug, etc.)
+        add_action('admin_enqueue_scripts', function($hook) {
+            // Only enqueue on the CallTrackingMetrics admin pages
+            if (strpos($hook, 'call-tracking-metrics') === false) return;
+
+            wp_enqueue_style(
+                'ctm-tailwind',
+                plugins_url('css/optmized.css', __FILE__),
+                [],
+                filemtime(plugin_dir_path(__FILE__) . 'css/optmized.css')
+            );
+        });
         // Merge: Enqueue debug JS and localize export nonce for debug tab
         add_action('admin_enqueue_scripts', function($hook) {
             // Only enqueue on the CallTrackingMetrics debug/settings page

@@ -1,7 +1,3 @@
-<?php
-// Settings page wrapper view
-?>
-<script src="https://cdn.tailwindcss.com/3.4.1"></script>
 <div class="mb-6">
     <?php if (!empty($notices)) foreach ($notices as $notice) echo $notice; ?>
 </div>

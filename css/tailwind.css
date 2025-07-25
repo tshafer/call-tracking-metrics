@@ -1,0 +1,3 @@
+/* npx @tailwindcss/cli -i ./css/tailwind.css -o ./css/optmized.css --watch */
+
+@import "tailwindcss";

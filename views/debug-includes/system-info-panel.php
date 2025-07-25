@@ -105,19 +105,19 @@ $system_info_report = ctm_get_system_info_report();
 ?>
 
 <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-    <!-- Export System Info Button -->
-    <button id="ctm-export-system-info" class="bg-gray-600 hover:bg-gray-700 text-white font-medium px-4 py-2 rounded-lg transition duration-200 float-right mb-2" type="button">
-        <svg class="w-4 h-4 inline-block mr-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7"></path>
-        </svg>
-        Export System Info
-    </button>
-    <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-        <svg class="w-6 h-6 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-        </svg>
-        System Information Panel
-    </h3>
+    <div class="flex items-center justify-between mb-4 gap-4">
+        <div class="flex items-center gap-2">
+            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+            </svg>
+            <h3 class="text-2xl font-extrabold text-gray-900">System Information Panel</h3>
+        </div>
+        <div class="flex justify-center my-4">
+            <button id="ctm-export-system-info" class="bg-gray-600 hover:bg-gray-700 text-white font-medium px-6 py-2 rounded-xl transition  gap-2 whitespace-nowrap" type="button">
+                <span>Export System Info</span>
+            </button>
+        </div>
+    </div>
     
     <!-- Quick Stats Grid -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -143,14 +143,14 @@ $system_info_report = ctm_get_system_info_report();
     <div class="space-y-4">
         <!-- WordPress Environment -->
         <div class="border border-gray-200 rounded-lg" data-section="wordpress-env">
-            <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
-                <h4 class="font-semibold text-gray-800 flex items-center">
-                    <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                <div class="flex items-center gap-1">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path>
                     </svg>
-                    WordPress Environment
-                </h4>
+                    <h4 class="text-lg font-bold text-gray-900">WordPress Environment</h4>
+                </div>
             </div>
             <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div class="flex justify-between">
@@ -184,13 +184,13 @@ $system_info_report = ctm_get_system_info_report();
 
         <!-- Server Environment -->
         <div class="border border-gray-200 rounded-lg" data-section="server-env">
-            <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
-                <h4 class="font-semibold text-gray-800 flex items-center">
-                    <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                <div class="flex items-center gap-1">
+                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path>
                     </svg>
-                    Server Environment
-                </h4>
+                    <h4 class="text-lg font-bold text-gray-900">Server Environment</h4>
+                </div>
             </div>
             <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div class="flex justify-between">
@@ -222,13 +222,13 @@ $system_info_report = ctm_get_system_info_report();
 
         <!-- Database Information -->
         <div class="border border-gray-200 rounded-lg" data-section="database-info">
-            <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
-                <h4 class="font-semibold text-gray-800 flex items-center">
-                    <svg class="w-5 h-5 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                <div class="flex items-center gap-1">
+                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
                     </svg>
-                    Database Information
-                </h4>
+                    <h4 class="text-lg font-bold text-gray-900">Database Information</h4>
+                </div>
             </div>
             <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div class="flex justify-between">
@@ -260,13 +260,13 @@ $system_info_report = ctm_get_system_info_report();
 
         <!-- PHP Extensions -->
         <div class="border border-gray-200 rounded-lg">
-            <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
-                <h4 class="font-semibold text-gray-800 flex items-center">
-                    <svg class="w-5 h-5 text-indigo-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                <div class="flex items-center gap-1">
+                    <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                     </svg>
-                    PHP Extensions
-                </h4>
+                    <h4 class="text-lg font-bold text-gray-900">PHP Extensions</h4>
+                </div>
             </div>
             <div class="p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <?php
@@ -294,13 +294,13 @@ $system_info_report = ctm_get_system_info_report();
 
         <!-- Plugin Information -->
         <div class="border border-gray-200 rounded-lg">
-            <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
-                <h4 class="font-semibold text-gray-800 flex items-center">
-                    <svg class="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                <div class="flex items-center gap-1">
+                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m0 0V1a1 1 0 011-1h2a1 1 0 011 1v3M7 4H5a1 1 0 00-1 1v3m0 0v8a2 2 0 002 2h10a2 2 0 002-2V8m0 0V5a1 1 0 00-1-1h-2M7 4h10"/>
                     </svg>
-                    CallTrackingMetrics Plugin
-                </h4>
+                    <h4 class="text-lg font-bold text-gray-900">CallTrackingMetrics Plugin</h4>
+                </div>
             </div>
             <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div class="flex justify-between">

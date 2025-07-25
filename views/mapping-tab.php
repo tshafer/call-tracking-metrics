@@ -27,11 +27,11 @@ $plugin_count = count($available_plugins);
                     <p class="text-gray-600 mb-6">To use field mapping, you need to install at least one supported form plugin.</p>
                     <div class="space-y-3">
                         <a href="<?= esc_url(admin_url('plugin-install.php?s=contact+form+7&tab=search&type=term')) ?>" 
-                           class="block bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-lg shadow transition">
+                           class="block bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-lg shadow transition text-white!">
                             Install Contact Form 7
                         </a>
-                        <a href="https://www.gravityforms.com/" target="_blank" rel="noopener"
-                           class="block bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-3 rounded-lg shadow transition">
+                        <a href="<?= esc_url(admin_url('plugin-install.php?s=gravity+forms&tab=search&type=term')) ?>" target="_blank" rel="noopener"
+                           class="block bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-3 rounded-lg shadow transition text-white!">
                             Get Gravity Forms
                         </a>
                     </div>

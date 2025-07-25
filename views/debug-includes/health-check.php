@@ -6,19 +6,18 @@
 ?>
 
 <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-    <div class="flex items-center justify-between mb-4">
-        <h3 class="text-xl font-semibold text-gray-800 flex items-center">
-            <svg class="w-6 h-6 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="flex items-center justify-between mb-4 gap-4">
+        <div class="flex items-center gap-2">
+            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
-            Plugin Health Check
-        </h3>
-        <button onclick="exportHealthReport()" class="bg-gray-600 hover:bg-gray-700 text-white font-medium px-4 py-2 rounded-lg transition duration-200">
-            <svg class="w-4 h-4 inline-block mr-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7"></path>
-            </svg>
-            Export Report
-        </button>
+            <h3 class="text-2xl font-extrabold text-gray-900">Plugin Health Check</h3>
+        </div>
+        <div class="flex justify-center my-4">
+            <button onclick="exportHealthReport()" class="bg-gray-600 hover:bg-gray-700 text-white font-medium px-6 py-2 rounded-xl flex items-center gap-2 justify-center transition" type="button">
+                <span>Export Report</span>
+            </button>
+        </div>
     </div>
     
     <div class="space-y-4">
@@ -40,12 +39,12 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- API Configuration -->
             <div class="border border-gray-200 rounded-lg p-4">
-                <h5 class="font-semibold text-gray-800 mb-3 flex items-center">
-                    <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex items-center gap-1 mb-2">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                     </svg>
-                    API Configuration
-                </h5>
+                    <h5 class="text-lg font-bold text-gray-900">API Configuration</h5>
+                </div>
                 <div id="health-api" class="space-y-2">
                     <div class="flex items-center justify-between text-sm">
                         <span>API Key Configured</span>
@@ -64,12 +63,12 @@
 
             <!-- Form Integration -->
             <div class="border border-gray-200 rounded-lg p-4">
-                <h5 class="font-semibold text-gray-800 mb-3 flex items-center">
-                    <svg class="w-5 h-5 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex items-center gap-1 mb-2">
+                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
-                    Form Integration
-                </h5>
+                    <h5 class="text-lg font-bold text-gray-900">Form Integration</h5>
+                </div>
                 <div id="health-forms" class="space-y-2">
                     <div class="flex items-center justify-between text-sm">
                         <span>Contact Form 7</span>
@@ -88,12 +87,12 @@
 
             <!-- Server Requirements -->
             <div class="border border-gray-200 rounded-lg p-4">
-                <h5 class="font-semibold text-gray-800 mb-3 flex items-center">
-                    <svg class="w-5 h-5 text-orange-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex items-center gap-1 mb-2">
+                    <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path>
                     </svg>
-                    Server Requirements
-                </h5>
+                    <h5 class="text-lg font-bold text-gray-900">Server Requirements</h5>
+                </div>
                 <div id="health-server" class="space-y-2">
                     <div class="flex items-center justify-between text-sm">
                         <span>PHP Version (7.4+)</span>
@@ -116,12 +115,12 @@
 
             <!-- Plugin Status -->
             <div class="border border-gray-200 rounded-lg p-4">
-                <h5 class="font-semibold text-gray-800 mb-3 flex items-center">
-                    <svg class="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex items-center gap-1 mb-2">
+                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m0 0V1a1 1 0 011-1h2a1 1 0 011 1v3M7 4H5a1 1 0 00-1 1v3m0 0v8a2 2 0 002 2h10a2 2 0 002-2V8m0 0V5a1 1 0 00-1-1h-2M7 4h10"/>
                     </svg>
-                    Plugin Status
-                </h5>
+                    <h5 class="text-lg font-bold text-gray-900">Plugin Status</h5>
+                </div>
                 <div id="health-plugin" class="space-y-2">
                     <div class="flex items-center justify-between text-sm">
                         <span>Plugin Version</span>
@@ -450,12 +449,6 @@ function showDetailedCheckInfo(checkName, status, message) {
             ` : ''}
             
             <div class="flex justify-end space-x-3">
-                ${status === 'fail' || status === 'warning' ? `
-                    <button onclick="fixSpecificIssue('${checkName}'); this.closest('.fixed').remove();" 
-                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                        Try Auto-Fix
-                    </button>
-                ` : ''}
                 <button onclick="this.closest('.fixed').remove()" 
                         class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                     Close
