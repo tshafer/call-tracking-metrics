@@ -107,6 +107,10 @@ class Options
         register_setting("call-tracking-metrics", "ctm_api_active_key");
         register_setting("call-tracking-metrics", "ctm_api_active_secret");
         register_setting("call-tracking-metrics", "ctm_api_auth_account");
+        register_setting("call-tracking-metrics", "ctm_api_base_url", [
+            'default' => 'https://api.calltrackingmetrics.com',
+            'sanitize_callback' => [$this, 'sanitizeApiUrl']
+        ]);
         
         // Tracking Script Settings
         register_setting("call-tracking-metrics", "call_track_account_script");
@@ -124,6 +128,8 @@ class Options
         // Logging Settings
         register_setting("call-tracking-metrics", "ctm_api_cf7_logs");
         register_setting("call-tracking-metrics", "ctm_api_gf_logs");
+        
+
     }
 
     /**
@@ -194,13 +200,18 @@ class Options
         
         // Test API connection if credentials are available
         if ($apiKey && $apiSecret) {
-            $apiService = new \CTM\Service\ApiService('https://api.calltrackingmetrics.com');
+            $apiService = new \CTM\Service\ApiService(\ctm_get_api_url());
             $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
             $apiStatus = ($accountInfo && isset($accountInfo['account'])) ? 'connected' : 'not_connected';
         }
         
         // Generate plugin notices (missing dependencies, etc.)
         $notices = $this->generateNotices();
+        
+        // Add success message if settings were updated - this will be displayed as a large banner at the top
+        if (isset($_GET['settings-updated']) && $_GET['settings-updated'] === 'true') {
+            array_unshift($notices, '<div class="notice notice-success is-dismissible" style="margin: 20px 0; padding: 20px; font-size: 16px; background: #d4edda; border: 2px solid #28a745; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><p style="margin: 0; font-weight: bold; color: #155724;"><strong>' . __('Settings saved successfully!', 'call-tracking-metrics') . '</strong></p></div>');
+        }
         
         // Determine active tab from URL parameter
         $active_tab = $_GET['tab'] ?? 'general';
@@ -268,6 +279,8 @@ class Options
                 return $this->renderer->getMappingTabContent();
             case 'api':
                 return $this->renderer->getApiTabContent();
+            case 'import':
+                return $this->renderer->getFormImportTabContent();
             case 'documentation':
                 return $this->renderer->getDocumentationTabContent();
             case 'debug':
@@ -360,7 +373,11 @@ class Options
         }
         
         // Handle general plugin settings
-        if (isset($_POST['ctm_api_key'])) {
+        if (isset($_POST['ctm_api_key']) && isset($_POST['ctm_settings_nonce']) && wp_verify_nonce($_POST['ctm_settings_nonce'], 'ctm_save_settings')) {
+            // Debug: Log what's being submitted
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('Form submitted with POST data: ' . json_encode($_POST), 'debug');
+            }
             $this->saveGeneralSettings();
         }
     }
@@ -375,7 +392,7 @@ class Options
         $apiKey = get_option('ctm_api_key');
         $apiSecret = get_option('ctm_api_secret');
         if (!empty($apiKey) && !empty($apiSecret)) {
-            $apiService = new \CTM\Service\ApiService('https://api.calltrackingmetrics.com');
+            $apiService = new \CTM\Service\ApiService(\ctm_get_api_url());
             $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
             $accountId = null;
             if ($accountInfo && isset($accountInfo['account']['id'])) {
@@ -410,21 +427,38 @@ class Options
         // Only update API key/secret if present in POST, otherwise keep existing
         $apiKey = isset($_POST['ctm_api_key']) ? sanitize_text_field($_POST['ctm_api_key']) : get_option('ctm_api_key');
         $apiSecret = isset($_POST['ctm_api_secret']) ? sanitize_text_field($_POST['ctm_api_secret']) : get_option('ctm_api_secret');
-        $trackingEnabled = isset($_POST['ctm_api_tracking_enabled']);
-        $cf7Enabled = isset($_POST['ctm_api_cf7_enabled']);
-        $gfEnabled = isset($_POST['ctm_api_gf_enabled']);
-        $dashboardEnabled = isset($_POST['ctm_api_dashboard_enabled']);
+        $apiBaseUrl = isset($_POST['ctm_api_base_url']) ? sanitize_text_field($_POST['ctm_api_base_url']) : get_option('ctm_api_base_url');
+        $trackingEnabled = isset($_POST['ctm_api_tracking_enabled']) ? 1 : 0;
+        $cf7Enabled = isset($_POST['ctm_api_cf7_enabled']) ? 1 : 0;
+        $gfEnabled = isset($_POST['ctm_api_gf_enabled']) ? 1 : 0;
+        $dashboardEnabled = isset($_POST['ctm_dashboard_enabled']) ? 1 : 0;
         $autoInjectTracking = isset($_POST['ctm_auto_inject_tracking_script']) ? 1 : 0;
+        $debugEnabled = isset($_POST['ctm_debug_enabled']) ? 1 : 0;
         
         // Auto-disable integrations if required plugins are not available
-        if (!class_exists('WPCF7_ContactForm')) {
+        if (!is_plugin_active('contact-form-7/wp-contact-form-7.php') && !class_exists('WPCF7_ContactForm') && !function_exists('wpcf7_contact_form')) {
             $cf7Enabled = false;
             $this->loggingSystem->logActivity('Contact Form 7 integration auto-disabled - plugin not available', 'config');
+        } else {
+            // Debug: Log what we found for CF7
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $cf7_plugin_active = is_plugin_active('contact-form-7/wp-contact-form-7.php');
+                $cf7_class_exists = class_exists('WPCF7_ContactForm');
+                $cf7_function_exists = function_exists('wpcf7_contact_form');
+                $this->loggingSystem->logActivity("CF7 detection - Plugin active: " . ($cf7_plugin_active ? 'true' : 'false') . ", Class exists: " . ($cf7_class_exists ? 'true' : 'false') . ", Function exists: " . ($cf7_function_exists ? 'true' : 'false'), 'debug');
+            }
         }
         
-        if (!class_exists('GFAPI')) {
+        if (!class_exists('GFAPI') && !function_exists('gravity_form')) {
             $gfEnabled = false;
             $this->loggingSystem->logActivity('Gravity Forms integration auto-disabled - plugin not available', 'config');
+        } else {
+            // Debug: Log what we found for GF
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $gf_class_exists = class_exists('GFAPI');
+                $gf_function_exists = function_exists('gravity_form');
+                $this->loggingSystem->logActivity("GF detection - Class exists: " . ($gf_class_exists ? 'true' : 'false') . ", Function exists: " . ($gf_function_exists ? 'true' : 'false'), 'debug');
+            }
         }
         
         // Log API key changes for security auditing
@@ -439,11 +473,18 @@ class Options
         // Save settings to WordPress options
         update_option('ctm_api_key', $apiKey);
         update_option('ctm_api_secret', $apiSecret);
+        update_option('ctm_api_base_url', $apiBaseUrl);
         update_option('ctm_api_tracking_enabled', $trackingEnabled);
         update_option('ctm_api_cf7_enabled', $cf7Enabled);
         update_option('ctm_api_gf_enabled', $gfEnabled);
-        update_option('ctm_api_dashboard_enabled', $dashboardEnabled);
+        update_option('ctm_dashboard_enabled', $dashboardEnabled);
         update_option('ctm_auto_inject_tracking_script', $autoInjectTracking);
+        update_option('ctm_debug_enabled', $debugEnabled);
+        
+        // Debug: Log what was saved
+        if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+            $this->loggingSystem->logActivity('Settings saved - CF7 enabled: ' . ($cf7Enabled ? 'true' : 'false'), 'debug');
+        }
         
         // Save tracking script if provided
         if (isset($_POST['call_track_account_script'])) {
@@ -457,11 +498,17 @@ class Options
             'tracking_enabled' => $trackingEnabled,
             'cf7_enabled' => $cf7Enabled,
             'gf_enabled' => $gfEnabled,
-            'dashboard_enabled' => $dashboardEnabled
+                'dashboard_enabled' => $dashboardEnabled,
+            'debug_enabled' => $debugEnabled,
+            'auto_inject_tracking' => $autoInjectTracking
         ]);
         
-        // Redirect to prevent form resubmission
-        wp_redirect(add_query_arg(['tab' => 'general'], wp_get_referer()));
+        // Redirect to prevent form resubmission with success message
+        $referer = wp_get_referer();
+        if (!$referer) {
+            $referer = admin_url('options-general.php?page=call-tracking-metrics&tab=general');
+        }
+        wp_redirect(add_query_arg(['tab' => 'general', 'settings-updated' => 'true'], $referer));
         exit;
     }
 
@@ -480,17 +527,34 @@ class Options
         $changes_made = false;
         
         // Check Contact Form 7 integration
-        if (!class_exists('WPCF7_ContactForm') && get_option('ctm_api_cf7_enabled', false)) {
+        if (!is_plugin_active('contact-form-7/wp-contact-form-7.php') && !class_exists('WPCF7_ContactForm') && !function_exists('wpcf7_contact_form') && get_option('ctm_api_cf7_enabled', false)) {
             update_option('ctm_api_cf7_enabled', false);
             $this->loggingSystem->logActivity('Contact Form 7 integration auto-disabled - plugin not available', 'config');
             $changes_made = true;
+        } else {
+            // Debug: Log what we found for CF7 in auto-disable check
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $cf7_plugin_active = is_plugin_active('contact-form-7/wp-contact-form-7.php');
+                $cf7_class_exists = class_exists('WPCF7_ContactForm');
+                $cf7_function_exists = function_exists('wpcf7_contact_form');
+                $cf7_enabled = get_option('ctm_api_cf7_enabled', false);
+                $this->loggingSystem->logActivity("CF7 auto-disable check - Plugin active: " . ($cf7_plugin_active ? 'true' : 'false') . ", Class exists: " . ($cf7_class_exists ? 'true' : 'false') . ", Function exists: " . ($cf7_function_exists ? 'true' : 'false') . ", Currently enabled: " . ($cf7_enabled ? 'true' : 'false'), 'debug');
+            }
         }
         
         // Check Gravity Forms integration
-        if (!class_exists('GFAPI') && get_option('ctm_api_gf_enabled', false)) {
+        if (!class_exists('GFAPI') && !function_exists('gravity_form') && get_option('ctm_api_gf_enabled', false)) {
             update_option('ctm_api_gf_enabled', false);
             $this->loggingSystem->logActivity('Gravity Forms integration auto-disabled - plugin not available', 'config');
             $changes_made = true;
+        } else {
+            // Debug: Log what we found for GF in auto-disable check
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $gf_class_exists = class_exists('GFAPI');
+                $gf_function_exists = function_exists('gravity_form');
+                $gf_enabled = get_option('ctm_api_gf_enabled', false);
+                $this->loggingSystem->logActivity("GF auto-disable check - Class exists: " . ($gf_class_exists ? 'true' : 'false') . ", Function exists: " . ($gf_function_exists ? 'true' : 'false') . ", Currently enabled: " . ($gf_enabled ? 'true' : 'false'), 'debug');
+            }
         }
         
         // Log summary if any changes were made
@@ -546,7 +610,7 @@ class Options
             $callsByDay = [];
             if ($apiKey && $apiSecret && $accountId && class_exists('CTM\\Service\\ApiService')) {
                 try {
-                    $api = new \CTM\Service\ApiService('https://api.calltrackingmetrics.com');
+                    $api = new \CTM\Service\ApiService(\ctm_get_api_url());
                     $since = date('Y-m-d', strtotime('-29 days'));
                     $until = date('Y-m-d');
                     $params = [
@@ -736,4 +800,41 @@ class Options
     {
         return isset($this->loggingSystem) ? $this->loggingSystem->isDebugEnabled() : false;
     }
+
+    /**
+     * Sanitize the API URL setting
+     * 
+     * Ensures the API URL is properly formatted and valid
+     * 
+     * @since 2.0.0
+     * @param string $url The API URL to sanitize
+     * @return string The sanitized API URL
+     */
+    public function sanitizeApiUrl(string $url): string
+    {
+        $url = trim($url);
+        
+        // If empty, return default
+        if (empty($url)) {
+            return 'https://api.calltrackingmetrics.com';
+        }
+        
+        // Ensure URL has protocol
+        if (!preg_match('/^https?:\/\//', $url)) {
+            $url = 'https://' . $url;
+        }
+        
+        // Remove trailing slash
+        $url = rtrim($url, '/');
+        
+        // Basic URL validation
+        if (filter_var($url, FILTER_VALIDATE_URL)) {
+            return $url;
+        }
+        
+        // If validation fails, return default
+        return 'https://api.calltrackingmetrics.com';
+    }
+    
+
 } 

@@ -57,6 +57,12 @@
                 </svg>
                 <span><?php _e('API Activity', 'call-tracking-metrics'); ?></span>
             </a>
+            <a href="?page=call-tracking-metrics&tab=import" class="flex items-center px-4 py-2 rounded-t-lg font-medium transition-colors duration-200 <?= $active_tab === 'import' ? 'bg-blue-600 !text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' ?>">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
+                </svg>
+                <span><?php _e('Import Forms', 'call-tracking-metrics'); ?></span>
+            </a>
             <a href="?page=call-tracking-metrics&tab=documentation" class="flex items-center px-4 py-2 rounded-t-lg font-medium transition-colors duration-200 <?= $active_tab === 'documentation' ? 'bg-blue-600 !text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' ?>">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>

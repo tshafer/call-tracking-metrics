@@ -565,13 +565,13 @@ class AdminAjaxSystemAjaxTest extends TestCase
     // BEGIN: Additional tests merged from root-level tests/AdminAjaxSystemAjaxTest.php
     public function testCanBeConstructedWithDependencies()
     {
-        $systemAjax = new \CTM\Admin\Ajax\SystemAjax(new \CTM\Admin\LoggingSystem(), new \CTM\Admin\SettingsRenderer());
-        $this->assertInstanceOf(\CTM\Admin\Ajax\SystemAjax::class, $systemAjax);
+        $systemAjax = new SystemAjax(new LoggingSystem(), new SettingsRenderer());
+        $this->assertInstanceOf(SystemAjax::class, $systemAjax);
     }
     public function testInjectLoggingSystemFromRoot()
     {
-        $realLogger = new \CTM\Admin\LoggingSystem();
-        $systemAjax = new \CTM\Admin\Ajax\SystemAjax($realLogger, new \CTM\Admin\SettingsRenderer());
+        $realLogger = new LoggingSystem();
+        $systemAjax = new SystemAjax($realLogger, new SettingsRenderer());
         $ref = new \ReflectionClass($systemAjax);
         $prop = $ref->getProperty('loggingSystem');
         $prop->setAccessible(true);
@@ -579,8 +579,8 @@ class AdminAjaxSystemAjaxTest extends TestCase
     }
     public function testInjectSettingsRendererFromRoot()
     {
-        $realRenderer = new \CTM\Admin\SettingsRenderer();
-        $systemAjax = new \CTM\Admin\Ajax\SystemAjax(new \CTM\Admin\LoggingSystem(), $realRenderer);
+        $realRenderer = new SettingsRenderer();
+        $systemAjax = new SystemAjax(new LoggingSystem(), $realRenderer);
         $ref = new \ReflectionClass($systemAjax);
         $prop = $ref->getProperty('renderer');
         $prop->setAccessible(true);
@@ -588,19 +588,19 @@ class AdminAjaxSystemAjaxTest extends TestCase
     }
     public function testDefaultLoggingSystemFromRoot()
     {
-        $systemAjax = new \CTM\Admin\Ajax\SystemAjax(new \CTM\Admin\LoggingSystem(), new \CTM\Admin\SettingsRenderer());
+        $systemAjax = new SystemAjax(new LoggingSystem(), new SettingsRenderer());
         $ref = new \ReflectionClass($systemAjax);
         $prop = $ref->getProperty('loggingSystem');
         $prop->setAccessible(true);
-        $this->assertInstanceOf(\CTM\Admin\LoggingSystem::class, $prop->getValue($systemAjax));
+        $this->assertInstanceOf(LoggingSystem::class, $prop->getValue($systemAjax));
     }
     public function testDefaultSettingsRendererFromRoot()
     {
-        $systemAjax = new \CTM\Admin\Ajax\SystemAjax(new \CTM\Admin\LoggingSystem(), new \CTM\Admin\SettingsRenderer());
+        $systemAjax = new SystemAjax(new LoggingSystem(), new SettingsRenderer());
         $ref = new \ReflectionClass($systemAjax);
         $prop = $ref->getProperty('renderer');
         $prop->setAccessible(true);
-        $this->assertInstanceOf(\CTM\Admin\SettingsRenderer::class, $prop->getValue($systemAjax));
+        $this->assertInstanceOf(SettingsRenderer::class, $prop->getValue($systemAjax));
     }
 
     public function testAjaxEmailSystemInfoInvalidEmail() {
@@ -793,6 +793,189 @@ class AdminAjaxSystemAjaxTest extends TestCase
             $this->assertArrayHasKey('message', $payload, 'Payload should have message key');
             $this->assertArrayHasKey('fixes', $payload, 'Payload should have fixes key');
         }
+    }
+
+    public function testAnalyzePluginConflictsWithNoConflicts()
+    {
+        // Mock WordPress functions
+        \Brain\Monkey\Functions\when('get_option')->alias(function($key) {
+            if ($key === 'active_plugins') return ['other-plugin/other-plugin.php'];
+            return null;
+        });
+        \Brain\Monkey\Functions\when('wp_script_is')->justReturn(false);
+        \Brain\Monkey\Functions\when('ini_get')->justReturn(false);
+
+        $loggingSystem = new LoggingSystem();
+        $renderer = new SettingsRenderer();
+        $systemAjax = new SystemAjax($loggingSystem, $renderer);
+        
+        // Use reflection to access private method
+        $reflection = new \ReflectionClass($systemAjax);
+        $method = $reflection->getMethod('analyzePluginConflicts');
+        $method->setAccessible(true);
+        
+        $result = $method->invoke($systemAjax);
+        
+        $this->assertIsArray($result);
+        $this->assertEquals('healthy', $result['status']);
+        $this->assertEquals(100, $result['score']);
+        $this->assertEmpty($result['issues']);
+    }
+
+    public function testAnalyzePluginConflictsWithConflicts()
+    {
+        // Mock WordPress functions
+        \Brain\Monkey\Functions\when('get_option')->alias(function($key) {
+            if ($key === 'active_plugins') return ['wp-rocket/wp-rocket.php', 'w3-total-cache/w3-total-cache.php'];
+            return null;
+        });
+        \Brain\Monkey\Functions\when('wp_script_is')->justReturn(false);
+        \Brain\Monkey\Functions\when('ini_get')->justReturn(false);
+
+        $loggingSystem = new LoggingSystem();
+        $renderer = new SettingsRenderer();
+        $systemAjax = new SystemAjax($loggingSystem, $renderer);
+        
+        // Use reflection to access private method
+        $reflection = new \ReflectionClass($systemAjax);
+        $method = $reflection->getMethod('analyzePluginConflicts');
+        $method->setAccessible(true);
+        
+        $result = $method->invoke($systemAjax);
+        
+        $this->assertIsArray($result);
+        $this->assertEquals('issues_found', $result['status']);
+        $this->assertEquals(0, $result['score']);
+        $this->assertNotEmpty($result['issues']);
+        $this->assertNotEmpty($result['solutions']);
+    }
+
+    public function testAnalyzeNetworkConnectivityWithCurlAvailable()
+    {
+        // Mock PHP functions
+        \Brain\Monkey\Functions\when('function_exists')->alias(function($function) {
+            if ($function === 'curl_init') return true;
+            return false;
+        });
+
+        $loggingSystem = new LoggingSystem();
+        $renderer = new SettingsRenderer();
+        $systemAjax = new SystemAjax($loggingSystem, $renderer);
+        
+        // Use reflection to access private method
+        $reflection = new \ReflectionClass($systemAjax);
+        $method = $reflection->getMethod('analyzeNetworkConnectivity');
+        $method->setAccessible(true);
+        
+        $result = $method->invoke($systemAjax);
+        
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('status', $result);
+        $this->assertArrayHasKey('issues', $result);
+        $this->assertArrayHasKey('solutions', $result);
+    }
+
+    public function testAnalyzeNetworkConnectivityWithNoHttpMethods()
+    {
+        // Mock PHP functions
+        \Brain\Monkey\Functions\when('function_exists')->alias(function($function) {
+            return false; // No HTTP methods available
+        });
+
+        $loggingSystem = new LoggingSystem();
+        $renderer = new SettingsRenderer();
+        $systemAjax = new SystemAjax($loggingSystem, $renderer);
+        
+        // Use reflection to access private method
+        $reflection = new \ReflectionClass($systemAjax);
+        $method = $reflection->getMethod('analyzeNetworkConnectivity');
+        $method->setAccessible(true);
+        
+        $result = $method->invoke($systemAjax);
+        
+        $this->assertIsArray($result);
+        $this->assertNotEmpty($result['issues']);
+        $this->assertNotEmpty($result['solutions']);
+    }
+
+    public function testGetCacheHits()
+    {
+        // Mock WordPress functions
+        \Brain\Monkey\Functions\when('wp_cache_get')->justReturn(100);
+        \Brain\Monkey\Functions\when('wp_cache_get_stats')->justReturn(['hits' => 1000, 'misses' => 100]);
+
+        $loggingSystem = new LoggingSystem();
+        $renderer = new SettingsRenderer();
+        $systemAjax = new SystemAjax($loggingSystem, $renderer);
+        
+        // Use reflection to access private method
+        $reflection = new \ReflectionClass($systemAjax);
+        $method = $reflection->getMethod('getCacheHits');
+        $method->setAccessible(true);
+        
+        $result = $method->invoke($systemAjax);
+        
+        $this->assertIsString($result);
+        $this->assertNotEmpty($result);
+    }
+
+    public function testGetSlowQueries()
+    {
+        // Mock WordPress functions
+        \Brain\Monkey\Functions\when('get_option')->justReturn([]);
+
+        $loggingSystem = new LoggingSystem();
+        $renderer = new SettingsRenderer();
+        $systemAjax = new SystemAjax($loggingSystem, $renderer);
+        
+        // Use reflection to access private method
+        $reflection = new \ReflectionClass($systemAjax);
+        $method = $reflection->getMethod('getSlowQueries');
+        $method->setAccessible(true);
+        
+        $result = $method->invoke($systemAjax);
+        
+        $this->assertIsString($result);
+        $this->assertNotEmpty($result);
+    }
+
+    public function testStoreApiResponseTime()
+    {
+        // Mock WordPress functions
+        \Brain\Monkey\Functions\when('update_option')->justReturn(true);
+
+        $loggingSystem = new LoggingSystem();
+        $renderer = new SettingsRenderer();
+        $systemAjax = new SystemAjax($loggingSystem, $renderer);
+        
+        // Use reflection to access private method
+        $reflection = new \ReflectionClass($systemAjax);
+        $method = $reflection->getMethod('storeApiResponseTime');
+        $method->setAccessible(true);
+        
+        // Should not throw any exceptions
+        $method->invoke($systemAjax, 0.5);
+        $this->assertTrue(true);
+    }
+
+    public function testGetApiResponseTime()
+    {
+        // Mock WordPress functions
+        \Brain\Monkey\Functions\when('get_option')->justReturn(0.5);
+
+        $loggingSystem = new LoggingSystem();
+        $renderer = new SettingsRenderer();
+        $systemAjax = new SystemAjax($loggingSystem, $renderer);
+        
+        // Use reflection to access private method
+        $reflection = new \ReflectionClass($systemAjax);
+        $method = $reflection->getMethod('getApiResponseTime');
+        $method->setAccessible(true);
+        
+        $result = $method->invoke($systemAjax);
+        
+        $this->assertIsString($result);
+        $this->assertNotEmpty($result);
     }
 
 

@@ -7,7 +7,7 @@ class ApiAjax {
     private $apiService;
 
     public function __construct($apiService = null) {
-        $this->apiService = $apiService ?: new ApiService('https://api.calltrackingmetrics.com');
+        $this->apiService = $apiService ?: new ApiService(\ctm_get_api_url());
     }
 
     public function registerHandlers() {
@@ -31,7 +31,7 @@ class ApiAjax {
             'wordpress_version' => get_bloginfo('version'),
             'php_version' => PHP_VERSION,
             'plugin_version' => '2.0',
-            'api_endpoint' => 'https://api.calltrackingmetrics.com',
+            'api_endpoint' => \ctm_get_api_url(),
             'request_method' => 'GET',
             'auth_method' => 'Basic Authentication'
         ];
@@ -241,7 +241,7 @@ class ApiAjax {
         update_option('ctm_api_key', $apiKey);
         update_option('ctm_api_secret', $apiSecret);
         // Fetch account info and tracking script
-        $apiService = new \CTM\Service\ApiService('https://api.calltrackingmetrics.com');
+        $apiService = new \CTM\Service\ApiService(\ctm_get_api_url());
         $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
         $accountId = null;
         if ($accountInfo && isset($accountInfo['account']['id'])) {

@@ -285,5 +285,140 @@ class AdminLoggingSystemTest extends TestCase
         $this->assertStringContainsString('debug', $spy->message);
     }
 
+    public function testCleanupOldLogsWithValidRetention()
+    {
+        // Mock WordPress functions
+        \Brain\Monkey\Functions\when('get_option')->alias(function($key) {
+            if ($key === 'ctm_log_auto_cleanup') return true;
+            if ($key === 'ctm_log_retention_days') return 7;
+            if ($key === 'ctm_log_index') return ['2024-01-01', '2024-01-02', '2024-01-03'];
+            return null;
+        });
+        \Brain\Monkey\Functions\when('delete_option')->justReturn(true);
+        \Brain\Monkey\Functions\when('update_option')->justReturn(true);
+
+        $loggingSystem = new LoggingSystem();
+        
+        // Use reflection to access private method
+        $reflection = new \ReflectionClass($loggingSystem);
+        $method = $reflection->getMethod('cleanupOldLogs');
+        $method->setAccessible(true);
+        
+        // Should not throw any exceptions
+        $method->invoke($loggingSystem);
+        $this->assertTrue(true);
+    }
+
+    public function testCleanupOldLogsWithAutoCleanupDisabled()
+    {
+        // Mock WordPress functions
+        \Brain\Monkey\Functions\when('get_option')->alias(function($key) {
+            if ($key === 'ctm_log_auto_cleanup') return false;
+            return null;
+        });
+
+        $loggingSystem = new LoggingSystem();
+        
+        // Use reflection to access private method
+        $reflection = new \ReflectionClass($loggingSystem);
+        $method = $reflection->getMethod('cleanupOldLogs');
+        $method->setAccessible(true);
+        
+        // Should not throw any exceptions and should return early
+        $method->invoke($loggingSystem);
+        $this->assertTrue(true);
+    }
+
+    public function testGetUserIPWithValidIP()
+    {
+        // Mock $_SERVER
+        $_SERVER['HTTP_X_FORWARDED_FOR'] = '192.168.1.100';
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+
+        $loggingSystem = new LoggingSystem();
+        
+        // Use reflection to access private method
+        $reflection = new \ReflectionClass($loggingSystem);
+        $method = $reflection->getMethod('getUserIP');
+        $method->setAccessible(true);
+        
+        $result = $method->invoke($loggingSystem);
+        $this->assertEquals('192.168.1.100', $result);
+    }
+
+    public function testGetUserIPWithInvalidIP()
+    {
+        // Mock $_SERVER with invalid IP
+        $_SERVER['HTTP_X_FORWARDED_FOR'] = 'invalid-ip';
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+
+        $loggingSystem = new LoggingSystem();
+        
+        // Use reflection to access private method
+        $reflection = new \ReflectionClass($loggingSystem);
+        $method = $reflection->getMethod('getUserIP');
+        $method->setAccessible(true);
+        
+        $result = $method->invoke($loggingSystem);
+        $this->assertEquals('127.0.0.1', $result);
+    }
+
+    public function testGetUserIPWithNoServerVars()
+    {
+        // Clear $_SERVER
+        unset($_SERVER['HTTP_X_FORWARDED_FOR'], $_SERVER['REMOTE_ADDR']);
+
+        $loggingSystem = new LoggingSystem();
+        
+        // Use reflection to access private method
+        $reflection = new \ReflectionClass($loggingSystem);
+        $method = $reflection->getMethod('getUserIP');
+        $method->setAccessible(true);
+        
+        $result = $method->invoke($loggingSystem);
+        $this->assertEquals('Unknown', $result);
+    }
+
+    public function testSendCleanupNotificationWithValidData()
+    {
+        // Mock WordPress functions
+        \Brain\Monkey\Functions\when('wp_mail')->justReturn(true);
+        \Brain\Monkey\Functions\when('get_option')->alias(function($key) {
+            if ($key === 'ctm_log_cleanup_notifications') return 'admin@example.com';
+            return null;
+        });
+
+        $loggingSystem = new LoggingSystem();
+        
+        // Use reflection to access private method
+        $reflection = new \ReflectionClass($loggingSystem);
+        $method = $reflection->getMethod('sendCleanupNotification');
+        $method->setAccessible(true);
+        
+        // Should not throw any exceptions
+        $method->invoke($loggingSystem, 5, 1024, 7);
+        $this->assertTrue(true);
+    }
+
+    public function testSendCleanupNotificationWithNoEmail()
+    {
+        // Mock WordPress functions
+        \Brain\Monkey\Functions\when('get_option')->alias(function($key) {
+            if ($key === 'ctm_log_cleanup_notifications') return '';
+            return null;
+        });
+
+        $loggingSystem = new LoggingSystem();
+        
+        // Use reflection to access private method
+        $reflection = new \ReflectionClass($loggingSystem);
+        $method = $reflection->getMethod('sendCleanupNotification');
+        $method->setAccessible(true);
+        
+        // Should not throw any exceptions
+        $method->invoke($loggingSystem, 5, 1024, 7);
+        $this->assertTrue(true);
+    }
+
     // For brevity, static methods like initializeLoggingSystem, onPluginActivation, onPluginDeactivation, performScheduledLogCleanup, logDebug are not tested here, but could be with further mocking.
 } 

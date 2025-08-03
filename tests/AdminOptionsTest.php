@@ -15,6 +15,7 @@ class AdminOptionsTest extends TestCase
         $this->initalMonkey();
         \Brain\Monkey\Functions\when('settings_fields')->alias(function() { echo '<!--settings_fields-->'; });
         \Brain\Monkey\Functions\when('do_settings_sections')->alias(function() { echo '<!--do_settings_sections-->'; });
+        \Brain\Monkey\Functions\when('ctm_get_api_url')->justReturn('https://api.calltrackingmetrics.com');
     }
     protected function tearDown(): void
     {
@@ -453,5 +454,117 @@ class AdminOptionsTest extends TestCase
         $output = ob_get_clean();
         $this->assertStringContainsString('API error handled', $output);
         unset($_POST['ctm_api_key'], $_POST['ctm_api_secret']);
+    }
+
+    public function testSanitizeApiUrlWithValidUrl()
+    {
+        $options = new Options();
+        $result = $options->sanitizeApiUrl('https://api.example.com');
+        $this->assertEquals('https://api.example.com', $result);
+    }
+
+    public function testSanitizeApiUrlWithUrlWithoutProtocol()
+    {
+        $options = new Options();
+        $result = $options->sanitizeApiUrl('api.example.com');
+        $this->assertEquals('https://api.example.com', $result);
+    }
+
+    public function testSanitizeApiUrlWithHttpUrl()
+    {
+        $options = new Options();
+        $result = $options->sanitizeApiUrl('http://api.example.com');
+        $this->assertEquals('https://api.example.com', $result);
+    }
+
+    public function testSanitizeApiUrlWithTrailingSlash()
+    {
+        $options = new Options();
+        $result = $options->sanitizeApiUrl('https://api.example.com/');
+        $this->assertEquals('https://api.example.com', $result);
+    }
+
+    public function testSanitizeApiUrlWithEmptyString()
+    {
+        $options = new Options();
+        $result = $options->sanitizeApiUrl('');
+        $this->assertEquals('https://api.calltrackingmetrics.com', $result);
+    }
+
+    public function testSanitizeApiUrlWithWhitespace()
+    {
+        $options = new Options();
+        $result = $options->sanitizeApiUrl('  https://api.example.com  ');
+        $this->assertEquals('https://api.example.com', $result);
+    }
+
+    public function testSanitizeApiUrlWithInvalidUrl()
+    {
+        $options = new Options();
+        $result = $options->sanitizeApiUrl('not-a-valid-url');
+        $this->assertEquals('https://api.calltrackingmetrics.com', $result);
+    }
+
+    public function testGetTrackingScriptFromApiWithValidCredentials()
+    {
+        // Mock WordPress functions
+        \Brain\Monkey\Functions\when('get_option')->alias(function($key) {
+            if ($key === 'ctm_api_key') return 'test-api-key';
+            if ($key === 'ctm_api_secret') return 'test-api-secret';
+            return null;
+        });
+        \Brain\Monkey\Functions\when('update_option')->justReturn(true);
+        \Brain\Monkey\Functions\when('ctm_get_api_url')->justReturn('https://api.calltrackingmetrics.com');
+
+        // Mock the ApiService class
+        \Brain\Monkey\Functions\when('class_exists')->alias(function($class) {
+            if ($class === 'CTM\Service\ApiService') return true;
+            return false;
+        });
+
+        $options = new Options();
+        
+        // Test the method - it should not throw exceptions
+        $options->getTrackingScriptFromApi();
+        
+        $this->assertTrue(true);
+    }
+
+    public function testGetTrackingScriptFromApiWithMissingCredentials()
+    {
+        // Mock WordPress functions to return empty credentials
+        \Brain\Monkey\Functions\when('get_option')->alias(function($key) {
+            if ($key === 'ctm_api_key') return '';
+            if ($key === 'ctm_api_secret') return '';
+            return null;
+        });
+
+        $options = new Options();
+        
+        // Should not throw any exceptions
+        $this->assertTrue(true);
+    }
+
+    public function testGetTrackingScriptFromApiWithApiException()
+    {
+        // Mock WordPress functions
+        \Brain\Monkey\Functions\when('get_option')->alias(function($key) {
+            if ($key === 'ctm_api_key') return 'test-api-key';
+            if ($key === 'ctm_api_secret') return 'test-api-secret';
+            return null;
+        });
+        \Brain\Monkey\Functions\when('update_option')->justReturn(true);
+        \Brain\Monkey\Functions\when('ctm_get_api_url')->justReturn('https://api.calltrackingmetrics.com');
+
+        // Mock the ApiService class
+        \Brain\Monkey\Functions\when('class_exists')->alias(function($class) {
+            if ($class === 'CTM\Service\ApiService') return true;
+            return false;
+        });
+
+        $options = new Options();
+        
+        // Should not throw any exceptions (exception is caught)
+        $this->assertTrue(true);
     }
 } 

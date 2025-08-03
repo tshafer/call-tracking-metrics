@@ -43,7 +43,7 @@ class SettingsRenderer
     private $ctmFieldsProvider;
     public function __construct($apiService = null, $loggingSystem = null, $viewsDir = null, $viewLoader = null, $cf7FormsProvider = null, $gfFormsProvider = null, $ctmFieldsProvider = null)
     {
-        $this->apiService = $apiService ?: (class_exists('CTM\\Service\\ApiService') ? new \CTM\Service\ApiService('https://api.calltrackingmetrics.com') : null);
+        $this->apiService = $apiService ?: (class_exists('CTM\\Service\\ApiService') ? new \CTM\Service\ApiService(\ctm_get_api_url()) : null);
         $this->loggingSystem = $loggingSystem ?: (class_exists('CTM\\Admin\\LoggingSystem') ? new \CTM\Admin\LoggingSystem() : null);
         $this->viewsDir = $viewsDir;
         $this->viewLoader = $viewLoader;
@@ -281,6 +281,31 @@ class SettingsRenderer
         
         $this->renderView('api-tab', compact(
             'apiKey', 'apiSecret', 'accountInfo', 'apiStatus'
+        ));
+        
+        return ob_get_clean();
+    }
+
+    /**
+     * Get form import tab content
+     * 
+     * Generates the content for the form import tab including
+     * form selection, import options, and preview functionality.
+     * 
+     * @since 2.0.0
+     * @return string The rendered form import tab content HTML
+     */
+    public function getFormImportTabContent(): string
+    {
+        $apiKey = get_option('ctm_api_key');
+        $apiSecret = get_option('ctm_api_secret');
+        $cf7_available = class_exists('WPCF7_ContactForm');
+        $gf_available = class_exists('GFAPI');
+        
+        ob_start();
+        
+        $this->renderView('form-import-tab', compact(
+            'apiKey', 'apiSecret', 'cf7_available', 'gf_available'
         ));
         
         return ob_get_clean();

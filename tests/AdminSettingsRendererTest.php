@@ -18,6 +18,7 @@ class AdminSettingsRendererTest extends TestCase
         $this->obLevel = ob_get_level();
         \Brain\Monkey\setUp();
         $this->initalMonkey();
+        \Brain\Monkey\Functions\when('ctm_get_api_url')->justReturn('https://api.calltrackingmetrics.com');
         $this->tempPluginDir = sys_get_temp_dir() . '/ctm_test_plugin/';
         $this->tempViewsDir = '/tmp/ctm_test_views/';
     }

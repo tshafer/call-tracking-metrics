@@ -1,9 +1,8 @@
 <?php
 // General tab view
 ?>
-<form method="post" action="options.php" class="space-y-6">
-    <?php settings_fields('call-tracking-metrics'); ?>
-    <?php do_settings_sections('call-tracking-metrics'); ?>
+<form method="post" action="" class="space-y-6">
+    <?php wp_nonce_field('ctm_save_settings', 'ctm_settings_nonce'); ?>
     
     <?php if ($apiStatus !== 'connected'): ?>
         <!-- API Connection Only View (Not Connected) -->
@@ -47,6 +46,20 @@
                             <button type="button" tabindex="-1" onclick="let f=document.getElementById('ctm_api_secret');f.type=f.type==='password'?'text':'password';this.innerHTML=f.type==='password'?'<svg class=\'w-5 h-5\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M15 12a3 3 0 11-6 0 3 3 0 016 0z\'/><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z\'/></svg>':'<svg class=\'w-5 h-5\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.956 9.956 0 012.223-3.592m3.31-2.687A9.956 9.956 0 0112 5c4.477 0 8.268 2.943 9.542 7a9.956 9.956 0 01-4.043 5.306M15 12a3 3 0 11-6 0 3 3 0 016 0z\'/><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M3 3l18 18\'/></svg>';" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 focus:outline-none">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                             </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block mb-2 text-gray-700 font-medium"><?php _e('API Base URL', 'call-tracking-metrics'); ?></label>
+                        <input type="url" id="ctm_api_base_url" name="ctm_api_base_url" value="<?= esc_attr(get_option('ctm_api_base_url', 'https://api.calltrackingmetrics.com')) ?>" class="block w-full rounded border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="https://api.calltrackingmetrics.com" />
+                        <p class="text-sm text-gray-500 mt-1"><?php _e('Leave empty to use the default API URL', 'call-tracking-metrics'); ?></p>
+                    </div>
+                    <div>
+                        <label class="block mb-2 text-gray-700 font-medium"><?php _e('Current API URL', 'call-tracking-metrics'); ?></label>
+                        <div class="bg-gray-100 p-3 rounded border text-sm font-mono text-gray-700">
+                            <?= esc_html(ctm_get_api_url()) ?>
                         </div>
                     </div>
                 </div>
@@ -187,15 +200,15 @@
                 <h2 class="text-xl font-semibold mb-4 text-gray-700"><?php _e('Integrations', 'call-tracking-metrics'); ?></h2>
                 
                 <!-- Contact Form 7 Integration -->
-                <label class="flex items-center mb-2 <?= !class_exists('WPCF7_ContactForm') ? 'opacity-50 cursor-not-allowed' : '' ?>">
+                <label class="flex items-center mb-2 <?= (!is_plugin_active('contact-form-7/wp-contact-form-7.php') && !class_exists('WPCF7_ContactForm') && !function_exists('wpcf7_contact_form')) ? 'opacity-50 cursor-not-allowed' : '' ?>">
                     <input type="checkbox" 
                            name="ctm_api_cf7_enabled" 
                            value="1"
                            <?= checked($cf7Enabled, 1, false) ?> 
-                           <?= !class_exists('WPCF7_ContactForm') ? 'disabled' : '' ?>
-                           class="mr-2 rounded border-gray-300 focus:ring-blue-500 <?= !class_exists('WPCF7_ContactForm') ? 'opacity-50 cursor-not-allowed' : '' ?>" />
-                    <span class="<?= !class_exists('WPCF7_ContactForm') ? 'text-gray-400' : '' ?>"><?php _e('Enable Contact Form 7 Integration', 'call-tracking-metrics'); ?></span>
-                    <?php if (!class_exists('WPCF7_ContactForm')): ?>
+                           <?= (!is_plugin_active('contact-form-7/wp-contact-form-7.php') && !class_exists('WPCF7_ContactForm') && !function_exists('wpcf7_contact_form')) ? 'disabled' : '' ?>
+                           class="mr-2 rounded border-gray-300 focus:ring-blue-500 <?= (!is_plugin_active('contact-form-7/wp-contact-form-7.php') && !class_exists('WPCF7_ContactForm') && !function_exists('wpcf7_contact_form')) ? 'opacity-50 cursor-not-allowed' : '' ?>" />
+                    <span class="<?= (!is_plugin_active('contact-form-7/wp-contact-form-7.php') && !class_exists('WPCF7_ContactForm') && !function_exists('wpcf7_contact_form')) ? 'text-gray-400' : '' ?>"><?php _e('Enable Contact Form 7 Integration', 'call-tracking-metrics'); ?></span>
+                    <?php if (!is_plugin_active('contact-form-7/wp-contact-form-7.php') && !class_exists('WPCF7_ContactForm') && !function_exists('wpcf7_contact_form')): ?>
                         <span class="ml-2 text-xs text-red-600 font-medium"><?php _e('(Plugin required)', 'call-tracking-metrics'); ?></span>
                     <?php endif; ?>
                 </label>
@@ -206,7 +219,7 @@
                 </div>
                 
                 <!-- Dismissible warning banner -->
-                <?php if (!class_exists('WPCF7_ContactForm')): ?>
+                <?php if (!is_plugin_active('contact-form-7/wp-contact-form-7.php') && !class_exists('WPCF7_ContactForm') && !function_exists('wpcf7_contact_form')): ?>
                     <div id="cf7-notice" class="bg-yellow-50 border-l-2 border-yellow-400 text-yellow-800 p-1.5 rounded flex items-center justify-between gap-1 mb-3 mt-2 text-xs ml-6">
                         <div class="flex items-center justify-between w-full gap-1">
                             <span class="font-semibold"><?php _e('Contact Form 7 is not installed or activated.', 'call-tracking-metrics'); ?></span>
@@ -216,15 +229,15 @@
                 <?php endif; ?>
                 
                 <!-- Gravity Forms Integration -->
-                <label class="flex items-center mb-2 <?= !class_exists('GFAPI') ? 'opacity-50 cursor-not-allowed' : '' ?>">
+                <label class="flex items-center mb-2 <?= (!class_exists('GFAPI') && !function_exists('gravity_form')) ? 'opacity-50 cursor-not-allowed' : '' ?>">
                     <input type="checkbox" 
                            name="ctm_api_gf_enabled" 
                            value="1"
                            <?= checked($gfEnabled, 1, false) ?> 
-                           <?= !class_exists('GFAPI') ? 'disabled' : '' ?>
-                           class="mr-2 rounded border-gray-300 focus:ring-blue-500 <?= !class_exists('GFAPI') ? 'opacity-50 cursor-not-allowed' : '' ?>" />
-                    <span class="<?= !class_exists('GFAPI') ? 'text-gray-400' : '' ?>"><?php _e('Enable Gravity Forms Integration', 'call-tracking-metrics'); ?></span>
-                    <?php if (!class_exists('GFAPI')): ?>
+                           <?= (!class_exists('GFAPI') && !function_exists('gravity_form')) ? 'disabled' : '' ?>
+                           class="mr-2 rounded border-gray-300 focus:ring-blue-500 <?= (!class_exists('GFAPI') && !function_exists('gravity_form')) ? 'opacity-50 cursor-not-allowed' : '' ?>" />
+                    <span class="<?= (!class_exists('GFAPI') && !function_exists('gravity_form')) ? 'text-gray-400' : '' ?>"><?php _e('Enable Gravity Forms Integration', 'call-tracking-metrics'); ?></span>
+                    <?php if (!class_exists('GFAPI') && !function_exists('gravity_form')): ?>
                         <span class="ml-2 text-xs text-red-600 font-medium"><?php _e('(Plugin required)', 'call-tracking-metrics'); ?></span>
                     <?php endif; ?>
                 </label>
@@ -234,7 +247,7 @@
                 </div>
                 
                 <!-- Dismissible warning banner -->
-                <?php if (!class_exists('GFAPI')): ?>
+                <?php if (!class_exists('GFAPI') && !function_exists('gravity_form')): ?>
                     <div id="gf-notice" class="bg-yellow-50 border-l-2 border-yellow-400 text-yellow-800 p-1.5 rounded flex items-center justify-between gap-1 mb-3 mt-2 text-xs ml-6">
                         <div class="flex items-center justify-between w-full gap-1">
                             <span class="font-semibold"><?php _e('Gravity Forms is not installed or activated.', 'call-tracking-metrics'); ?></span>

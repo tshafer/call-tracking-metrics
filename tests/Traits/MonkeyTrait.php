@@ -16,11 +16,19 @@ trait MonkeyTrait
                 $cb();
             }
         };
+        $mock('ctm_get_api_url', fn() => \Brain\Monkey\Functions\when('ctm_get_api_url')->justReturn('https://api.calltrackingmetrics.com'));
         $mock('delete_option', fn() => \Brain\Monkey\Functions\when('delete_option')->justReturn(true));
         $mock('wp_next_scheduled', fn() => \Brain\Monkey\Functions\when('wp_next_scheduled')->justReturn(null));
         $mock('wp_schedule_event', fn() => \Brain\Monkey\Functions\when('wp_schedule_event')->justReturn(null));
         // WordPress core and plugin functions
         $mock('active_plugins', fn() => \Brain\Monkey\Functions\when('active_plugins')->justReturn(['call-tracking-metrics/call-tracking-metrics.php']));
+        $mock('is_plugin_active', fn() => \Brain\Monkey\Functions\when('is_plugin_active')->alias(function($plugin) {
+            // Return false for Contact Form 7 and true for other plugins
+            if ($plugin === 'contact-form-7/wp-contact-form-7.php') {
+                return false;
+            }
+            return true;
+        }));
         $mock('plugin_dir_path', fn() => \Brain\Monkey\Functions\when('plugin_dir_path')->alias(function($file) { return __DIR__ . '/../../'; }));
         $mock('plugin_dir_url', fn() => \Brain\Monkey\Functions\when('plugin_dir_url')->alias(function($file) { return '/'; }));
         $mock('home_url', fn() => \Brain\Monkey\Functions\when('home_url')->justReturn('http://example.com'));

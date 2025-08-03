@@ -1183,7 +1183,7 @@ class SystemAjax {
             $solutions[] = 'Enter your API key and secret in the General tab';
         } else {
             try {
-                $response = wp_remote_get('https://api.calltrackingmetrics.com/api/v1/accounts', [
+                $response = wp_remote_get(\ctm_get_api_url() . '/api/v1/accounts', [
                     'timeout' => 10,
                     'sslverify' => true,
                     'headers' => [
@@ -1289,7 +1289,7 @@ class SystemAjax {
             $solutions[] = 'Contact CallTrackingMetrics support to obtain API credentials';
         } else {
             try {
-                $apiService = new \CTM\Service\ApiService('https://api.calltrackingmetrics.com');
+                $apiService = new \CTM\Service\ApiService(\ctm_get_api_url());
                 $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
                 
                 if (!$accountInfo || !isset($accountInfo['account'])) {
@@ -1341,7 +1341,7 @@ class SystemAjax {
         // API Connection Check
         if ($apiKey && $apiSecret) {
             try {
-                $apiService = new \CTM\Service\ApiService('https://api.calltrackingmetrics.com');
+                $apiService = new \CTM\Service\ApiService(\ctm_get_api_url());
                 $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
                 if ($accountInfo && isset($accountInfo['account'])) {
                     $checks[] = ['name' => 'API Connection', 'status' => 'pass', 'message' => 'Connected'];
@@ -1836,7 +1836,7 @@ class SystemAjax {
             $start_time = microtime(true);
             
             // Make a simple API call to test response time
-            $response = wp_remote_head('https://api.calltrackingmetrics.com/api/v1/accounts', [
+            $response = wp_remote_head(\ctm_get_api_url() . '/api/v1/accounts', [
                 'timeout' => 10,
                 'headers' => [
                     'Authorization' => 'Basic ' . base64_encode($api_key . ':' . $api_secret),
@@ -1957,7 +1957,7 @@ class SystemAjax {
         $start_time = microtime(true);
         
         // Use WordPress HTTP API for better compatibility
-        $response = wp_remote_head('https://api.calltrackingmetrics.com/api/v1/accounts', [
+        $response = wp_remote_head(\ctm_get_api_url() . '/api/v1/accounts', [
             'timeout' => 5,
             'sslverify' => true
         ]);

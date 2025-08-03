@@ -53,6 +53,38 @@ use CTM\Admin\Options;
 use CTM\Admin\LoggingSystem;
 
 /**
+ * Get the CTM API base URL
+ * 
+ * Returns the configured API URL from settings, or the default URL if not set.
+ * This function provides a centralized way to access the API URL throughout the plugin.
+ * 
+ * @since 2.0.0
+ * @return string The API base URL
+ */
+if (!function_exists('ctm_get_api_url')) {
+function ctm_get_api_url(): string
+{
+    $api_url = get_option('ctm_api_base_url', 'https://api.calltrackingmetrics.com');
+    
+    // Ensure URL is properly formatted
+    $api_url = trim($api_url);
+    
+    // If empty, return default
+    if (empty($api_url)) {
+        return 'https://api.calltrackingmetrics.com';
+    }
+    
+    // Ensure URL has protocol
+    if (!preg_match('/^https?:\/\//', $api_url)) {
+        $api_url = 'https://' . $api_url;
+    }
+    
+    // Remove trailing slash
+    return rtrim($api_url, '/');
+}
+}
+
+/**
  * Main CallTrackingMetrics Plugin Class
  * 
  * This is the core plugin class that orchestrates all functionality including:
@@ -191,11 +223,13 @@ class CallTrackingMetrics
             // Only enqueue on the CallTrackingMetrics admin pages
             if (strpos($hook, 'call-tracking-metrics') === false) return;
 
+            $css_file = plugin_dir_path(__FILE__) . 'css/optmized.css';
+            $version = file_exists($css_file) ? filemtime($css_file) : '2.0.0';
             wp_enqueue_style(
                 'ctm-tailwind',
                 plugins_url('css/optmized.css', __FILE__),
                 [],
-                filemtime(plugin_dir_path(__FILE__) . 'css/optmized.css')
+                $version
             );
         });
         // Merge: Enqueue debug JS and localize export nonce for debug tab
@@ -403,7 +437,7 @@ class CallTrackingMetrics
             $response = $this->apiService->submitFormReactor($result, $apiKey, $apiSecret, $form->id());
             
             // Log the submission for debugging and monitoring
-            LoggingSystem::logDebug([
+            $this->loggingSystem->logDebug([
                 'type' => 'cf7',
                 'form_id' => $form->id(),
                 'form_title' => $form->title(),
@@ -469,7 +503,7 @@ class CallTrackingMetrics
             $response = $this->apiService->submitFormReactor($result, $apiKey, $apiSecret, $form['id']);
             
             // Log the submission for debugging and monitoring
-            LoggingSystem::logDebug([
+            $this->loggingSystem->logDebug([
                 'type' => 'gf',
                 'form_id' => $form['id'],
                 'form_title' => $form['title'],

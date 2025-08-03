@@ -22,6 +22,10 @@
     "glob",
     "is_readable",
     "count",
-    "sys_getloadavg"
+    "sys_getloadavg",
+    "defined",
+    "constant",
+    "version_compare",
+    "dirname"
   ]
 } 

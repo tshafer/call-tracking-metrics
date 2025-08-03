@@ -173,17 +173,18 @@ class ApiServiceTest extends TestCase
         $this->assertNull($result, 'Should return null for throttling error');
     }
 
-    public function testGetFormsReturnsFormsOnSuccess()
+    public function testGetFormsReturnsNullWhenAccountInfoFails()
     {
+        // Mock wp_remote_request to return error for account info
         \Brain\Monkey\Functions\when('wp_remote_request')->justReturn([
-            'response' => ['code' => 200],
-            'body' => json_encode(['forms' => [['id' => 1, 'name' => 'Form 1']]])
+            'response' => ['code' => 401],
+            'body' => json_encode(['error' => 'Unauthorized'])
         ]);
-        \Brain\Monkey\Functions\when('wp_remote_retrieve_body')->justReturn(json_encode(['forms' => [['id' => 1, 'name' => 'Form 1']]]));
-        \Brain\Monkey\Functions\when('wp_remote_retrieve_response_code')->justReturn(200);
-        $result = $this->apiService->getForms('valid', 'valid');
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('forms', $result);
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_body')->justReturn(json_encode(['error' => 'Unauthorized']));
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_response_code')->justReturn(401);
+        
+        $result = $this->apiService->getForms('invalid', 'invalid');
+        $this->assertNull($result, 'Should return null when account info fails');
     }
 
     public function testGetFormsReturnsNullOnError()

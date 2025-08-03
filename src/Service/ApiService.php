@@ -180,19 +180,106 @@ class ApiService
     }
 
     /**
-     * Get all forms associated with an account
+     * Get all form reactors for an account
      * 
-     * Retrieves a list of all forms configured in the CTM account.
+     * Retrieves a list of all form reactors configured in the CTM account.
      * This can be used for form mapping and configuration purposes.
      * 
      * @since 1.0.0
+     * @param string $accountId The account ID
      * @param string $apiKey    The API key for authentication
      * @param string $apiSecret The API secret for authentication
-     * @return array|null Array of forms or null on failure
+     * @return array|null Array of form reactors or null on failure
      */
-    public function getForms(string $apiKey, string $apiSecret): ?array
+    public function getFormReactors(string $accountId, string $apiKey, string $apiSecret, int $page = 1, int $perPage = 50): ?array
     {
-        $endpoint = '/api/v1/forms';
+        $endpoint = "/api/v1/accounts/{$accountId}/form_reactors";
+        $params = [
+            'page' => max(1, $page),
+            'per_page' => min(100, max(1, $perPage))
+        ];
+        
+        $start = microtime(true);
+        try {
+            $data = $this->makeRequest('GET', $endpoint, $params, $apiKey, $apiSecret);
+            $elapsed = (microtime(true) - $start) * 1000;
+            $this->trackApiCall();
+            $this->trackApiResponseTime($elapsed);
+            if (isset($data['error']) || (isset($data['status']) && $data['status'] === 'error')) {
+                return null;
+            }
+            return $data;
+        } catch (\Exception $e) {
+            error_log('CTM API Error (getFormReactors): ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Get all form reactors for an account with automatic pagination
+     * 
+     * Retrieves all form reactors by automatically handling pagination.
+     * 
+     * @since 1.0.0
+     * @param string $accountId The account ID
+     * @param string $apiKey    The API key for authentication
+     * @param string $apiSecret The API secret for authentication
+     * @param int    $perPage   Items per page (default: 50, max: 100)
+     * @return array|null Array of all form reactors or null on failure
+     */
+    public function getAllFormReactors(string $accountId, string $apiKey, string $apiSecret, int $perPage = 50): ?array
+    {
+        $allFormReactors = [];
+        $page = 1;
+        $hasMorePages = true;
+        
+        while ($hasMorePages) {
+            $response = $this->getFormReactors($accountId, $apiKey, $apiSecret, $page, $perPage);
+            
+            if (!$response || !isset($response['form_reactors'])) {
+                break;
+            }
+            
+            $formReactors = $response['form_reactors'];
+            $allFormReactors = array_merge($allFormReactors, $formReactors);
+            
+            // Check if there are more pages
+            $totalPages = $response['pagination']['total_pages'] ?? 1;
+            $hasMorePages = $page < $totalPages;
+            $page++;
+            
+            // Safety check to prevent infinite loops
+            if ($page > 100) {
+                error_log('CTM API Error: Pagination limit exceeded (100 pages)');
+                break;
+            }
+        }
+        
+        return [
+            'form_reactors' => $allFormReactors,
+            'pagination' => [
+                'total_items' => count($allFormReactors),
+                'total_pages' => $page - 1,
+                'per_page' => $perPage
+            ]
+        ];
+    }
+
+    /**
+     * Get a specific form reactor by ID
+     * 
+     * Retrieves detailed information about a specific form reactor.
+     * 
+     * @since 1.0.0
+     * @param string $accountId      The account ID
+     * @param string $formReactorId  The form reactor ID
+     * @param string $apiKey         The API key for authentication
+     * @param string $apiSecret      The API secret for authentication
+     * @return array|null Form reactor details or null on failure
+     */
+    public function getFormReactorById(string $accountId, string $formReactorId, string $apiKey, string $apiSecret): ?array
+    {
+        $endpoint = "/api/v1/accounts/{$accountId}/form_reactors/{$formReactorId}";
         $start = microtime(true);
         try {
             $data = $this->makeRequest('GET', $endpoint, [], $apiKey, $apiSecret);
@@ -204,13 +291,100 @@ class ApiService
             }
             return $data;
         } catch (\Exception $e) {
-            error_log('CTM API Error (getForms): ' . $e->getMessage());
+            error_log('CTM API Error (getFormReactorById): ' . $e->getMessage());
             return null;
         }
     }
 
     /**
-     * Get tracking numbers for an account
+     * Get forms from CTM API
+     * 
+     * Retrieves forms directly from the CTM API using the form_reactors endpoint.
+     * This method handles the new API response format with 'forms' array.
+     * 
+     * @since 2.0.0
+     * @param string $apiKey    The API key for authentication
+     * @param string $apiSecret The API secret for authentication
+     * @param int    $page      Page number (default: 1)
+     * @param int    $perPage   Items per page (default: 50, max: 100)
+     * @return array|null Array of forms or null on failure
+     */
+    public function getFormsDirect(string $apiKey, string $apiSecret, int $page = 1, int $perPage = 50): ?array
+    {
+        error_log('CTM Debug: ApiService::getFormsDirect - Starting');
+        
+        // First get account information to get the account ID
+        $accountInfo = $this->getAccountInfo($apiKey, $apiSecret);
+        if (!$accountInfo || !isset($accountInfo['account']['id'])) {
+            error_log('CTM API Error: Could not retrieve account information for forms');
+            error_log('CTM Debug: Account info response: ' . json_encode($accountInfo));
+            return null;
+        }
+        
+        $accountId = $accountInfo['account']['id'];
+        error_log('CTM Debug: Using account ID: ' . $accountId);
+        
+        $endpoint = "/api/v1/accounts/{$accountId}/form_reactors";
+        $params = [
+            'page' => max(1, $page),
+            'per_page' => min(100, max(1, $perPage))
+        ];
+        
+        error_log('CTM Debug: Making request to endpoint: ' . $endpoint);
+        error_log('CTM Debug: Request params: ' . json_encode($params));
+        
+        $start = microtime(true);
+        try {
+            $data = $this->makeRequest('GET', $endpoint, $params, $apiKey, $apiSecret);
+            $elapsed = (microtime(true) - $start) * 1000;
+            $this->trackApiCall();
+            $this->trackApiResponseTime($elapsed);
+            
+            error_log('CTM Debug: API response received in ' . round($elapsed, 2) . 'ms');
+            error_log('CTM Debug: Response keys: ' . implode(', ', array_keys($data)));
+            
+            if (isset($data['error']) || (isset($data['status']) && $data['status'] === 'error')) {
+                error_log('CTM API Error: API returned error response: ' . json_encode($data));
+                return null;
+            }
+            
+            error_log('CTM Debug: Successfully retrieved forms data');
+            return $data;
+        } catch (\Exception $e) {
+            error_log('CTM API Error (getFormsDirect): ' . $e->getMessage());
+            error_log('CTM Debug: Exception stack trace: ' . $e->getTraceAsString());
+            return null;
+        }
+    }
+
+    /**
+     * Get forms from CTM API (backward compatibility)
+     * 
+     * @since 1.0.0
+     * @param string $apiKey    The API key for authentication
+     * @param string $apiSecret The API secret for authentication
+     * @return array|null Array of forms or null on failure
+     */
+    public function getForms(string $apiKey, string $apiSecret): ?array
+    {
+        // First try the direct forms endpoint
+        $forms = $this->getFormsDirect($apiKey, $apiSecret);
+        if ($forms && isset($forms['forms'])) {
+            return $forms;
+        }
+        
+        // Fallback to account-based approach
+        $accountInfo = $this->getAccountInfo($apiKey, $apiSecret);
+        if (!$accountInfo || !isset($accountInfo['account']['id'])) {
+            return null;
+        }
+        
+        $accountId = $accountInfo['account']['id'];
+        return $this->getFormReactors($accountId, $apiKey, $apiSecret);
+    }
+
+    /**
+     * Get tracking numbers for an account with pagination support
      * 
      * Retrieves all tracking phone numbers associated with the account.
      * This can be used for call tracking and analytics purposes.
@@ -218,14 +392,21 @@ class ApiService
      * @since 1.0.0
      * @param string $apiKey    The API key for authentication
      * @param string $apiSecret The API secret for authentication
+     * @param int    $page      Page number (default: 1)
+     * @param int    $perPage   Items per page (default: 50, max: 100)
      * @return array|null Array of tracking numbers or null on failure
      */
-    public function getTrackingNumbers(string $apiKey, string $apiSecret): ?array
+    public function getTrackingNumbers(string $apiKey, string $apiSecret, int $page = 1, int $perPage = 50): ?array
     {
         $endpoint = '/api/v1/tracking_numbers';
+        $params = [
+            'page' => max(1, $page),
+            'per_page' => min(100, max(1, $perPage))
+        ];
+        
         $start = microtime(true);
         try {
-            $data = $this->makeRequest('GET', $endpoint, [], $apiKey, $apiSecret);
+            $data = $this->makeRequest('GET', $endpoint, $params, $apiKey, $apiSecret);
             $elapsed = (microtime(true) - $start) * 1000;
             $this->trackApiCall();
             $this->trackApiResponseTime($elapsed);
@@ -312,6 +493,11 @@ class ApiService
     private function makeRequest(string $method, string $endpoint, array $data = [], string $apiKey = '', string $apiSecret = '', string $contentType = 'application/json'): array
     {
         $url = $this->baseUrl . $endpoint;
+        
+        error_log('CTM Debug: makeRequest - URL: ' . $url);
+        error_log('CTM Debug: makeRequest - Method: ' . $method);
+        error_log('CTM Debug: makeRequest - Content-Type: ' . $contentType);
+        
         $args = [
             'method'  => strtoupper($method),
             'timeout' => $this->timeout,
@@ -323,7 +509,11 @@ class ApiService
         ];
         if (!empty($apiKey) && !empty($apiSecret)) {
             $args['headers']['Authorization'] = 'Basic ' . base64_encode($apiKey . ':' . $apiSecret);
+            error_log('CTM Debug: makeRequest - Authorization header set');
+        } else {
+            error_log('CTM Debug: makeRequest - No authorization credentials provided');
         }
+        
         // Handle body encoding
         if (in_array($method, ['POST', 'PUT']) && !empty($data)) {
             if ($contentType === 'application/json') {
@@ -333,16 +523,40 @@ class ApiService
             } else {
                 $args['body'] = $data;
             }
+            error_log('CTM Debug: makeRequest - Request body: ' . $args['body']);
         }
+        
+        error_log('CTM Debug: makeRequest - Making wp_remote_request');
         $response = \wp_remote_request($url, $args);
+        
         if (is_wp_error($response)) {
-            throw new \Exception('HTTP request failed: ' . $response->get_error_message());
+            $errorMessage = 'HTTP request failed: ' . $response->get_error_message();
+            error_log('CTM Debug: makeRequest - WP Error: ' . $errorMessage);
+            throw new \Exception($errorMessage);
         }
+        
+        $statusCode = \wp_remote_retrieve_response_code($response);
         $body = \wp_remote_retrieve_body($response);
+        
+        error_log('CTM Debug: makeRequest - Response status: ' . $statusCode);
+        error_log('CTM Debug: makeRequest - Response body length: ' . strlen($body));
+        error_log('CTM Debug: makeRequest - Response body: ' . substr($body, 0, 500) . (strlen($body) > 500 ? '...' : ''));
+        
+        if ($statusCode >= 400) {
+            $errorMessage = 'HTTP ' . $statusCode . ' error: ' . $body;
+            error_log('CTM Debug: makeRequest - HTTP Error: ' . $errorMessage);
+            throw new \Exception($errorMessage);
+        }
+        
         $result = json_decode($body, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \Exception('Invalid JSON response');
+            $errorMessage = 'Invalid JSON response: ' . json_last_error_msg();
+            error_log('CTM Debug: makeRequest - JSON Error: ' . $errorMessage);
+            error_log('CTM Debug: makeRequest - Raw response: ' . $body);
+            throw new \Exception($errorMessage);
         }
+        
+        error_log('CTM Debug: makeRequest - Successfully decoded JSON response');
         return $result;
     }
 

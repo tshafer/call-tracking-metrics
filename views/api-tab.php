@@ -97,7 +97,7 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600"><?php _e('Base URL:', 'call-tracking-metrics'); ?></span>
-                                <span class="text-gray-800 break-all">https://api.calltrackingmetrics.com</span>
+                                <span class="text-gray-800 break-all"><?= esc_html(ctm_get_api_url()) ?></span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600"><?php _e('Last Connected:', 'call-tracking-metrics'); ?></span>
