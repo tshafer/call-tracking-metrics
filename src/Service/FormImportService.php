@@ -535,6 +535,10 @@ class FormImportService
                     case 'select':
                     case 'choice_list':
                         $options = $field['options'] ?? [];
+                        // Ensure options is an array
+                        if (!is_array($options)) {
+                            $options = [];
+                        }
                         $optionsStr = implode('|', $options);
                         $formContent .= "[select{$required} {$fieldName} \"{$optionsStr}\"]";
                         error_log("CTM Debug: convertToCF7Format - Added select field: [select{$required} {$fieldName} \"{$optionsStr}\"]");
@@ -545,6 +549,10 @@ class FormImportService
                         break;
                     case 'radio':
                         $options = $field['options'] ?? [];
+                        // Ensure options is an array
+                        if (!is_array($options)) {
+                            $options = [];
+                        }
                         $optionsStr = implode('|', $options);
                         $formContent .= "[radio{$required} {$fieldName} \"{$optionsStr}\"]";
                         error_log("CTM Debug: convertToCF7Format - Added radio field: [radio{$required} {$fieldName} \"{$optionsStr}\"]");

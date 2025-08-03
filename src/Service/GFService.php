@@ -70,11 +70,17 @@ class GFService
             $fieldLabels = [];
             if (!empty($form['fields']) && is_array($form['fields'])) {
                 foreach ($form['fields'] as $field) {
+                    if (!is_object($field) || !isset($field->id)) {
+                        continue;
+                    }
                     $fid = (string)$field->id;
                     $flabel = $field->label ?? ('Field ' . $fid);
                     $fieldLabels[$fid] = $flabel;
                     if (!empty($field->inputs) && is_array($field->inputs)) {
                         foreach ($field->inputs as $input) {
+                            if (!is_array($input) || !isset($input['id'])) {
+                                continue;
+                            }
                             $iid = (string)$input['id'];
                             $ilabel = $input['label'] ?? ($flabel . ' ' . $iid);
                             $fieldLabels[$iid] = $ilabel;
@@ -364,7 +370,19 @@ class GFService
     private function mapFormFields(array $entry, array $form, array $fieldMapping): array
     {
         $mappedFields = [];
+        
+        // Check if form has fields and they are properly structured
+        if (empty($form['fields']) || !is_array($form['fields'])) {
+            $this->logDebug("Form has no fields or fields are not properly structured");
+            return $mappedFields;
+        }
+        
         foreach ($form['fields'] as $field) {
+            // Skip if field is not properly structured
+            if (!is_object($field) || !isset($field->id)) {
+                continue;
+            }
+            
             $fieldId = $field->id;
             $fieldValue = $entry[$fieldId] ?? null;
             if ($this->isAdminField($field)) {
@@ -554,7 +572,9 @@ class GFService
     private function getFieldName($field): string
     {
         // Use admin label if available, otherwise use label
-        return $field->adminLabel ?: $field->label ?: "Field {$field->id}";
+        $adminLabel = isset($field->adminLabel) ? $field->adminLabel : null;
+        $label = isset($field->label) ? $field->label : null;
+        return $adminLabel ?: $label ?: "Field {$field->id}";
     }
 
     /**
@@ -642,7 +662,8 @@ class GFService
         $value = (string) $value;
         
         // Field-specific sanitization
-        switch ($field->type) {
+        $fieldType = isset($field->type) ? $field->type : 'text';
+        switch ($fieldType) {
             case 'email':
                 $value = sanitize_email($value);
                 break;

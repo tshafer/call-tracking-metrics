@@ -962,4 +962,1066 @@ class FormImportServiceTest extends TestCase
         $this->assertTrue(method_exists($apiService, 'getAllFormReactors'));
         $this->assertTrue(method_exists($apiService, 'getTrackingNumbers'));
     }
+
+    public function testApiServiceErrorHandling()
+    {
+        $apiService = new ApiService('https://invalid-api-url.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        // Test with invalid credentials
+        $result = $formImportService->getAvailableForms('invalid_key', 'invalid_secret');
+        $this->assertNull($result);
+        
+        // Test with empty credentials
+        $result = $formImportService->getAvailableForms('', '');
+        $this->assertNull($result);
+    }
+
+    public function testFormImportWithMalformedData()
+    {
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $malformedForm = [
+            'id' => null,
+            'name' => '',
+            'description' => null,
+            'fields' => 'not_an_array'
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($malformedForm, 'Malformed Form');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+        $this->assertArrayHasKey('success', $cf7Result);
+    }
+
+    public function testFieldTypeMappingAccuracy()
+    {
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $mappingForm = [
+            'id' => 'mapping_test',
+            'name' => 'Field Type Mapping Test',
+            'fields' => [
+                ['name' => 'text_field', 'type' => 'text', 'label' => 'Text Field'],
+                ['name' => 'email_field', 'type' => 'email', 'label' => 'Email Field'],
+                ['name' => 'textarea_field', 'type' => 'textarea', 'label' => 'Textarea Field'],
+                ['name' => 'number_field', 'type' => 'number', 'label' => 'Number Field'],
+                ['name' => 'phone_field', 'type' => 'phone', 'label' => 'Phone Field'],
+                ['name' => 'website_field', 'type' => 'website', 'label' => 'Website Field'],
+                ['name' => 'select_field', 'type' => 'select', 'label' => 'Select Field', 'options' => ['A', 'B']],
+                ['name' => 'checkbox_field', 'type' => 'checkbox', 'label' => 'Checkbox Field'],
+                ['name' => 'radio_field', 'type' => 'radio', 'label' => 'Radio Field', 'options' => ['X', 'Y']],
+                ['name' => 'date_field', 'type' => 'date', 'label' => 'Date Field'],
+                ['name' => 'file_field', 'type' => 'file_upload', 'label' => 'File Field']
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($mappingForm, 'Mapping Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+    }
+
+    public function testRequiredFieldHandling()
+    {
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $requiredForm = [
+            'id' => 'required_test',
+            'name' => 'Required Fields Test',
+            'fields' => [
+                ['name' => 'required_text', 'type' => 'text', 'label' => 'Required Text', 'required' => true],
+                ['name' => 'optional_text', 'type' => 'text', 'label' => 'Optional Text', 'required' => false],
+                ['name' => 'required_email', 'type' => 'email', 'label' => 'Required Email', 'required' => true],
+                ['name' => 'optional_email', 'type' => 'email', 'label' => 'Optional Email', 'required' => false],
+                ['name' => 'required_select', 'type' => 'select', 'label' => 'Required Select', 'required' => true, 'options' => ['A', 'B']]
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($requiredForm, 'Required Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+    }
+
+    public function testHalfWidthFieldHandling()
+    {
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $halfWidthForm = [
+            'id' => 'half_width_test',
+            'name' => 'Half Width Fields Test',
+            'custom_fields' => [
+                ['name' => 'full_width', 'type' => 'text', 'label' => 'Full Width', 'half_width' => false],
+                ['name' => 'half_width_1', 'type' => 'text', 'label' => 'Half Width 1', 'half_width' => true],
+                ['name' => 'half_width_2', 'type' => 'email', 'label' => 'Half Width 2', 'half_width' => true],
+                ['name' => 'half_width_3', 'type' => 'phone', 'label' => 'Half Width 3', 'half_width' => true]
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($halfWidthForm, 'Half Width Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+    }
+
+    public function testFileTypeHandling()
+    {
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $fileTypeForm = [
+            'id' => 'file_type_test',
+            'name' => 'File Type Test',
+            'custom_fields' => [
+                ['name' => 'image_upload', 'type' => 'upload', 'label' => 'Image Upload', 'file_type' => 'image/*'],
+                ['name' => 'document_upload', 'type' => 'upload', 'label' => 'Document Upload', 'file_type' => 'application/pdf'],
+                ['name' => 'any_file', 'type' => 'upload', 'label' => 'Any File', 'file_type' => '*/*']
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($fileTypeForm, 'File Type Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+    }
+
+    public function testDateFieldValidation()
+    {
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $dateForm = [
+            'id' => 'date_test',
+            'name' => 'Date Field Test',
+            'custom_fields' => [
+                ['name' => 'simple_date', 'type' => 'date', 'label' => 'Simple Date'],
+                ['name' => 'future_date', 'type' => 'date', 'label' => 'Future Date', 'disable_before' => 'today'],
+                ['name' => 'past_date', 'type' => 'date', 'label' => 'Past Date', 'disable_before' => ''],
+                ['name' => 'specific_date', 'type' => 'date', 'label' => 'Specific Date', 'disable_before' => '2024-01-01']
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($dateForm, 'Date Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+    }
+
+    public function testAutocompleteAttributeHandling()
+    {
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $autocompleteForm = [
+            'id' => 'autocomplete_test',
+            'name' => 'Autocomplete Test',
+            'fields' => [
+                ['name' => 'your_name', 'type' => 'text', 'label' => 'Your Name'],
+                ['name' => 'your_email', 'type' => 'email', 'label' => 'Your Email'],
+                ['name' => 'your_phone', 'type' => 'phone', 'label' => 'Your Phone'],
+                ['name' => 'company_name', 'type' => 'text', 'label' => 'Company Name'],
+                ['name' => 'website_url', 'type' => 'website', 'label' => 'Website URL']
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($autocompleteForm, 'Autocomplete Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+    }
+
+    public function testFormWithNoFields()
+    {
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $noFieldsForm = [
+            'id' => 'no_fields_test',
+            'name' => 'No Fields Test',
+            'description' => 'A form with no fields',
+            'fields' => []
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($noFieldsForm, 'No Fields Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+        $this->assertArrayHasKey('success', $cf7Result);
+    }
+
+    public function testFormWithNullFields()
+    {
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $nullFieldsForm = [
+            'id' => 'null_fields_test',
+            'name' => 'Null Fields Test',
+            'fields' => [
+                null,
+                ['name' => 'valid_field', 'type' => 'text', 'label' => 'Valid Field'],
+                null
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($nullFieldsForm, 'Null Fields Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+    }
+
+    public function testFormWithDuplicateFieldNames()
+    {
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $duplicateForm = [
+            'id' => 'duplicate_test',
+            'name' => 'Duplicate Fields Test',
+            'fields' => [
+                ['name' => 'email', 'type' => 'email', 'label' => 'Email 1'],
+                ['name' => 'email', 'type' => 'email', 'label' => 'Email 2'],
+                ['name' => 'name', 'type' => 'text', 'label' => 'Name 1'],
+                ['name' => 'name', 'type' => 'text', 'label' => 'Name 2']
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($duplicateForm, 'Duplicate Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+    }
+
+    public function testFormWithEmptyFieldNames()
+    {
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $emptyNamesForm = [
+            'id' => 'empty_names_test',
+            'name' => 'Empty Names Test',
+            'fields' => [
+                ['name' => '', 'type' => 'text', 'label' => 'Empty Name'],
+                ['name' => null, 'type' => 'email', 'label' => 'Null Name'],
+                ['name' => 'valid_name', 'type' => 'text', 'label' => 'Valid Name']
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($emptyNamesForm, 'Empty Names Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+    }
+
+    public function testFormWithSpecialFieldTypes()
+    {
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $specialTypesForm = [
+            'id' => 'special_types_test',
+            'name' => 'Special Types Test',
+            'fields' => [
+                ['name' => 'information_field', 'type' => 'information', 'label' => 'Information Field'],
+                ['name' => 'captcha_field', 'type' => 'captcha', 'label' => 'CAPTCHA Field'],
+                ['name' => 'decimal_field', 'type' => 'decimal', 'label' => 'Decimal Field'],
+                ['name' => 'text_area_field', 'type' => 'text_area', 'label' => 'Text Area Field']
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($specialTypesForm, 'Special Types Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+    }
+
+    public function testFormWithComplexOptions()
+    {
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $complexOptionsForm = [
+            'id' => 'complex_options_test',
+            'name' => 'Complex Options Test',
+            'fields' => [
+                [
+                    'name' => 'select_with_quotes',
+                    'type' => 'select',
+                    'label' => 'Select with Quotes',
+                    'options' => ['Option "with" quotes', 'Option with \'single\' quotes', 'Option with & symbols']
+                ],
+                [
+                    'name' => 'radio_with_special_chars',
+                    'type' => 'radio',
+                    'label' => 'Radio with Special Chars',
+                    'options' => ['Option 1 & 2', 'Option 3 < 4', 'Option 5 > 6']
+                ],
+                [
+                    'name' => 'picker_with_unicode',
+                    'type' => 'picker',
+                    'label' => 'Picker with Unicode',
+                    'options' => ['Option 中文', 'Option Español', 'Option Français']
+                ]
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($complexOptionsForm, 'Complex Options Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+    }
+
+    public function testFormWithVeryLongLabels()
+    {
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $longLabelsForm = [
+            'id' => 'long_labels_test',
+            'name' => 'Long Labels Test',
+            'fields' => [
+                [
+                    'name' => 'field1',
+                    'type' => 'text',
+                    'label' => 'This is a very long field label that contains many words and should be handled properly by the form import system without causing any issues or breaking the form generation process',
+                    'required' => true
+                ],
+                [
+                    'name' => 'field2',
+                    'type' => 'textarea',
+                    'label' => 'Another extremely long field label with multiple sentences and various punctuation marks including commas, periods, and even some special characters like @#$%^&*() that should all be processed correctly',
+                    'required' => false
+                ]
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($longLabelsForm, 'Long Labels Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+    }
+
+    public function testFormWithNumericFieldNames()
+    {
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $numericNamesForm = [
+            'id' => 'numeric_names_test',
+            'name' => 'Numeric Names Test',
+            'fields' => [
+                ['name' => '123', 'type' => 'text', 'label' => 'Numeric Name 1'],
+                ['name' => 'field_456', 'type' => 'email', 'label' => 'Numeric Name 2'],
+                ['name' => '789_field', 'type' => 'phone', 'label' => 'Numeric Name 3'],
+                ['name' => 'field_123_456', 'type' => 'text', 'label' => 'Numeric Name 4']
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($numericNamesForm, 'Numeric Names Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+    }
+
+    public function testFormWithReservedWords()
+    {
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $reservedWordsForm = [
+            'id' => 'reserved_words_test',
+            'name' => 'Reserved Words Test',
+            'fields' => [
+                ['name' => 'submit', 'type' => 'text', 'label' => 'Submit Field'],
+                ['name' => 'action', 'type' => 'text', 'label' => 'Action Field'],
+                ['name' => 'method', 'type' => 'text', 'label' => 'Method Field'],
+                ['name' => 'form', 'type' => 'text', 'label' => 'Form Field'],
+                ['name' => 'input', 'type' => 'text', 'label' => 'Input Field']
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($reservedWordsForm, 'Reserved Words Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+    }
+
+    public function testFormWithMixedDataStructures()
+    {
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $mixedForm = [
+            'id' => 'mixed_test',
+            'name' => 'Mixed Data Test',
+            'fields' => [
+                ['name' => 'old_format', 'type' => 'text', 'label' => 'Old Format Field']
+            ],
+            'custom_fields' => [
+                ['name' => 'new_format', 'type' => 'email', 'label' => 'New Format Field', 'half_width' => true]
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($mixedForm, 'Mixed Data Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+    }
+
+    public function testPerformanceWithManyOptions()
+    {
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $manyOptionsForm = [
+            'id' => 'many_options_test',
+            'name' => 'Many Options Test',
+            'fields' => [
+                [
+                    'name' => 'large_select',
+                    'type' => 'select',
+                    'label' => 'Large Select',
+                    'options' => array_map(function($i) { return "Option {$i}"; }, range(1, 100))
+                ],
+                [
+                    'name' => 'large_radio',
+                    'type' => 'radio',
+                    'label' => 'Large Radio',
+                    'options' => array_map(function($i) { return "Radio {$i}"; }, range(1, 50))
+                ]
+            ]
+        ];
+        
+        $startTime = microtime(true);
+        $cf7Result = $formImportService->importToCF7($manyOptionsForm, 'Many Options Test');
+        $endTime = microtime(true);
+        
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+        $this->assertLessThan(5.0, $endTime - $startTime, 'Form import should complete within 5 seconds');
+    }
+
+    public function testApiResponseVariations()
+    {
+        // Mock WordPress functions
+        \Brain\Monkey\Functions\when('wp_insert_post')->justReturn(123);
+        \Brain\Monkey\Functions\when('get_option')->justReturn('test@example.com');
+        \Brain\Monkey\Functions\when('class_exists')->justReturn(true);
+        
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        // Test with different API response structures
+        $variationForm1 = [
+            'id' => 'variation_1',
+            'name' => 'API Response Variation 1',
+            'form_reactors' => [
+                ['id' => 'form1', 'name' => 'Form 1', 'fields' => [['name' => 'field1', 'type' => 'text', 'label' => 'Field 1']]]
+            ]
+        ];
+        
+        $variationForm2 = [
+            'id' => 'variation_2',
+            'name' => 'API Response Variation 2',
+            'forms' => [
+                ['id' => 'form2', 'name' => 'Form 2', 'custom_fields' => [['name' => 'field2', 'type' => 'email', 'label' => 'Field 2']]]
+            ]
+        ];
+        
+        $cf7Result1 = $formImportService->importToCF7($variationForm1, 'Variation 1');
+        $cf7Result2 = $formImportService->importToCF7($variationForm2, 'Variation 2');
+        
+        $this->assertNotNull($cf7Result1);
+        $this->assertNotNull($cf7Result2);
+        $this->assertIsArray($cf7Result1);
+        $this->assertIsArray($cf7Result2);
+    }
+
+    public function testFormValidationWithInvalidData()
+    {
+        // Mock WordPress functions
+        \Brain\Monkey\Functions\when('wp_insert_post')->justReturn(123);
+        \Brain\Monkey\Functions\when('get_option')->justReturn('test@example.com');
+        \Brain\Monkey\Functions\when('class_exists')->justReturn(true);
+        
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $invalidData = [
+            'id' => 'invalid_data_test',
+            'name' => 'Invalid Data Test',
+            'fields' => [
+                ['name' => 'field1', 'type' => 'invalid_type', 'label' => 'Invalid Type'],
+                ['name' => 'field2', 'type' => 'text', 'label' => '', 'required' => 'not_boolean'],
+                ['name' => 'field3', 'type' => 'select', 'label' => 'Select Field', 'options' => null],
+                ['name' => 'field4', 'type' => 'number', 'label' => 'Number Field', 'min' => 'not_number'],
+                ['name' => 'field5', 'type' => 'date', 'label' => 'Date Field', 'disable_before' => 123],
+                ['name' => 'field6', 'type' => 'radio', 'label' => 'Radio Field', 'options' => 'invalid_options'],
+                ['name' => 'field7', 'type' => 'picker', 'label' => 'Picker Field', 'options' => false]
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($invalidData, 'Invalid Data Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+        $this->assertArrayHasKey('success', $cf7Result);
+    }
+
+    public function testFormWithConditionalLogic()
+    {
+        // Mock WordPress functions
+        \Brain\Monkey\Functions\when('wp_insert_post')->justReturn(123);
+        \Brain\Monkey\Functions\when('get_option')->justReturn('test@example.com');
+        \Brain\Monkey\Functions\when('class_exists')->justReturn(true);
+        
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $conditionalForm = [
+            'id' => 'conditional_logic_test',
+            'name' => 'Conditional Logic Test',
+            'custom_fields' => [
+                [
+                    'name' => 'contact_type',
+                    'type' => 'select',
+                    'label' => 'Contact Type',
+                    'required' => true,
+                    'options' => ['General', 'Support', 'Sales'],
+                    'conditional_logic' => [
+                        'show_when' => 'always',
+                        'hide_when' => 'never'
+                    ]
+                ],
+                [
+                    'name' => 'support_ticket',
+                    'type' => 'text',
+                    'label' => 'Support Ticket',
+                    'required' => false,
+                    'conditional_logic' => [
+                        'show_when' => 'contact_type equals Support',
+                        'hide_when' => 'contact_type not equals Support'
+                    ]
+                ],
+                [
+                    'name' => 'company_size',
+                    'type' => 'select',
+                    'label' => 'Company Size',
+                    'required' => false,
+                    'options' => ['1-10', '11-50', '51+'],
+                    'conditional_logic' => [
+                        'show_when' => 'contact_type equals Sales',
+                        'hide_when' => 'contact_type not equals Sales'
+                    ]
+                ]
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($conditionalForm, 'Conditional Logic Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+    }
+
+    public function testFormWithAdvancedFieldProperties()
+    {
+        // Mock WordPress functions
+        \Brain\Monkey\Functions\when('wp_insert_post')->justReturn(123);
+        \Brain\Monkey\Functions\when('get_option')->justReturn('test@example.com');
+        \Brain\Monkey\Functions\when('class_exists')->justReturn(true);
+        
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $advancedForm = [
+            'id' => 'advanced_properties_test',
+            'name' => 'Advanced Properties Test',
+            'custom_fields' => [
+                [
+                    'name' => 'text_with_placeholder',
+                    'type' => 'text',
+                    'label' => 'Text with Placeholder',
+                    'placeholder' => 'Enter your name here',
+                    'max_length' => 50,
+                    'min_length' => 2
+                ],
+                [
+                    'name' => 'email_with_validation',
+                    'type' => 'email',
+                    'label' => 'Email with Validation',
+                    'validation_pattern' => '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+                    'validation_message' => 'Please enter a valid email address'
+                ],
+                [
+                    'name' => 'number_with_constraints',
+                    'type' => 'number',
+                    'label' => 'Number with Constraints',
+                    'min_value' => 1,
+                    'max_value' => 100,
+                    'step' => 5
+                ],
+                [
+                    'name' => 'textarea_with_counter',
+                    'type' => 'textarea',
+                    'label' => 'Textarea with Counter',
+                    'max_length' => 500,
+                    'rows' => 5,
+                    'cols' => 40
+                ]
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($advancedForm, 'Advanced Properties Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+    }
+
+    public function testFormWithCustomValidationRules()
+    {
+        // Mock WordPress functions
+        \Brain\Monkey\Functions\when('wp_insert_post')->justReturn(123);
+        \Brain\Monkey\Functions\when('get_option')->justReturn('test@example.com');
+        \Brain\Monkey\Functions\when('class_exists')->justReturn(true);
+        
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $customValidationForm = [
+            'id' => 'custom_validation_test',
+            'name' => 'Custom Validation Test',
+            'custom_fields' => [
+                [
+                    'name' => 'phone_with_format',
+                    'type' => 'phone',
+                    'label' => 'Phone with Format',
+                    'validation_pattern' => '^\+?[1-9]\d{1,14}$',
+                    'validation_message' => 'Please enter a valid phone number'
+                ],
+                [
+                    'name' => 'zip_code',
+                    'type' => 'text',
+                    'label' => 'ZIP Code',
+                    'validation_pattern' => '^\d{5}(-\d{4})?$',
+                    'validation_message' => 'Please enter a valid ZIP code'
+                ],
+                [
+                    'name' => 'credit_card',
+                    'type' => 'text',
+                    'label' => 'Credit Card',
+                    'validation_pattern' => '^\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}$',
+                    'validation_message' => 'Please enter a valid credit card number'
+                ],
+                [
+                    'name' => 'ssn',
+                    'type' => 'text',
+                    'label' => 'Social Security Number',
+                    'validation_pattern' => '^\d{3}-\d{2}-\d{4}$',
+                    'validation_message' => 'Please enter SSN in format XXX-XX-XXXX'
+                ]
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($customValidationForm, 'Custom Validation Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+    }
+
+    public function testFormWithFileUploadConstraints()
+    {
+        // Mock WordPress functions
+        \Brain\Monkey\Functions\when('wp_insert_post')->justReturn(123);
+        \Brain\Monkey\Functions\when('get_option')->justReturn('test@example.com');
+        \Brain\Monkey\Functions\when('class_exists')->justReturn(true);
+        
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $fileUploadForm = [
+            'id' => 'file_upload_constraints_test',
+            'name' => 'File Upload Constraints Test',
+            'custom_fields' => [
+                [
+                    'name' => 'image_upload',
+                    'type' => 'upload',
+                    'label' => 'Image Upload',
+                    'file_type' => 'image/*',
+                    'max_file_size' => '2MB',
+                    'allowed_extensions' => ['jpg', 'jpeg', 'png', 'gif'],
+                    'max_files' => 1
+                ],
+                [
+                    'name' => 'document_upload',
+                    'type' => 'upload',
+                    'label' => 'Document Upload',
+                    'file_type' => 'application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'max_file_size' => '10MB',
+                    'allowed_extensions' => ['pdf', 'doc', 'docx'],
+                    'max_files' => 3
+                ],
+                [
+                    'name' => 'video_upload',
+                    'type' => 'upload',
+                    'label' => 'Video Upload',
+                    'file_type' => 'video/*',
+                    'max_file_size' => '50MB',
+                    'allowed_extensions' => ['mp4', 'avi', 'mov'],
+                    'max_files' => 1
+                ]
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($fileUploadForm, 'File Upload Constraints Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+    }
+
+    public function testFormWithMultiStepLogic()
+    {
+        // Mock WordPress functions
+        \Brain\Monkey\Functions\when('wp_insert_post')->justReturn(123);
+        \Brain\Monkey\Functions\when('get_option')->justReturn('test@example.com');
+        \Brain\Monkey\Functions\when('class_exists')->justReturn(true);
+        
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $multiStepForm = [
+            'id' => 'multi_step_test',
+            'name' => 'Multi-Step Form Test',
+            'steps' => [
+                [
+                    'step_number' => 1,
+                    'step_title' => 'Personal Information',
+                    'custom_fields' => [
+                        ['name' => 'first_name', 'type' => 'text', 'label' => 'First Name', 'required' => true],
+                        ['name' => 'last_name', 'type' => 'text', 'label' => 'Last Name', 'required' => true],
+                        ['name' => 'email', 'type' => 'email', 'label' => 'Email', 'required' => true]
+                    ]
+                ],
+                [
+                    'step_number' => 2,
+                    'step_title' => 'Company Information',
+                    'custom_fields' => [
+                        ['name' => 'company_name', 'type' => 'text', 'label' => 'Company Name', 'required' => false],
+                        ['name' => 'job_title', 'type' => 'text', 'label' => 'Job Title', 'required' => false],
+                        ['name' => 'industry', 'type' => 'select', 'label' => 'Industry', 'required' => false, 'options' => ['Technology', 'Healthcare', 'Finance', 'Other']]
+                    ]
+                ],
+                [
+                    'step_number' => 3,
+                    'step_title' => 'Additional Information',
+                    'custom_fields' => [
+                        ['name' => 'message', 'type' => 'textarea', 'label' => 'Message', 'required' => false],
+                        ['name' => 'newsletter', 'type' => 'checkbox', 'label' => 'Subscribe to Newsletter', 'required' => false]
+                    ]
+                ]
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($multiStepForm, 'Multi-Step Form Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+    }
+
+    public function testFormWithCalculatedFields()
+    {
+        // Mock WordPress functions
+        \Brain\Monkey\Functions\when('wp_insert_post')->justReturn(123);
+        \Brain\Monkey\Functions\when('get_option')->justReturn('test@example.com');
+        \Brain\Monkey\Functions\when('class_exists')->justReturn(true);
+        
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $calculatedForm = [
+            'id' => 'calculated_fields_test',
+            'name' => 'Calculated Fields Test',
+            'custom_fields' => [
+                [
+                    'name' => 'quantity',
+                    'type' => 'number',
+                    'label' => 'Quantity',
+                    'required' => true,
+                    'min_value' => 1,
+                    'max_value' => 100
+                ],
+                [
+                    'name' => 'unit_price',
+                    'type' => 'number',
+                    'label' => 'Unit Price',
+                    'required' => true,
+                    'step' => 0.01
+                ],
+                [
+                    'name' => 'total_amount',
+                    'type' => 'number',
+                    'label' => 'Total Amount',
+                    'required' => false,
+                    'calculated' => true,
+                    'calculation' => 'quantity * unit_price'
+                ],
+                [
+                    'name' => 'tax_rate',
+                    'type' => 'number',
+                    'label' => 'Tax Rate (%)',
+                    'required' => false,
+                    'default_value' => 8.5
+                ],
+                [
+                    'name' => 'tax_amount',
+                    'type' => 'number',
+                    'label' => 'Tax Amount',
+                    'required' => false,
+                    'calculated' => true,
+                    'calculation' => 'total_amount * (tax_rate / 100)'
+                ],
+                [
+                    'name' => 'grand_total',
+                    'type' => 'number',
+                    'label' => 'Grand Total',
+                    'required' => false,
+                    'calculated' => true,
+                    'calculation' => 'total_amount + tax_amount'
+                ]
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($calculatedForm, 'Calculated Fields Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+    }
+
+    public function testFormWithRepeatingSections()
+    {
+        // Mock WordPress functions
+        \Brain\Monkey\Functions\when('wp_insert_post')->justReturn(123);
+        \Brain\Monkey\Functions\when('get_option')->justReturn('test@example.com');
+        \Brain\Monkey\Functions\when('class_exists')->justReturn(true);
+        
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $repeatingForm = [
+            'id' => 'repeating_sections_test',
+            'name' => 'Repeating Sections Test',
+            'sections' => [
+                [
+                    'section_name' => 'primary_contact',
+                    'section_label' => 'Primary Contact',
+                    'repeatable' => false,
+                    'custom_fields' => [
+                        ['name' => 'primary_name', 'type' => 'text', 'label' => 'Name', 'required' => true],
+                        ['name' => 'primary_email', 'type' => 'email', 'label' => 'Email', 'required' => true],
+                        ['name' => 'primary_phone', 'type' => 'phone', 'label' => 'Phone', 'required' => false]
+                    ]
+                ],
+                [
+                    'section_name' => 'additional_contacts',
+                    'section_label' => 'Additional Contacts',
+                    'repeatable' => true,
+                    'max_repeats' => 5,
+                    'custom_fields' => [
+                        ['name' => 'contact_name', 'type' => 'text', 'label' => 'Contact Name', 'required' => false],
+                        ['name' => 'contact_email', 'type' => 'email', 'label' => 'Contact Email', 'required' => false],
+                        ['name' => 'contact_role', 'type' => 'select', 'label' => 'Role', 'required' => false, 'options' => ['Manager', 'Developer', 'Designer', 'Other']]
+                    ]
+                ],
+                [
+                    'section_name' => 'project_details',
+                    'section_label' => 'Project Details',
+                    'repeatable' => true,
+                    'max_repeats' => 10,
+                    'custom_fields' => [
+                        ['name' => 'project_name', 'type' => 'text', 'label' => 'Project Name', 'required' => false],
+                        ['name' => 'project_description', 'type' => 'textarea', 'label' => 'Description', 'required' => false],
+                        ['name' => 'project_budget', 'type' => 'number', 'label' => 'Budget', 'required' => false]
+                    ]
+                ]
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($repeatingForm, 'Repeating Sections Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+    }
+
+    public function testFormWithAdvancedStyling()
+    {
+        // Mock WordPress functions
+        \Brain\Monkey\Functions\when('wp_insert_post')->justReturn(123);
+        \Brain\Monkey\Functions\when('get_option')->justReturn('test@example.com');
+        \Brain\Monkey\Functions\when('class_exists')->justReturn(true);
+        
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $styledForm = [
+            'id' => 'advanced_styling_test',
+            'name' => 'Advanced Styling Test',
+            'theme' => 'modern',
+            'style' => 'rounded',
+            'color_scheme' => 'blue',
+            'custom_css' => '.form-field { border-radius: 8px; }',
+            'custom_fields' => [
+                [
+                    'name' => 'styled_text',
+                    'type' => 'text',
+                    'label' => 'Styled Text Field',
+                    'required' => true,
+                    'css_class' => 'highlighted-field',
+                    'inline_style' => 'background-color: #f0f8ff; border: 2px solid #4CAF50;'
+                ],
+                [
+                    'name' => 'styled_select',
+                    'type' => 'select',
+                    'label' => 'Styled Select Field',
+                    'required' => false,
+                    'options' => ['Option 1', 'Option 2', 'Option 3'],
+                    'css_class' => 'custom-select',
+                    'inline_style' => 'border-radius: 15px; padding: 10px;'
+                ],
+                [
+                    'name' => 'styled_textarea',
+                    'type' => 'textarea',
+                    'label' => 'Styled Textarea',
+                    'required' => false,
+                    'rows' => 4,
+                    'css_class' => 'large-textarea',
+                    'inline_style' => 'resize: vertical; min-height: 100px;'
+                ]
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($styledForm, 'Advanced Styling Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+    }
+
+    public function testFormWithIntegrationHooks()
+    {
+        // Mock WordPress functions
+        \Brain\Monkey\Functions\when('wp_insert_post')->justReturn(123);
+        \Brain\Monkey\Functions\when('get_option')->justReturn('test@example.com');
+        \Brain\Monkey\Functions\when('class_exists')->justReturn(true);
+        
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        $integrationForm = [
+            'id' => 'integration_hooks_test',
+            'name' => 'Integration Hooks Test',
+            'integrations' => [
+                'mailchimp' => [
+                    'enabled' => true,
+                    'list_id' => 'abc123',
+                    'fields_mapping' => [
+                        'email' => 'EMAIL',
+                        'first_name' => 'FNAME',
+                        'last_name' => 'LNAME'
+                    ]
+                ],
+                'salesforce' => [
+                    'enabled' => true,
+                    'object_type' => 'Lead',
+                    'fields_mapping' => [
+                        'email' => 'Email',
+                        'company_name' => 'Company',
+                        'phone' => 'Phone'
+                    ]
+                ],
+                'zapier' => [
+                    'enabled' => true,
+                    'webhook_url' => 'https://hooks.zapier.com/hooks/catch/123/abc/'
+                ]
+            ],
+            'custom_fields' => [
+                ['name' => 'first_name', 'type' => 'text', 'label' => 'First Name', 'required' => true],
+                ['name' => 'last_name', 'type' => 'text', 'label' => 'Last Name', 'required' => true],
+                ['name' => 'email', 'type' => 'email', 'label' => 'Email', 'required' => true],
+                ['name' => 'company_name', 'type' => 'text', 'label' => 'Company Name', 'required' => false],
+                ['name' => 'phone', 'type' => 'phone', 'label' => 'Phone', 'required' => false]
+            ]
+        ];
+        
+        $cf7Result = $formImportService->importToCF7($integrationForm, 'Integration Hooks Test');
+        $this->assertNotNull($cf7Result);
+        $this->assertIsArray($cf7Result);
+    }
 } 

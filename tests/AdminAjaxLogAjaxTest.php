@@ -87,7 +87,6 @@ class AdminAjaxLogAjaxTest extends TestCase
         $logAjax->ajaxEmailDailyLog();
         $this->assertIsArray($called);
         $this->assertEquals('Invalid email address.', $called['message']);
-        $this->addToAssertionCount(1);
     }
 
     public function testAjaxEmailDailyLogSuccess()
@@ -362,7 +361,6 @@ class AdminAjaxLogAjaxTest extends TestCase
         $logAjax->ajaxAddLogEntry();
         $this->assertIsArray($called);
         $this->assertEquals('Type is required.', $called['message']);
-        $this->addToAssertionCount(1);
     }
 
     public function testAjaxAddLogEntryTypeSanitization()
@@ -382,7 +380,6 @@ class AdminAjaxLogAjaxTest extends TestCase
         $logAjax->ajaxAddLogEntry();
         $this->assertIsArray($called);
         $this->assertEquals('Type is required.', $called['message']);
-        $this->addToAssertionCount(1);
     }
 
     public function testAjaxAddLogEntryContextArray()
