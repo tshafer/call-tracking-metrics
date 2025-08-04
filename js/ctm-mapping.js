@@ -71,7 +71,7 @@ jQuery(document).ready(function($) {
         });
         html += '</tbody></table>';
         html += '<div class="mt-4 flex gap-2">' +
-            '<button type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow transition" id="ctm-add-row">Add Mapping Row</button>' +
+            '<button type="button" class="bg-blue-600 hover:bg-blue-700 text-white! px-4 py-2 rounded shadow transition " id="ctm-add-row">Add Mapping Row</button>' +
             '</div>';
         mappingTableContainer.html(html);
     }
