@@ -3,9 +3,9 @@
 ?>
 <div class="mb-12">
     <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mb-8">
-        <div class="flex items-center mb-6 border-b border-blue-100 pb-4">
-            <svg class="w-7 h-7 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zm0 10c-4.418 0-8-3.582-8-8s3.582-8 8-8 8 3.582 8 8-3.582 8-8 8z" /></svg>
-            <h2 class="text-2xl font-bold text-blue-800 tracking-tight"><?php _e('Documentation', 'call-tracking-metrics'); ?></h2>
+        <div class="flex items-center mb-6 border-b border-[#02bdf6] pb-4">
+            <svg class="w-7 h-7 text-[#02bdf6] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zm0 10c-4.418 0-8-3.582-8-8s3.582-8 8-8 8 3.582 8 8-3.582 8-8 8z" /></svg>
+            <h2 class="text-2xl font-bold text-[#16294f] tracking-tight font-brand-heading"><?php _e('Documentation', 'call-tracking-metrics'); ?></h2>
         </div>
         <div id="main-doc-tabs" class="mb-8">
             <nav class="flex flex-wrap border-b border-gray-200">

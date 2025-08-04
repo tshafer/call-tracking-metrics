@@ -12,10 +12,10 @@ $log_stats = $log_stats ?? ['total_days' => 0, 'total_entries' => 0, 'total_size
 <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 sm:p-6 p-4 mb-6">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
         <div class="flex items-center gap-3">
-            <svg class="w-7 h-7 text-blue-600 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-7 h-7 text-[#02bdf6] -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
             </svg>
-            <h2 class="text-2xl font-bold tracking-tight text-gray-900"><?php _e('Debug Center', 'call-tracking-metrics'); ?></h2>
+            <h2 class="text-2xl font-bold tracking-tight text-[#16294f] font-brand-heading"><?php _e('Debug Center', 'call-tracking-metrics'); ?></h2>
         </div>
 
         <div class="flex items-center gap-1">

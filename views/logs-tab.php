@@ -3,12 +3,12 @@
 ?>
 <div class="mb-12">
     <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mb-8">
-        <div class="flex items-center mb-6 border-b border-blue-100 pb-4">
-            <svg class="w-7 h-7 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 014-4h3m4 4v1a3 3 0 01-3 3H7a3 3 0 01-3-3v-1a9 9 0 0118 0z" /></svg>
-            <h2 class="text-2xl font-bold text-blue-800 tracking-tight"><?php _e('CF7 Logs', 'call-tracking-metrics'); ?></h2>
+        <div class="flex items-center mb-6 border-b border-[#02bdf6] pb-4">
+            <svg class="w-7 h-7 text-[#02bdf6] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 014-4h3m4 4v1a3 3 0 01-3 3H7a3 3 0 01-3-3v-1a9 9 0 0118 0z" /></svg>
+            <h2 class="text-2xl font-bold text-[#16294f] tracking-tight font-brand-heading"><?php _e('CF7 Logs', 'call-tracking-metrics'); ?></h2>
         </div>
         <div class="mb-6">
-            <button type="button" onclick="clearLogs('cf7')" class="bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 text-white font-bold px-6 py-2 rounded-lg shadow transition-transform transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed" id="clear-cf7-btn"><?php _e('Clear CF7 Logs', 'call-tracking-metrics'); ?></button>
+            <button type="button" onclick="clearLogs('cf7')" class="bg-gradient-to-r from-[#02bdf6] to-[#324a85] hover:from-[#324a85] hover:to-[#16294f] text-white font-bold px-6 py-2 rounded-lg shadow transition-transform transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed" id="clear-cf7-btn"><?php _e('Clear CF7 Logs', 'call-tracking-metrics'); ?></button>
         </div>
         <?php if (empty($cf7Logs)): ?>
             <div class="text-gray-500"><?php _e('No CF7 logs found.', 'call-tracking-metrics'); ?></div>
@@ -37,12 +37,12 @@
         <?php endif; ?>
     </div>
     <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mb-8">
-        <div class="flex items-center mb-6 border-b border-blue-100 pb-4">
-            <svg class="w-7 h-7 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v4a1 1 0 001 1h3m10-5v4a1 1 0 001 1h3m-7 4v4m0 0H7m5 0h5" /></svg>
-            <h2 class="text-2xl font-bold text-blue-800 tracking-tight"><?php _e('Gravity Forms Logs', 'call-tracking-metrics'); ?></h2>
+        <div class="flex items-center mb-6 border-b border-[#02bdf6] pb-4">
+            <svg class="w-7 h-7 text-[#02bdf6] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v4a1 1 0 001 1h3m10-5v4a1 1 0 001 1h3m-7 4v4m0 0H7m5 0h5" /></svg>
+            <h2 class="text-2xl font-bold text-[#16294f] tracking-tight font-brand-heading"><?php _e('Gravity Forms Logs', 'call-tracking-metrics'); ?></h2>
         </div>
         <div class="mb-6">
-            <button type="button" onclick="clearLogs('gf')" class="bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 text-white font-bold px-6 py-2 rounded-lg shadow transition-transform transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed" id="clear-gf-btn"><?php _e('Clear GF Logs', 'call-tracking-metrics'); ?></button>
+            <button type="button" onclick="clearLogs('gf')" class="bg-gradient-to-r from-[#02bdf6] to-[#324a85] hover:from-[#324a85] hover:to-[#16294f] text-white font-bold px-6 py-2 rounded-lg shadow transition-transform transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed" id="clear-gf-btn"><?php _e('Clear GF Logs', 'call-tracking-metrics'); ?></button>
         </div>
         <?php if (empty($gfLogs)): ?>
             <div class="text-gray-500"><?php _e('No Gravity Forms logs found.', 'call-tracking-metrics'); ?></div>

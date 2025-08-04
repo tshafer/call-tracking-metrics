@@ -14,15 +14,15 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
         
         <!-- Account Information Section -->
         <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
-            <div class="bg-gradient-to-r from-blue-50 to-green-50 px-6 py-4 border-b border-gray-200 rounded-t-lg flex items-center justify-between">
+            <div class="bg-gradient-to-r from-[#e6f7ff] to-[#e6f7ff] px-6 py-4 border-b border-[#02bdf6] rounded-t-lg flex items-center justify-between">
                 <div class="flex items-center">
-                    <div class="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
-                    <h2 class="text-lg font-semibold text-gray-800"><?php _e('Account Information', 'call-tracking-metrics'); ?></h2>
-                    <span class="ml-2 px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full"><?php _e('Active', 'call-tracking-metrics'); ?></span>
+                    <div class="w-3 h-3 bg-[#02bdf6] rounded-full mr-3"></div>
+                    <h2 class="text-lg font-semibold text-[#16294f] font-brand-heading"><?php _e('Account Information', 'call-tracking-metrics'); ?></h2>
+                    <span class="ml-2 px-3 py-1 bg-[#02bdf6] text-white text-xs font-medium rounded-full"><?php _e('Active', 'call-tracking-metrics'); ?></span>
                 </div>
                 <!-- Move buttons here -->
                 <div class="flex gap-2">
-                    <button id="ctm-change-api-btn" type="button" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded font-medium transition text-sm"><?php _e('Change API Keys', 'call-tracking-metrics'); ?></button>
+                    <button id="ctm-change-api-btn" type="button" class="bg-[#324a85] hover:bg-[#16294f] text-white px-3 py-1 rounded font-medium transition text-sm"><?php _e('Change API Keys', 'call-tracking-metrics'); ?></button>
                     <button id="ctm-disable-api-btn" type="button" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded font-medium transition text-sm"><?php _e('Disable API / Start Over', 'call-tracking-metrics'); ?></button>
                 </div>
             </div>
@@ -31,7 +31,7 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Account Details -->
                     <div class="space-y-4">
-                        <h3 class="text-md font-medium text-gray-700 border-b pb-2"><?php _e('Account Details', 'call-tracking-metrics'); ?></h3>
+                        <h3 class="text-md font-medium text-[#16294f] border-b border-[#02bdf6] pb-2 font-brand-heading"><?php _e('Account Details', 'call-tracking-metrics'); ?></h3>
                         <?php if (isset($accountInfo['account']) && is_array($accountInfo['account'])): ?>
                             <?php $account = $accountInfo['account']; ?>
                             <div class="space-y-3 text-sm">
@@ -87,7 +87,7 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
                     
                     <!-- API Information -->
                     <div class="space-y-4">
-                        <h3 class="text-md font-medium text-gray-700 border-b pb-2"><?php _e('API Information', 'call-tracking-metrics'); ?></h3>
+                        <h3 class="text-md font-medium text-[#16294f] border-b border-[#02bdf6] pb-2 font-brand-heading"><?php _e('API Information', 'call-tracking-metrics'); ?></h3>
                         <div class="space-y-3 text-sm">
                             <div class="flex justify-between">
                                 <span class="text-gray-600"><?php _e('API Key:', 'call-tracking-metrics'); ?></span>
