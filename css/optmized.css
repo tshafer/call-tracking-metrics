@@ -59,6 +59,7 @@
     --color-teal-200: oklch(91% 0.096 180.426);
     --color-teal-600: oklch(60% 0.118 184.704);
     --color-teal-700: oklch(51.1% 0.096 186.391);
+    --color-teal-800: oklch(43.7% 0.078 188.216);
     --color-cyan-50: oklch(98.4% 0.019 200.873);
     --color-blue-50: oklch(97% 0.014 254.604);
     --color-blue-100: oklch(93.2% 0.032 255.585);
@@ -1459,6 +1460,9 @@
   }
   .text-teal-700 {
     color: var(--color-teal-700);
+  }
+  .text-teal-800 {
+    color: var(--color-teal-800);
   }
   .text-violet-600 {
     color: var(--color-violet-600);
