@@ -68,7 +68,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
                                 </svg>
                             </div>
-                            <h3 class="text-xl font-semibold text-green-700"><?php _e('🔑 API Key Management', 'call-tracking-metrics'); ?></h3>
+                            <h3 class="text-xl font-semibold text-green-700"><?php _e('API Key Management', 'call-tracking-metrics'); ?></h3>
                         </div>
                         <ul class="list-disc pl-6 mb-4 space-y-2">
                             <li class="flex items-start">
@@ -112,7 +112,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
                             </div>
-                            <h3 class="text-xl font-semibold text-purple-700"><?php _e('🔗 Integration Details', 'call-tracking-metrics'); ?></h3>
+                            <h3 class="text-xl font-semibold text-purple-700"><?php _e('Integration Details', 'call-tracking-metrics'); ?></h3>
                         </div>
                         <p class="mb-4"><?php _e('This plugin integrates with Contact Form 7 and Gravity Forms to automatically submit form data to CallTrackingMetrics FormReactor.', 'call-tracking-metrics'); ?></p>
                         <ul class="list-disc pl-6 mb-4 space-y-2">
@@ -139,7 +139,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.08 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
                                 </svg>
                             </div>
-                            <h3 class="text-xl font-semibold text-red-700"><?php _e('🔧 Troubleshooting', 'call-tracking-metrics'); ?></h3>
+                            <h3 class="text-xl font-semibold text-red-700"><?php _e('Troubleshooting', 'call-tracking-metrics'); ?></h3>
                         </div>
                         <ul class="list-disc pl-6 mb-4 space-y-2">
                             <li class="flex items-start">
@@ -165,7 +165,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
                             </div>
-                            <h3 class="text-xl font-semibold text-teal-700"><?php _e('❓ FAQ', 'call-tracking-metrics'); ?></h3>
+                            <h3 class="text-xl font-semibold text-teal-700"><?php _e('FAQ', 'call-tracking-metrics'); ?></h3>
                         </div>
                         <div class="space-y-4">
                             <div>
@@ -195,7 +195,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 2.25a9.75 9.75 0 109.75 9.75A9.75 9.75 0 0012 2.25z"></path>
                                 </svg>
                             </div>
-                            <h3 class="text-xl font-semibold text-emerald-700"><?php _e('💬 Support', 'call-tracking-metrics'); ?></h3>
+                            <h3 class="text-xl font-semibold text-emerald-700"><?php _e('Support', 'call-tracking-metrics'); ?></h3>
                         </div>
                         <p class="mb-4"><?php _e('Need help with the CallTrackingMetrics WordPress plugin? Here are your support options:', 'call-tracking-metrics'); ?></p>
                         <ul class="list-disc pl-6 mb-4 space-y-2">
@@ -219,11 +219,37 @@
                 <!-- Debug subtabs -->
                 <div id="debug-subtabs" class="mb-6">
                     <nav class="flex flex-wrap border-b border-gray-200">
-                        <button class="debug-subtab px-4 py-2 -mb-px text-blue-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300" data-subtab="system-info"><?php _e('System Info', 'call-tracking-metrics'); ?></button>
-                        <button class="debug-subtab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300" data-subtab="health-check"><?php _e('Health Check', 'call-tracking-metrics'); ?></button>
-                        <button class="debug-subtab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300" data-subtab="performance-monitor"><?php _e('Performance', 'call-tracking-metrics'); ?></button>
-                        <button class="debug-subtab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300" data-subtab="log-settings"><?php _e('Log Settings', 'call-tracking-metrics'); ?></button>
-                        <button class="debug-subtab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300" data-subtab="daily-logs"><?php _e('Daily Logs', 'call-tracking-metrics'); ?></button>
+                        <button class="debug-subtab px-4 py-2 -mb-px text-blue-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300 flex items-center gap-2" data-subtab="system-info">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <?php _e('System Info', 'call-tracking-metrics'); ?>
+                        </button>
+                        <button class="debug-subtab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300 flex items-center gap-2" data-subtab="health-check">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                            </svg>
+                            <?php _e('Health Check', 'call-tracking-metrics'); ?>
+                        </button>
+                        <button class="debug-subtab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300 flex items-center gap-2" data-subtab="performance-monitor">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                            <?php _e('Performance', 'call-tracking-metrics'); ?>
+                        </button>
+                        <button class="debug-subtab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300 flex items-center gap-2" data-subtab="log-settings">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            <?php _e('Log Settings', 'call-tracking-metrics'); ?>
+                        </button>
+                        <button class="debug-subtab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300 flex items-center gap-2" data-subtab="daily-logs">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <?php _e('Daily Logs', 'call-tracking-metrics'); ?>
+                        </button>
                     </nav>
                 </div>
                 <div id="debug-subtab-content">

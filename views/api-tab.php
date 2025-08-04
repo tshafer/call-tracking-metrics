@@ -119,7 +119,7 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
                                         <input type="text" id="ctm_new_api_secret" name="ctm_new_api_secret" class="w-full border border-gray-300 rounded px-3 py-2" required autocomplete="off">
                                     </div>
                                     <div class="flex justify-end gap-2 mt-6">
-                                        <button type="button" id="ctm-cancel-change-api" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded"><?php _e('Cancel', 'call-tracking-metrics'); ?></button>
+                                        <button type="button" id="ctm-cancel-change-api" class="bg-gray-200 hover:bg-gray-300 !text-white px-4 py-2 rounded"><?php _e('Cancel', 'call-tracking-metrics'); ?></button>
                                         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"><?php _e('Save', 'call-tracking-metrics'); ?></button>
                                     </div>
                                 </form>
