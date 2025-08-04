@@ -45,6 +45,12 @@ function testApiConnection() {
         return false; // Prevent form submission
     }
 
+    // Validate minimum length
+    if (apiKey.length < 20 || apiSecret.length < 20) {
+        alert('API Key and Secret must be at least 20 characters long.');
+        return false; // Prevent form submission
+    }
+
     // Initialize test state
     const startTime = Date.now();
     let currentStep = 0;
@@ -125,12 +131,13 @@ function testApiConnection() {
                 saveBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
                 saveBtn.classList.add('bg-green-600', 'hover:bg-green-700');
                 
-                // Auto-refresh after successful connection
+                // Submit the form after successful test
                 setTimeout(() => {
-                    window.location.reload();
-                }, 3000);
-                
-                return true; // Allow form submission
+                    const form = document.querySelector('form');
+                    if (form) {
+                        form.submit();
+                    }
+                }, 2000);
                 
             } else {
                 // Step 5: Error
@@ -176,8 +183,6 @@ function testApiConnection() {
             return false; // Prevent form submission
         });
     }, 800); // Small delay to show initial progress
-    
-    return false; // Prevent form submission while testing
 }
 
 function updateProgress(step, total, message) {
@@ -518,14 +523,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault(); // Prevent default form submission
             
             // Run API test instead
-            const testResult = testApiConnection();
-            
-            // If test is successful, submit the form after a delay
-            if (testResult === true) {
-                setTimeout(() => {
-                    apiForm.submit();
-                }, 1000);
-            }
+            testApiConnection();
         });
     }
     
