@@ -4,7 +4,9 @@
 <div class="mb-12">
     <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mb-8">
         <div class="flex items-center mb-6 border-b border-[#02bdf6] pb-4">
-            <svg class="w-7 h-7 text-[#02bdf6] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zm0 10c-4.418 0-8-3.582-8-8s3.582-8 8-8 8 3.582 8 8-3.582 8-8 8z" /></svg>
+            <svg class="w-4 h-4 mr-2 text-[#02bdf6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+            </svg>
             <h2 class="text-2xl font-bold text-[#16294f] tracking-tight font-brand-heading"><?php _e('Documentation', 'call-tracking-metrics'); ?></h2>
         </div>
         <div id="main-doc-tabs" class="mb-8">
@@ -49,7 +51,11 @@
                             </li>
                             <li class="flex items-start">
                                 <span class="mr-2">⚙️</span>
-                                <?php _e('Go to <b>Settings &gt; CallTrackingMetrics</b> to configure.', 'call-tracking-metrics'); ?>
+                                <span class="whitespace-nowrap"></span>
+                                    <?php _e('Go to', 'call-tracking-metrics'); ?>
+                                    <b>Settings &gt; CallTrackingMetrics</b>
+                                    <?php _e('and enter your API credentials to connect.', 'call-tracking-metrics'); ?>
+                                </span>
                             </li>
                         </ol>
                     </div>
@@ -71,15 +77,29 @@
                             </li>
                             <li class="flex items-start">
                                 <span class="mr-2">🔧</span>
-                                <?php _e('Navigate to <b>Account Settings &gt; API Keys</b>.', 'call-tracking-metrics'); ?>
+                                <span class="whitespace-nowrap">
+                                    <?php _e('Navigate to', 'call-tracking-metrics'); ?>
+                                    <b>Account Settings &gt; API Keys</b>
+                                    .
+                                </span>
                             </li>
                             <li class="flex items-start">
                                 <span class="mr-2">📋</span>
-                                <?php _e('Copy your <b>API Key</b> and <b>API Secret</b> and enter them in the plugin settings.', 'call-tracking-metrics'); ?>
+                                <span class="whitespace-nowrap">
+                                    <?php _e('Copy your', 'call-tracking-metrics'); ?>
+                                    <b>API Key</b>
+                                    <?php _e('and', 'call-tracking-metrics'); ?>
+                                    <b>API Secret</b>
+                                    <?php _e('and enter them in the plugin settings.', 'call-tracking-metrics'); ?>
+                                </span>
                             </li>
                             <li class="flex items-start">
                                 <span class="mr-2">💾</span>
-                                <?php _e('Click <b>Save Settings</b> to connect.', 'call-tracking-metrics'); ?>
+                                <span class="whitespace-nowrap">
+                                    <?php _e('Click', 'call-tracking-metrics'); ?>
+                                    <b>Save Settings</b>
+                                    <?php _e('to connect.', 'call-tracking-metrics'); ?>
+                                </span>
                             </li>
                         </ul>
                     </div>

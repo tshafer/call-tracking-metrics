@@ -592,6 +592,9 @@
   .flex-shrink {
     flex-shrink: 1;
   }
+  .flex-shrink-0 {
+    flex-shrink: 0;
+  }
   .grow {
     flex-grow: 1;
   }
@@ -1334,6 +1337,9 @@
   }
   .break-all {
     word-break: break-all;
+  }
+  .whitespace-normal {
+    white-space: normal;
   }
   .whitespace-nowrap {
     white-space: nowrap;

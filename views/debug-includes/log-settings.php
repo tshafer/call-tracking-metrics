@@ -62,7 +62,7 @@ $notification_email = $notification_email ?? get_option('ctm_log_notification_em
         
         // Disable button and show loading state
         button.disabled = true;
-        button.textContent = <?php _e('Updating...', 'call-tracking-metrics'); ?>;
+        button.textContent = '<?php _e('Updating...', 'call-tracking-metrics'); ?>';
         
         // Get form data
         const formData = new FormData();
