@@ -24,11 +24,11 @@ class LoggingSystem
         }
 
         $log_entry = [
-            'timestamp' => current_time('mysql'),
+            'timestamp' => \current_time('mysql'),
             'type' => $type, // info, error, warning, debug, api, config, system
             'message' => $message,
             'context' => $context,
-            'user_id' => get_current_user_id(),
+            'user_id' => \get_current_user_id(),
             'ip_address' => $this->getUserIP(),
             'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown',
             'memory_usage' => memory_get_usage(true),
@@ -270,7 +270,7 @@ class LoggingSystem
     /**
      * Handle plugin activation - set up logging defaults
      */
-    public function onPluginActivation(): void
+    public static function onPluginActivation(): void
     {
         // Set default log settings if not already set
         if (\get_option('ctm_log_retention_days') === false) {
@@ -289,8 +289,11 @@ class LoggingSystem
             \update_option('ctm_log_notification_email', \get_option('admin_email'));
         }
         
-        $this->initializeLoggingSystem();
-        $this->logActivity('CTM Plugin activated', 'system', [
+        // Initialize logging system
+        self::initializeLoggingSystemStatic();
+        
+        // Log activation
+        self::logActivityStatic('CTM Plugin activated', 'system', [
             'wp_version' => get_bloginfo('version'),
             'php_version' => PHP_VERSION,
             'memory_limit' => ini_get('memory_limit')
@@ -300,13 +303,110 @@ class LoggingSystem
     /**
      * Handle plugin deactivation - clean up scheduled tasks
      */
-    public function onPluginDeactivation(): void
+    public static function onPluginDeactivation(): void
     {
         // Remove scheduled cleanup
         \wp_clear_scheduled_hook('ctm_daily_log_cleanup');
         
         // Log plugin deactivation
-        $this->logActivity('CTM Plugin deactivated', 'system');
+        self::logActivityStatic('CTM Plugin deactivated', 'system');
+    }
+
+    /**
+     * Static version of initializeLoggingSystem for activation hook
+     */
+    private static function initializeLoggingSystemStatic(): void
+    {
+        if (!\wp_next_scheduled('ctm_daily_log_cleanup')) {
+            \wp_schedule_event(time(), 'daily', 'ctm_daily_log_cleanup');
+        }
+    }
+
+    /**
+     * Static version of logActivity for activation hook
+     */
+    private static function logActivityStatic(string $message, string $type = 'info', array $context = []): void
+    {
+        // Check if debug mode is enabled
+        if (!(bool) \get_option('ctm_debug_enabled', false)) {
+            return; // Only log when debug mode is enabled
+        }
+
+        $log_entry = [
+            'timestamp' => \current_time('mysql'),
+            'type' => $type,
+            'message' => $message,
+            'context' => $context,
+            'user_id' => \get_current_user_id(),
+            'ip_address' => self::getUserIPStatic(),
+            'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown',
+            'memory_usage' => memory_get_usage(true),
+            'memory_peak' => memory_get_peak_usage(true)
+        ];
+
+        self::writeToLogStatic($log_entry);
+    }
+
+    /**
+     * Static version of writeToLog for activation hook
+     */
+    private static function writeToLogStatic(array $log_entry): void
+    {
+        $log_date = date('Y-m-d');
+        $daily_logs = \get_option("ctm_daily_log_{$log_date}", []);
+        
+        if (!is_array($daily_logs)) {
+            $daily_logs = [];
+        }
+        
+        $daily_logs[] = $log_entry;
+        
+        // Keep only last 1000 entries per day to prevent memory issues
+        if (count($daily_logs) > 1000) {
+            $daily_logs = array_slice($daily_logs, -1000);
+        }
+        
+        \update_option("ctm_daily_log_{$log_date}", $daily_logs);
+        
+        // Update log index
+        self::updateLogIndexStatic($log_date);
+    }
+
+    /**
+     * Static version of updateLogIndex for activation hook
+     */
+    private static function updateLogIndexStatic(string $log_date): void
+    {
+        $log_index = \get_option('ctm_log_index', []);
+        if (!is_array($log_index)) {
+            $log_index = [];
+        }
+        
+        if (!in_array($log_date, $log_index)) {
+            $log_index[] = $log_date;
+            // Keep index sorted
+            sort($log_index);
+            \update_option('ctm_log_index', $log_index);
+        }
+    }
+
+    /**
+     * Static version of getUserIP for activation hook
+     */
+    private static function getUserIPStatic(): string
+    {
+        $ip_keys = ['HTTP_CF_CONNECTING_IP', 'HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR'];
+        
+        foreach ($ip_keys as $key) {
+            if (!empty($_SERVER[$key])) {
+                $ip = $_SERVER[$key];
+                if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                    return $ip;
+                }
+            }
+        }
+        
+        return $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
     }
 
     /**
