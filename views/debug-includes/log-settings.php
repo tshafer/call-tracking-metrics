@@ -20,7 +20,7 @@ $notification_email = $notification_email ?? get_option('ctm_log_notification_em
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"></path>
                 </svg>
             </div>
-            <h3 class="text-xl font-semibold text-orange-700"><?php _e('⚙️ Log Settings', 'call-tracking-metrics'); ?></h3>
+            <h3 class="text-xl font-semibold text-orange-700"><?php _e('Log Settings', 'call-tracking-metrics'); ?></h3>
         </div>
         <p class="mb-4"><?php _e('Configure how debug logs are managed. Set retention periods, enable automatic cleanup, and receive email notifications for critical errors. Keeping logs well-managed helps maintain site performance and security.', 'call-tracking-metrics'); ?></p>
         <ul class="list-disc pl-6 mb-4 space-y-2">
@@ -77,7 +77,12 @@ $notification_email = $notification_email ?? get_option('ctm_log_notification_em
             </div>
 
             <div class="flex justify-center my-4">
-                <button type="button" onclick="updateLogSettings()" id="update-log-settings-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg shadow transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"><?php _e('Update Log Settings', 'call-tracking-metrics'); ?></button>
+                <button type="button" onclick="updateLogSettings()" id="update-log-settings-btn" class="bg-blue-600 hover:bg-blue-700 !text-white font-medium px-6 py-2 rounded-lg shadow transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    <?php _e('Update Settings', 'call-tracking-metrics'); ?>
+                </button>
             </div>
         
         </form>

@@ -51,9 +51,9 @@
                             </li>
                             <li class="flex items-start">
                                 <span class="mr-2">⚙️</span>
-                                <span class="whitespace-nowrap"></span>
-                                    <?php _e('Go to', 'call-tracking-metrics'); ?>
-                                    <b>Settings &gt; CallTrackingMetrics</b>
+                                <span class="whitespace-nowrap">
+                                    <?php _e('Go to', 'call-tracking-metrics'); ?> 
+                                     <b> Settings &gt; CallTrackingMetrics</b> 
                                     <?php _e('and enter your API credentials to connect.', 'call-tracking-metrics'); ?>
                                 </span>
                             </li>
@@ -73,7 +73,9 @@
                         <ul class="list-disc pl-6 mb-4 space-y-2">
                             <li class="flex items-start">
                                 <span class="mr-2">🌐</span>
-                                <?php _e('Log in to your <a href="https://app.calltrackingmetrics.com/accounts/edit#account-api" class="text-green-600 underline font-medium" target="_blank">CallTrackingMetrics account</a>.', 'call-tracking-metrics'); ?>
+                                <span class="whitespace-nowrap">
+                                    <?php _e('Log in to your', 'call-tracking-metrics'); ?> <a href="https://app.calltrackingmetrics.com/accounts/edit#account-api" class="text-green-600 underline font-medium" target="_blank"><?php _e('CallTrackingMetrics account', 'call-tracking-metrics'); ?></a>.
+                                </span>
                             </li>
                             <li class="flex items-start">
                                 <span class="mr-2">🔧</span>

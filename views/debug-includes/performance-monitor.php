@@ -14,10 +14,17 @@
             <h3 class="text-2xl font-extrabold text-gray-900"><?php _e('Performance Monitor', 'call-tracking-metrics'); ?></h3>
         </div>
         <div class="flex justify-center my-4 gap-2">
-            <button onclick="toggleAutoRefresh()" id="auto-refresh-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-4 py-2 rounded-xl transition text-sm"><?php _e('Auto-refresh: OFF', 'call-tracking-metrics'); ?></button>
-            <button onclick="refreshPerformance()" id="refresh-performance-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-medium px-6 py-2 rounded-xl flex items-center gap-2 transition text-sm">
-                <span class="text-lg">&rarr;</span>
-                <span><?php _e('Refresh', 'call-tracking-metrics'); ?></span>
+            <button onclick="toggleAutoRefresh()" id="auto-refresh-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-4 py-2 rounded-xl transition text-sm flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                <?php _e('Auto-refresh: OFF', 'call-tracking-metrics'); ?>
+            </button>
+            <button onclick="refreshPerformance()" id="refresh-performance-btn" class="bg-gray-600 hover:bg-gray-700 !text-white font-medium px-6 py-2 rounded-xl flex items-center gap-2 transition text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                <?php _e('Refresh', 'call-tracking-metrics'); ?>
             </button>
         </div>
     </div>

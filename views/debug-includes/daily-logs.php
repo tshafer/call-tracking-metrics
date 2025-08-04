@@ -17,7 +17,7 @@ $available_dates = $available_dates ?? [];
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
             </div>
-            <h3 class="text-xl font-semibold text-teal-700"><?php _e('📋 Daily Logs', 'call-tracking-metrics'); ?></h3>
+            <h3 class="text-xl font-semibold text-teal-700"><?php _e('Daily Logs', 'call-tracking-metrics'); ?></h3>
         </div>
         <p class="mb-4"><?php _e('View, filter, and manage daily debug logs. Each day\'s log shows all plugin activity, errors, warnings, and more. You can email logs, clear them, or view detailed context for each entry.', 'call-tracking-metrics'); ?></p>
         <ul class="list-disc pl-6 mb-4 space-y-2">
@@ -181,8 +181,18 @@ $available_dates = $available_dates ?? [];
             <label for="email-log-to" class="block text-sm font-medium text-gray-700 mb-1"><?php _e('Send to', 'call-tracking-metrics'); ?></label>
             <input type="email" id="email-log-to" name="to" class="w-full border border-gray-300 rounded px-3 py-2 mb-4" required>
             <div class="flex justify-end space-x-2">
-                <button type="button" onclick="hideEmailForm()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded"><?php _e('Cancel', 'call-tracking-metrics'); ?></button>
-                <button type="submit" id="email-log-send-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"><?php _e('Send', 'call-tracking-metrics'); ?></button>
+                <button type="button" onclick="hideEmailForm()" class="bg-gray-600 hover:bg-gray-700 !text-white px-4 py-2 rounded flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    <?php _e('Cancel', 'call-tracking-metrics'); ?>
+                </button>
+                <button type="submit" id="email-log-send-btn" class="bg-blue-600 hover:bg-blue-700 !text-white px-4 py-2 rounded flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                    <?php _e('Send', 'call-tracking-metrics'); ?>
+                </button>
             </div>
         </form>
     </div>

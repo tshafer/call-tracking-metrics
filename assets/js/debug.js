@@ -17,7 +17,7 @@ function ctmShowToast(message, type = 'info') {
 
   // Create toast element
   const toast = document.createElement('div');
-  toast.className = `${bg} text-white px-4 py-2 rounded shadow mb-2 transition-opacity duration-500`;
+  toast.className = `${bg} !text-white px-4 py-2 rounded shadow mb-2 transition-opacity duration-500`;
   toast.style.opacity = 1;
   toast.textContent = message;
 

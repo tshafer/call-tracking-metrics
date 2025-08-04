@@ -14,8 +14,11 @@
             <h3 class="text-2xl font-extrabold text-gray-900"><?php _e('Plugin Health Check', 'call-tracking-metrics'); ?></h3>
         </div>
         <div class="flex justify-center my-4">
-            <button onclick="exportHealthReport()" class="bg-gray-600 hover:bg-gray-700 text-white font-medium px-6 py-2 rounded-xl flex items-center gap-2 justify-center transition" type="button">
-                <span><?php _e('Export Report', 'call-tracking-metrics'); ?></span>
+            <button onclick="exportHealthReport()" class="bg-gray-600 hover:bg-gray-700 !text-white font-medium px-6 py-2 rounded-xl flex items-center gap-2 justify-center transition" type="button">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <?php _e('Export Health Report', 'call-tracking-metrics'); ?>
             </button>
         </div>
     </div>
@@ -140,11 +143,11 @@
 
         <!-- Action Buttons -->
         <div class="flex gap-3 pt-4 border-t border-gray-200">
-            <button onclick="runHealthCheck()" id="health-check-btn" class="bg-green-600 hover:bg-green-700 text-white font-medium px-6 py-2 rounded-lg transition duration-200 flex items-center">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            <button onclick="runHealthCheck()" id="health-check-btn" class="bg-green-600 hover:bg-green-700 !text-white font-medium px-6 py-2 rounded-lg transition duration-200 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
                 </svg>
-                <span><?php _e('Run Health Check', 'call-tracking-metrics'); ?></span>
+                <?php _e('Run Health Check', 'call-tracking-metrics'); ?>
             </button>
         </div>
 

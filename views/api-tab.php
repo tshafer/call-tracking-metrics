@@ -18,18 +18,18 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
                 <div class="flex items-center">
                     <div class="w-3 h-3 bg-[#02bdf6] rounded-full mr-3"></div>
                     <h2 class="text-lg font-semibold text-[#16294f] font-brand-heading"><?php _e('Account Information', 'call-tracking-metrics'); ?></h2>
-                    <span class="ml-2 px-3 py-1 bg-[#02bdf6] text-white text-xs font-medium rounded-full"><?php _e('Active', 'call-tracking-metrics'); ?></span>
+                    <span class="ml-2 px-3 py-1 bg-[#02bdf6] !text-white text-xs font-medium rounded-full"><?php _e('Active', 'call-tracking-metrics'); ?></span>
                 </div>
                 <!-- Move buttons here -->
                 <div class="flex gap-2">
-                    <button id="ctm-change-api-btn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-medium transition text-sm flex items-center gap-2">
+                    <button id="ctm-change-api-btn" type="button" class="bg-blue-600 hover:bg-blue-700 !text-white px-4 py-2 rounded font-medium transition text-sm flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                         </svg>
                         <?php _e('Change API Keys', 'call-tracking-metrics'); ?>
                     </button>
-                    <button id="ctm-disable-api-btn" type="button" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-medium transition text-sm flex items-center gap-2">
+                    <button id="ctm-disable-api-btn" type="button" class="bg-red-600 hover:bg-red-700 !text-white px-4 py-2 rounded font-medium transition text-sm flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"/>
                         </svg>
@@ -136,7 +136,7 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
                                             </svg>
                                             <?php _e('Cancel', 'call-tracking-metrics'); ?>
                                         </button>
-                                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center gap-2">
+                                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 !text-white px-4 py-2 rounded flex items-center gap-2">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                             </svg>
@@ -159,7 +159,7 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
                                         </svg>
                                         <?php _e('Cancel', 'call-tracking-metrics'); ?>
                                     </button>
-                                    <button type="button" id="ctm-confirm-disable-api" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded flex items-center gap-2">
+                                    <button type="button" id="ctm-confirm-disable-api" class="bg-red-600 hover:bg-red-700 !text-white px-4 py-2 rounded flex items-center gap-2">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                         </svg>
@@ -192,19 +192,19 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
             
             <div class="p-6">
                 <div class="flex items-center space-x-4 mb-4">
-                    <button id="ctm-test-api-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2">
+                    <button id="ctm-test-api-btn" class="bg-blue-600 hover:bg-blue-700 !text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                         <?php _e('Test API Connection', 'call-tracking-metrics'); ?>
                     </button>
-                    <button id="ctm-toggle-auto-test" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2">
+                    <button id="ctm-toggle-auto-test" class="bg-green-600 hover:bg-green-700 !text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                         <?php _e('Auto-Test: OFF', 'call-tracking-metrics'); ?>
                     </button>
-                    <button id="ctm-clear-logs-btn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2">
+                    <button id="ctm-clear-logs-btn" class="bg-gray-500 hover:bg-gray-600 !text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                         </svg>
@@ -294,7 +294,7 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
                 <p class="text-gray-600 mb-4">
                     <?php _e('You need to configure your API credentials to view account information and API activity.', 'call-tracking-metrics'); ?>
                 </p>
-                <a href="?page=call-tracking-metrics&tab=general" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200">
+                <a href="?page=call-tracking-metrics&tab=general" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 !text-white rounded-lg font-medium transition-colors duration-200">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>

@@ -113,7 +113,7 @@ $system_info_report = ctm_get_system_info_report();
             <h3 class="text-2xl font-extrabold text-gray-900"><?php _e('System Information Panel', 'call-tracking-metrics'); ?></h3>
         </div>
         <div class="flex justify-center my-4">
-            <button id="ctm-export-system-info" class="bg-gray-600 hover:bg-gray-700 text-white font-medium px-6 py-2 rounded-xl transition flex items-center gap-2 whitespace-nowrap" type="button">
+            <button id="ctm-export-system-info" class="bg-gray-600 hover:bg-gray-700 !text-white font-medium px-6 py-2 rounded-xl transition flex items-center gap-2 whitespace-nowrap" type="button">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>
@@ -356,23 +356,23 @@ $system_info_report = ctm_get_system_info_report();
 
     <!-- Action Buttons -->
     <div class="mt-6 flex flex-wrap gap-3">
-        <button onclick="copySystemInfo()" id="copy-system-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition duration-200 flex items-center">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+        <button onclick="copySystemInfo()" id="copy-system-btn" class="bg-blue-600 hover:bg-blue-700 !text-white font-medium px-4 py-2 rounded-lg transition duration-200 flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
             </svg>
             <?php _e('Copy to Clipboard', 'call-tracking-metrics'); ?>
         </button>
-        <button onclick="emailSystemInfo()" class="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-lg transition duration-200 flex items-center">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+        <button onclick="emailSystemInfo()" class="bg-green-600 hover:bg-green-700 !text-white font-medium px-4 py-2 rounded-lg transition duration-200 flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
             </svg>
-            <?php _e('Email Report', 'call-tracking-metrics'); ?>
+            <?php _e('Email System Info', 'call-tracking-metrics'); ?>
         </button>
-        <button onclick="refreshSystemInfo()" id="refresh-system-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-medium px-4 py-2 rounded-lg transition duration-200 flex items-center">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        <button onclick="refreshSystemInfo()" id="refresh-system-btn" class="bg-gray-600 hover:bg-gray-700 !text-white font-medium px-4 py-2 rounded-lg transition duration-200 flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
             </svg>
-            <?php _e('Refresh Data', 'call-tracking-metrics'); ?>
+            <?php _e('Refresh System Info', 'call-tracking-metrics'); ?>
         </button>
     </div>
 </div>
@@ -721,7 +721,7 @@ function showDebugMessage(message, type = 'info') {
 
   // Create toast element
   const toast = document.createElement('div');
-  toast.className = `${bg} text-white px-4 py-2 rounded shadow mb-2 transition-opacity duration-500`;
+  toast.className = `${bg} !text-white px-4 py-2 rounded shadow mb-2 transition-opacity duration-500`;
   toast.style.opacity = 1;
   toast.textContent = message;
 
