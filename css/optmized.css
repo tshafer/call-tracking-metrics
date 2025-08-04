@@ -831,6 +831,9 @@
   .border-yellow-500 {
     border-color: var(--color-yellow-500);
   }
+  .bg-\[\#02bdf6\] {
+    background-color: #02bdf6;
+  }
   .bg-\[\#e6f7ff\] {
     background-color: #e6f7ff;
   }

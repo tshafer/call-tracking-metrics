@@ -240,24 +240,7 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
                 </div>
             </div>
         </div>
-        
-        <!-- Documentation & Support Links -->
-        <div class="bg-white border border-blue-200 rounded-lg shadow-sm mt-8">
-            <div class="bg-blue-50 px-6 py-4 border-b border-blue-200 rounded-t-lg flex items-center">
-                <svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 14h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8s-9-3.582-9-8 4.03-8 9-8 9 3.582 9 8z"/></svg>
-                <h2 class="text-lg font-semibold text-blue-800"><?php _e('CallTrackingMetrics Documentation & Support', 'call-tracking-metrics'); ?></h2>
-            </div>
-            <div class="p-6 space-y-3 text-sm">
-                <ul class="list-disc list-inside space-y-2">
-                    <li><a href="https://calltrackingmetrics.zendesk.com/hc/en-us" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline hover:text-blue-900"><?php _e('CTM Help Center', 'call-tracking-metrics'); ?></a></li>
-                    <li><a href="https://calltrackingmetrics.zendesk.com/hc/en-us/categories/200216006-API-Developers" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline hover:text-blue-900"><?php _e('API Documentation', 'call-tracking-metrics'); ?></a></li>
-                    <li><a href="https://calltrackingmetrics.zendesk.com/hc/en-us/articles/360050247232-Getting-Started-with-CallTrackingMetrics" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline hover:text-blue-900"><?php _e('Getting Started Guide', 'call-tracking-metrics'); ?></a></li>
-                    <li><a href="https://calltrackingmetrics.zendesk.com/hc/en-us/sections/200216016-Troubleshooting" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline hover:text-blue-900"><?php _e('Troubleshooting', 'call-tracking-metrics'); ?></a></li>
-                    <li><a href="https://calltrackingmetrics.zendesk.com/hc/en-us/requests/new" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline hover:text-blue-900"><?php _e('Contact Support', 'call-tracking-metrics'); ?></a></li>
-                </ul>
-                <p class="text-xs text-gray-500 mt-2"><?php _e('For more guides, best practices, and API reference, visit the', 'call-tracking-metrics'); ?> <a href="https://calltrackingmetrics.zendesk.com/hc/en-us" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline"><?php _e('CallTrackingMetrics Help Center', 'call-tracking-metrics'); ?></a>.</p>
-            </div>
-        </div>
+
         
     <?php else: ?>
         <!-- Not Connected State -->
