@@ -94,4 +94,88 @@
     <div class="bg-gray-50 p-6 rounded-b-lg">
         <?= $tab_content ?>
     </div>
+</div>
+
+<!-- Support Footer -->
+<div class="mt-8 bg-white border border-gray-200 rounded-lg shadow-sm">
+    <div class="bg-blue-50 px-6 py-4 border-b border-blue-200 rounded-t-lg">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+                <h3 class="text-lg font-semibold text-blue-800"><?php _e('Need Help?', 'call-tracking-metrics'); ?></h3>
+            </div>
+            <div class="text-sm text-blue-600">
+                <span class="font-medium"><?php _e('Plugin Version:', 'call-tracking-metrics'); ?></span> 2.0.0
+            </div>
+        </div>
+    </div>
+    
+    <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Documentation -->
+            <div class="space-y-3">
+                <h4 class="font-semibold text-gray-800 flex items-center">
+                    <svg class="w-4 h-4 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
+                    <?php _e('Documentation', 'call-tracking-metrics'); ?>
+                </h4>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="https://calltrackingmetrics.zendesk.com/hc/en-us/articles/360050247232-Getting-Started-with-CallTrackingMetrics" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline"><?php _e('Getting Started Guide', 'call-tracking-metrics'); ?></a></li>
+                    <li><a href="https://calltrackingmetrics.zendesk.com/hc/en-us/categories/200216006-API-Developers" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline"><?php _e('API Documentation', 'call-tracking-metrics'); ?></a></li>
+                    <li><a href="https://calltrackingmetrics.zendesk.com/hc/en-us/sections/200216016-Troubleshooting" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline"><?php _e('Troubleshooting Guide', 'call-tracking-metrics'); ?></a></li>
+                </ul>
+            </div>
+            
+            <!-- Support -->
+            <div class="space-y-3">
+                <h4 class="font-semibold text-gray-800 flex items-center">
+                    <svg class="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                    <?php _e('Support', 'call-tracking-metrics'); ?>
+                </h4>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="https://calltrackingmetrics.zendesk.com/hc/en-us" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline"><?php _e('Help Center', 'call-tracking-metrics'); ?></a></li>
+                    <li><a href="https://calltrackingmetrics.zendesk.com/hc/en-us/requests/new" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline"><?php _e('Contact Support', 'call-tracking-metrics'); ?></a></li>
+                    <li><a href="mailto:support@calltrackingmetrics.com" class="text-blue-600 hover:text-blue-800 underline"><?php _e('Email Support', 'call-tracking-metrics'); ?></a></li>
+                </ul>
+            </div>
+            
+            <!-- Resources -->
+            <div class="space-y-3">
+                <h4 class="font-semibold text-gray-800 flex items-center">
+                    <svg class="w-4 h-4 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                    </svg>
+                    <?php _e('Resources', 'call-tracking-metrics'); ?>
+                </h4>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="https://www.calltrackingmetrics.com/" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline"><?php _e('CallTrackingMetrics Website', 'call-tracking-metrics'); ?></a></li>
+                    <li><a href="https://calltrackingmetrics.zendesk.com/hc/en-us/articles/360050247232-Getting-Started-with-CallTrackingMetrics" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline"><?php _e('Best Practices', 'call-tracking-metrics'); ?></a></li>
+                    <li><a href="?page=call-tracking-metrics&tab=documentation" class="text-blue-600 hover:text-blue-800 underline"><?php _e('Plugin Documentation', 'call-tracking-metrics'); ?></a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Quick Help Section -->
+        <div class="mt-6 pt-6 border-t border-gray-200">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm text-gray-600"><?php _e('Quick Help:', 'call-tracking-metrics'); ?></span>
+                    <a href="?page=call-tracking-metrics&tab=debug" class="text-sm text-blue-600 hover:text-blue-800 underline"><?php _e('Debug Tools', 'call-tracking-metrics'); ?></a>
+                    <span class="text-gray-400">|</span>
+                    <a href="?page=call-tracking-metrics&tab=api" class="text-sm text-blue-600 hover:text-blue-800 underline"><?php _e('API Activity', 'call-tracking-metrics'); ?></a>
+                    <span class="text-gray-400">|</span>
+                    <a href="?page=call-tracking-metrics&tab=logs" class="text-sm text-blue-600 hover:text-blue-800 underline"><?php _e('View Logs', 'call-tracking-metrics'); ?></a>
+                </div>
+                <div class="text-xs text-gray-500">
+                    <?php _e('WordPress', 'call-tracking-metrics'); ?> <?= get_bloginfo('version') ?> | 
+                    <?php _e('PHP', 'call-tracking-metrics'); ?> <?= PHP_VERSION ?>
+                </div>
+            </div>
+        </div>
+    </div>
 </div> 

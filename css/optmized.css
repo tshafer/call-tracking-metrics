@@ -1192,6 +1192,9 @@
   .text-orange-700 {
     color: var(--color-orange-700);
   }
+  .text-purple-500 {
+    color: var(--color-purple-500);
+  }
   .text-purple-600 {
     color: var(--color-purple-600);
   }

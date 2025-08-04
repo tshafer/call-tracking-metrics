@@ -24,12 +24,11 @@ function dismissNotice(type) {
     });
 }
 
+
 function testApiConnection() {
     const apiKey = document.getElementById('ctm_api_key').value;
     const apiSecret = document.getElementById('ctm_api_secret').value;
-    const testBtn = document.getElementById('test-api-btn');
-    const testBtnText = document.getElementById('test-btn-text');
-    const testBtnSpinner = document.getElementById('test-btn-spinner');
+    const saveBtn = document.getElementById('save-api-btn');
     const apiTestLogs = document.getElementById('api-test-logs');
     const apiLogContent = document.getElementById('api-log-content');
     const testDuration = document.getElementById('test-duration');
@@ -43,7 +42,7 @@ function testApiConnection() {
 
     if (!apiKey || !apiSecret) {
         alert('Please enter both API Key and API Secret.');
-        return;
+        return false; // Prevent form submission
     }
 
     // Initialize test state
@@ -51,9 +50,8 @@ function testApiConnection() {
     let currentStep = 0;
     const totalSteps = 5;
     
-    testBtn.disabled = true;
-    testBtnText.classList.add('hidden');
-    testBtnSpinner.classList.remove('hidden');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Testing Connection...';
     apiTestLogs.classList.remove('hidden');
     apiLogContent.innerHTML = '';
     testDuration.classList.add('hidden');
@@ -100,10 +98,6 @@ function testApiConnection() {
             testDuration.textContent = `${totalTime}ms`;
             testDuration.classList.remove('hidden');
             
-            testBtn.disabled = false;
-            testBtnText.classList.remove('hidden');
-            testBtnSpinner.classList.add('hidden');
-
             if (data.success) {
                 // Step 5: Success
                 updateProgress(++currentStep, totalSteps, 'Connection successful!');
@@ -126,20 +120,21 @@ function testApiConnection() {
                 
                 appendLog('success', 'All tests completed successfully!');
                 
-                // Auto-refresh countdown
-                let countdown = 3;
-                const countdownInterval = setInterval(() => {
-                    appendLog('info', `Refreshing page in ${countdown} seconds...`);
-                    countdown--;
-                    if (countdown < 0) {
-                        clearInterval(countdownInterval);
-                        window.location.reload();
-                    }
-                }, 1000);
+                // Update button and allow form submission
+                saveBtn.textContent = 'API Credentials Saved Successfully!';
+                saveBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                saveBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                
+                // Auto-refresh after successful connection
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
+                
+                return true; // Allow form submission
+                
             } else {
-                updateProgress(totalSteps, totalSteps, 'Connection failed');
-                progressBar.classList.remove('bg-blue-600');
-                progressBar.classList.add('bg-red-600');
+                // Step 5: Error
+                updateProgress(++currentStep, totalSteps, 'Connection failed!');
                 
                 appendLog('error', '✗ Failed to connect to CTM API: ' + data.message);
                 appendLog('error', `Total test duration: ${totalTime}ms`);
@@ -153,6 +148,12 @@ function testApiConnection() {
                 displayTechnicalDetails(data);
                 
                 appendLog('warning', 'Please check your API credentials and try again.');
+                
+                // Reset button
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save API Credentials';
+                
+                return false; // Prevent form submission
             }
         })
         .catch(error => {
@@ -164,15 +165,19 @@ function testApiConnection() {
             progressBar.classList.remove('bg-blue-600');
             progressBar.classList.add('bg-red-600');
             
-            testBtn.disabled = false;
-            testBtnText.classList.remove('hidden');
-            testBtnSpinner.classList.add('hidden');
-            
             appendLog('error', '✗ Network Error: ' + error.message);
             appendLog('error', `Total test duration: ${totalTime}ms`);
             appendLog('warning', 'Please check your internet connection and try again.');
+            
+            // Reset button
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save API Credentials';
+            
+            return false; // Prevent form submission
         });
     }, 800); // Small delay to show initial progress
+    
+    return false; // Prevent form submission while testing
 }
 
 function updateProgress(step, total, message) {
@@ -504,6 +509,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Form submission handler for API credentials
+    const apiForm = document.querySelector('form');
+    const saveBtn = document.getElementById('save-api-btn');
+    
+    if (apiForm && saveBtn) {
+        apiForm.addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevent default form submission
+            
+            // Run API test instead
+            const testResult = testApiConnection();
+            
+            // If test is successful, submit the form after a delay
+            if (testResult === true) {
+                setTimeout(() => {
+                    apiForm.submit();
+                }, 1000);
+            }
+        });
+    }
+    
     // Countdown timer for API test
     let countdownSeconds = 600; // 10 minutes
     const countdownDisplay = document.getElementById('api-test-countdown');
@@ -514,15 +539,5 @@ document.addEventListener('DOMContentLoaded', function() {
             countdownDisplay.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
         }
     }
-    setInterval(() => {
-        countdownSeconds--;
-        if (countdownSeconds <= 0) {
-            if (typeof testApiConnection === 'function') {
-                testApiConnection();
-            }
-            countdownSeconds = 600;
-        }
-        updateCountdownDisplay();
-    }, 1000);
     updateCountdownDisplay();
 }); 

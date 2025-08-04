@@ -19,6 +19,7 @@ class ApiAjax {
         add_action('wp_ajax_ctm_disable_api', [$this, 'ajaxDisableApi']);
     }
 
+
     public function ajaxTestApiConnection(): void
     {
         $start_time = microtime(true);
