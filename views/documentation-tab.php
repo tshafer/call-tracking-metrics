@@ -9,7 +9,7 @@
         </div>
         <div id="main-doc-tabs" class="mb-8">
             <nav class="flex flex-wrap border-b border-gray-200">
-                <button class="main-doc-tab px-4 py-2 -mb-px text-white border-b-2 border-blue-600 font-semibold focus:outline-none" data-tab="general"><?php _e('General', 'call-tracking-metrics'); ?></button>
+                <button class="main-doc-tab px-4 py-2 -mb-px text-gray-700 border-b-2 border-blue-600 font-semibold focus:outline-none" data-tab="general"><?php _e('General', 'call-tracking-metrics'); ?></button>
                 <button class="main-doc-tab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300" data-tab="debug"><?php _e('Debug', 'call-tracking-metrics'); ?></button>
                 <button class="main-doc-tab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300" data-tab="api"><?php _e('API', 'call-tracking-metrics'); ?></button>
                 <button class="main-doc-tab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300" data-tab="cti"><?php _e('CTI', 'call-tracking-metrics'); ?></button>
@@ -93,7 +93,7 @@
                 <!-- Debug subtabs -->
                 <div id="debug-subtabs" class="mb-6">
                     <nav class="flex flex-wrap border-b border-gray-200">
-                        <button class="debug-subtab px-4 py-2 -mb-px text-white border-b-2 border-blue-600 font-semibold focus:outline-none" data-subtab="system-info"><?php _e('System Information', 'call-tracking-metrics'); ?></button>
+                        <button class="debug-subtab px-4 py-2 -mb-px text-gray-700 border-b-2 border-blue-600 font-semibold focus:outline-none" data-subtab="system-info"><?php _e('System Information', 'call-tracking-metrics'); ?></button>
                         <button class="debug-subtab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300" data-subtab="health-check"><?php _e('Health Check', 'call-tracking-metrics'); ?></button>
                         <button class="debug-subtab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300" data-subtab="performance-monitor"><?php _e('Performance Monitor', 'call-tracking-metrics'); ?></button>
                         <button class="debug-subtab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300" data-subtab="log-settings"><?php _e('Log Settings', 'call-tracking-metrics'); ?></button>
