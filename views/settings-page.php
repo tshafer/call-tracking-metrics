@@ -139,33 +139,33 @@ try {
 </div>
 
 <!-- Support Footer -->
-<div class="mt-8 rounded-lg shadow-sm border border-gray-200 overflow-hidden bg-gradient-to-br from-[#e6f7ff] via-white to-white max-w-full mx-auto wrap">
-    <div class="flex flex-col md:flex-row items-center justify-between gap-4 px-8 py-6 bg-[#e6f7ff] border-b border-[#02bdf6]">
-        <div class="flex items-center gap-3">
-            <span class="inline-flex items-center justify-center rounded-full bg-white border border-[#02bdf6] w-10 h-10 mr-2">
-                <svg class="w-6 h-6 text-[#02bdf6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<div class="mt-6 rounded-lg shadow-sm border border-gray-200 overflow-hidden bg-gradient-to-br from-[#e6f7ff] via-white to-white max-w-full mx-auto wrap">
+    <div class="flex flex-col md:flex-row items-center justify-between gap-3 px-6 py-4 bg-[#e6f7ff] border-b border-[#02bdf6]">
+        <div class="flex items-center gap-2">
+            <span class="inline-flex items-center justify-center rounded-full bg-white border border-[#02bdf6] w-8 h-8 mr-2">
+                <svg class="w-5 h-5 text-[#02bdf6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path>
                 </svg>
             </span>
-            <h3 class="text-xl font-bold text-[#16294f] font-brand-heading tracking-tight"><?php _e('Need Help?', 'call-tracking-metrics'); ?></h3>
+            <h3 class="text-lg font-bold text-[#16294f] font-brand-heading tracking-tight"><?php _e('Need Help?', 'call-tracking-metrics'); ?></h3>
         </div>
         <div class="text-sm text-[#02bdf6] font-semibold tracking-wide">
             <?php _e('Plugin Version:', 'call-tracking-metrics'); ?> <span class="ml-1 bg-white px-2 py-0.5 rounded text-[#16294f] border border-[#02bdf6]">2.0.0</span>
         </div>
     </div>
-    <div class="px-8 py-8 bg-white">
-        <div class="flex flex-col md:flex-row gap-8 justify-center">
+    <div class="px-6 py-4 bg-white">
+        <div class="flex flex-col md:flex-row gap-6 justify-center">
             <!-- Support -->
-            <div class="flex-1 min-w-[220px]">
-                <div class="flex items-center mb-3">
-                    <span class="inline-flex items-center justify-center rounded-full bg-[#e6f7ff] border border-[#02bdf6] w-8 h-8 mr-2">
-                        <svg class="w-4 h-4 text-[#02bdf6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex-1 min-w-[200px]">
+                <div class="flex items-center mb-2">
+                    <span class="inline-flex items-center justify-center rounded-full bg-[#e6f7ff] border border-[#02bdf6] w-6 h-6 mr-2">
+                        <svg class="w-3 h-3 text-[#02bdf6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                         </svg>
                     </span>
-                    <h4 class="font-semibold text-[#16294f] font-brand-heading text-base"><?php _e('Support', 'call-tracking-metrics'); ?></h4>
+                    <h4 class="font-semibold text-[#16294f] font-brand-heading text-sm"><?php _e('Support', 'call-tracking-metrics'); ?></h4>
                 </div>
-                <ul class="space-y-1 text-sm pl-2">
+                <ul class="space-y-0.5 text-xs pl-2">
                     <li>
                         <a href="https://calltrackingmetrics.zendesk.com/hc/en-us" target="_blank" rel="noopener noreferrer" class="text-[#02bdf6] hover:text-[#324a85] underline transition">
                             <?php _e('Help Center', 'call-tracking-metrics'); ?>
@@ -184,16 +184,16 @@ try {
                 </ul>
             </div>
             <!-- Resources -->
-            <div class="flex-1 min-w-[220px]">
-                <div class="flex items-center mb-3">
-                    <span class="inline-flex items-center justify-center rounded-full bg-[#e6f7ff] border border-[#02bdf6] w-8 h-8 mr-2">
-                        <svg class="w-4 h-4 text-[#02bdf6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex-1 min-w-[200px]">
+                <div class="flex items-center mb-2">
+                    <span class="inline-flex items-center justify-center rounded-full bg-[#e6f7ff] border border-[#02bdf6] w-6 h-6 mr-2">
+                        <svg class="w-3 h-3 text-[#02bdf6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                         </svg>
                     </span>
-                    <h4 class="font-semibold text-[#16294f] font-brand-heading text-base"><?php _e('Resources', 'call-tracking-metrics'); ?></h4>
+                    <h4 class="font-semibold text-[#16294f] font-brand-heading text-sm"><?php _e('Resources', 'call-tracking-metrics'); ?></h4>
                 </div>
-                <ul class="space-y-1 text-sm pl-2">
+                <ul class="space-y-0.5 text-xs pl-2">
                     <li>
                         <a href="https://www.calltrackingmetrics.com/" target="_blank" rel="noopener noreferrer" class="text-[#02bdf6] hover:text-[#324a85] underline transition">
                             <?php _e('CallTrackingMetrics Website', 'call-tracking-metrics'); ?>
@@ -210,31 +210,31 @@ try {
         
         <?php if ($apiStatus === 'connected'): ?>
         <!-- Quick Help Section -->
-                       <div class="mt-6 pt-6 border-t border-gray-200">
-                   <div class="flex items-center justify-between">
-                       <div class="flex items-center space-x-4">
-                           <span class="text-sm text-gray-600"><?php _e('Quick Help:', 'call-tracking-metrics'); ?></span>
-                           <a href="?page=call-tracking-metrics&tab=debug" class="text-sm text-[#02bdf6] hover:text-[#324a85] underline"><?php _e('Debug Tools', 'call-tracking-metrics'); ?></a>
-                           <span class="text-gray-400">|</span>
-                           <a href="?page=call-tracking-metrics&tab=api" class="text-sm text-[#02bdf6] hover:text-[#324a85] underline"><?php _e('API Information', 'call-tracking-metrics'); ?></a>
-                           <span class="text-gray-400">|</span>
-                           <a href="?page=call-tracking-metrics&tab=logs" class="text-sm text-[#02bdf6] hover:text-[#324a85] underline"><?php _e('View Logs', 'call-tracking-metrics'); ?></a>
-                       </div>
-                       <div class="flex items-center space-x-3">
-                           <div class="flex items-center text-xs text-gray-500">
-                               <svg class="w-4 h-4 mr-1 text-[#02bdf6]" fill="currentColor" viewBox="0 0 24 24">
-                                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                               </svg>
-                               <span><?php _e('Powered by CallTrackingMetrics', 'call-tracking-metrics'); ?></span>
-                           </div>
-                           <span class="text-gray-400">|</span>
-                           <div class="text-xs text-gray-500">
-                               <?php _e('WordPress', 'call-tracking-metrics'); ?> <?= get_bloginfo('version') ?> | 
-                               <?php _e('PHP', 'call-tracking-metrics'); ?> <?= PHP_VERSION ?>
-                           </div>
-                       </div>
-                   </div>
-               </div>
+        <div class="mt-4 pt-3 border-t border-gray-200">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                <div class="flex items-center space-x-3">
+                    <span class="text-xs text-gray-600"><?php _e('Quick Help:', 'call-tracking-metrics'); ?></span>
+                    <a href="?page=call-tracking-metrics&tab=debug" class="text-xs text-[#02bdf6] hover:text-[#324a85] underline"><?php _e('Debug Tools', 'call-tracking-metrics'); ?></a>
+                    <span class="text-gray-400">|</span>
+                    <a href="?page=call-tracking-metrics&tab=api" class="text-xs text-[#02bdf6] hover:text-[#324a85] underline"><?php _e('API Information', 'call-tracking-metrics'); ?></a>
+                    <span class="text-gray-400">|</span>
+                    <a href="?page=call-tracking-metrics&tab=logs" class="text-xs text-[#02bdf6] hover:text-[#324a85] underline"><?php _e('View Logs', 'call-tracking-metrics'); ?></a>
+                </div>
+                <div class="flex items-center space-x-2 text-xs text-gray-500">
+                    <div class="flex items-center">
+                        <svg class="w-3 h-3 mr-1 text-[#02bdf6]" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                        <span><?php _e('Powered by CallTrackingMetrics', 'call-tracking-metrics'); ?></span>
+                    </div>
+                    <span class="text-gray-400">|</span>
+                    <div>
+                        <?php _e('WP', 'call-tracking-metrics'); ?> <?= get_bloginfo('version') ?> | 
+                        <?php _e('PHP', 'call-tracking-metrics'); ?> <?= PHP_VERSION ?>
+                    </div>
+                </div>
+            </div>
+        </div>
         <?php endif; ?>
     </div>
 </div> 

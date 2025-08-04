@@ -688,12 +688,12 @@ add_action('admin_init', function() {
             }
         } // else: skip version check if GF_VERSION is not defined
     }
-    if ($cf7_active && defined('WPCF7_VERSION') && version_compare(WPCF7_VERSION, $min_cf7, '<')) {
-        $notices[] = 'CallTrackingMetrics requires Contact Form 7 ' . $min_cf7 . ' or higher. You are running ' . WPCF7_VERSION . '.';
-    }
-    if(!get_option('call_track_account_script')) {
-       
-    }
+    // if ($cf7_active && defined('WPCF7_VERSION') && version_compare(WPCF7_VERSION, $min_cf7, '<')) {
+    //     $notices[] = 'CallTrackingMetrics requires Contact Form 7 ' . $min_cf7 . ' or higher. You are running ' . WPCF7_VERSION . '.';
+    // }
+    // if(!get_option('call_track_account_script')) {
+    //     $notices[] = 'CallTrackingMetrics tracking script is missing. Please save your API credentials to generate the tracking script.';
+    // }
     if (!empty($notices)) {
         add_action('admin_notices', function() use ($notices) {
             foreach ($notices as $msg) {

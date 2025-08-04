@@ -125,8 +125,13 @@ try {
                     </div>
                 </div>
                 
-                <div class="mt-8 text-center">
-                    <button type="submit" id="save-api-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-4 rounded-lg shadow-lg transition text-lg"><?php _e('Save API Credentials', 'call-tracking-metrics'); ?></button>
+                <div class="mt-8 flex justify-center">
+                    <button type="submit" id="save-api-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-4 rounded-lg shadow-lg transition text-lg flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <?php _e('Save API Credentials', 'call-tracking-metrics'); ?>
+                    </button>
                 </div>
             </div>
         </div>
