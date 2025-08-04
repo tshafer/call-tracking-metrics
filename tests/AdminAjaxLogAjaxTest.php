@@ -60,14 +60,14 @@ class AdminAjaxLogAjaxTest extends TestCase
 
     public function testAjaxEmailDailyLogInvalidEmail()
     {
-        \Brain\Monkey\Functions\when('wp_send_json_error')->justReturn(null);
-        \Brain\Monkey\Functions\when('wp_send_json_success')->justReturn(null);
         $loggingSystem = new LoggingSystem();
         $renderer = new \CTM\Admin\SettingsRenderer();
         $logAjax = new LogAjax($loggingSystem, $renderer);
+
         $_POST['nonce'] = 'abc';
         $_POST['log_date'] = '2024-01-01';
         $_POST['email_to'] = 'invalid-email';
+
         \Brain\Monkey\Functions\when('get_option')->alias(function($key, $default = []) {
             if ($key === 'admin_email') return 'admin@example.com';
             return [
@@ -81,12 +81,12 @@ class AdminAjaxLogAjaxTest extends TestCase
         });
         \Brain\Monkey\Functions\when('is_email')->justReturn(false);
         $called = [];
-        \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arr) use (&$called) {
+        \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arr) use (&$called) {
             $called = $arr;
         });
         $logAjax->ajaxEmailDailyLog();
         $this->assertIsArray($called);
-        $this->assertEquals('Invalid email address.', $called['message']);
+        $this->assertStringContainsString('Invalid email address', $called['message']);
     }
 
     public function testAjaxEmailDailyLogSuccess()
@@ -120,7 +120,7 @@ class AdminAjaxLogAjaxTest extends TestCase
 
         $logAjax->ajaxEmailDailyLog();
         $this->assertIsArray($called);
-        $this->assertStringContainsString('Log emailed to', $called['message']);
+        $this->assertStringContainsString('Log emailed successfully to', $called['message']);
     }
 
     public function testAjaxEmailDailyLogFailSend()

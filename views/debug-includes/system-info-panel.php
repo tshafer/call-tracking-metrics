@@ -378,29 +378,37 @@ $system_info_report = ctm_get_system_info_report();
 </div>
 
 <!-- Email System Info Modal -->
-<div id="email-system-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Email System Information</h3>
-            <form id="email-system-form">
-                <div class="mb-4">
-                    <label for="system_email_to" class="block text-sm font-medium text-gray-700 mb-2">Email To:</label>
-                    <input type="email" id="system_email_to" name="email_to" value="<?= esc_attr($notification_email ?? get_option('admin_email')) ?>" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div class="mb-4">
-                    <label for="system_email_subject" class="block text-sm font-medium text-gray-700 mb-2">Subject:</label>
-                    <input type="text" id="system_email_subject" name="subject" value="System Information Report - <?= get_bloginfo('name') ?>" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div class="mb-4">
-                    <label for="system_email_message" class="block text-sm font-medium text-gray-700 mb-2">Additional Message (Optional):</label>
-                    <textarea id="system_email_message" name="message" rows="3" placeholder="Add any additional context or notes..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
-                </div>
-                <div class="flex justify-end space-x-3">
-                    <button type="button" onclick="hideEmailSystemForm()" class="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Cancel</button>
-                    <button type="submit" id="send-system-email-btn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Send Email</button>
-                </div>
-            </form>
-        </div>
+<div id="email-system-modal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-[999999] flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-md mx-4">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Email System Information</h3>
+        <form id="email-system-form">
+            <div class="mb-4">
+                <label for="system_email_to" class="block text-sm font-medium text-gray-700 mb-2">Email To:</label>
+                <input type="email" id="system_email_to" name="email_to" value="<?= esc_attr($notification_email ?? get_option('admin_email')) ?>" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div class="mb-4">
+                <label for="system_email_subject" class="block text-sm font-medium text-gray-700 mb-2">Subject:</label>
+                <input type="text" id="system_email_subject" name="subject" value="System Information Report - <?= get_bloginfo('name') ?>" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div class="mb-4">
+                <label for="system_email_message" class="block text-sm font-medium text-gray-700 mb-2">Additional Message (Optional):</label>
+                <textarea id="system_email_message" name="message" rows="3" placeholder="Add any additional context or notes..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="hideEmailSystemForm()" class="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    Cancel
+                </button>
+                <button type="submit" id="send-system-email-btn" class="px-4 py-2 bg-green-600 !text-white rounded-lg hover:bg-green-700 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                    Send Email
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 

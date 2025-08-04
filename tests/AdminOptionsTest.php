@@ -34,12 +34,12 @@ class AdminOptionsTest extends TestCase
     public function testRegisterSettingsPageAddsOptionsPage()
     {
         $called = false;
-        \Brain\Monkey\Functions\when('add_options_page')->alias(function(...$args) use (&$called) {
+        \Brain\Monkey\Functions\when('add_menu_page')->alias(function(...$args) use (&$called) {
             $called = true;
         });
         $options = new Options();
         $options->registerSettingsPage();
-        $this->assertTrue($called, 'add_options_page should be called');
+        $this->assertTrue($called, 'add_menu_page should be called');
     }
 
     public function testInitializeRegistersHandlersAndAssets()

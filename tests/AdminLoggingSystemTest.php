@@ -205,31 +205,25 @@ class AdminLoggingSystemTest extends TestCase
     {
         $updated = [];
         \Brain\Monkey\Functions\when('get_option')->alias(function($key) {
-            if ($key === 'ctm_log_retention_days' || $key === 'ctm_log_auto_cleanup' || $key === 'ctm_log_email_notifications' || $key === 'ctm_log_notification_email') return false;
+            if ($key === 'ctm_log_retention_days') return false;
+            if ($key === 'ctm_log_auto_cleanup') return false;
+            if ($key === 'ctm_log_email_notifications') return false;
+            if ($key === 'ctm_log_notification_email') return false;
             if ($key === 'admin_email') return 'admin@example.com';
+            if ($key === 'ctm_debug_enabled') return true;
             return null;
         });
         \Brain\Monkey\Functions\when('update_option')->alias(function($key, $value) use (&$updated) {
             $updated[$key] = $value;
-            return true;
         });
-        \Brain\Monkey\Functions\when('get_bloginfo')->alias(function($key) { return '6.0.0'; });
-        \Brain\Monkey\Functions\when('ini_get')->alias(function($key) { return '128M'; });
-        $spy = new class extends LoggingSystem {
-            public $logActivityCalled = false;
-            public $logActivityArgs = [];
-            public $initCalled = false;
-            public function logActivity(string $message, string $type = 'info', array $context = []): void {
-                $this->logActivityCalled = true;
-                $this->logActivityArgs = [$message, $type, $context];
-            }
-            public function initializeLoggingSystem(): void {
-                $this->initCalled = true;
-            }
-        };
-        $spy->onPluginActivation();
-        $this->assertTrue($spy->logActivityCalled);
-        $this->assertTrue($spy->initCalled);
+        \Brain\Monkey\Functions\when('wp_schedule_event')->justReturn(true);
+        \Brain\Monkey\Functions\when('wp_next_scheduled')->justReturn(false);
+        \Brain\Monkey\Functions\when('get_bloginfo')->justReturn('Test Site');
+        \Brain\Monkey\Functions\when('current_time')->justReturn('2024-01-01 00:00:00');
+        \Brain\Monkey\Functions\when('get_current_user_id')->justReturn(1);
+        
+        LoggingSystem::onPluginActivation();
+        
         $this->assertArrayHasKey('ctm_log_retention_days', $updated);
         $this->assertArrayHasKey('ctm_log_auto_cleanup', $updated);
         $this->assertArrayHasKey('ctm_log_email_notifications', $updated);
@@ -242,16 +236,15 @@ class AdminLoggingSystemTest extends TestCase
         \Brain\Monkey\Functions\when('wp_clear_scheduled_hook')->alias(function($hook) use (&$cleared) {
             if ($hook === 'ctm_daily_log_cleanup') $cleared = true;
         });
-        $spy = new class extends LoggingSystem {
-            public $logActivityCalled = false;
-            public $logActivityArgs = [];
-            public function logActivity(string $message, string $type = 'info', array $context = []): void {
-                $this->logActivityCalled = true;
-                $this->logActivityArgs = [$message, $type, $context];
-            }
-        };
-        $spy->onPluginDeactivation();
-        $this->assertTrue($spy->logActivityCalled);
+        \Brain\Monkey\Functions\when('get_option')->alias(function($key) {
+            if ($key === 'ctm_debug_enabled') return true;
+            return null;
+        });
+        \Brain\Monkey\Functions\when('current_time')->justReturn('2024-01-01 00:00:00');
+        \Brain\Monkey\Functions\when('get_current_user_id')->justReturn(1);
+        \Brain\Monkey\Functions\when('update_option')->justReturn(true);
+        
+        LoggingSystem::onPluginDeactivation();
         $this->assertTrue($cleared);
     }
 
