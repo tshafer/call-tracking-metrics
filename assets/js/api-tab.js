@@ -169,15 +169,15 @@ jQuery(document).ready(function($) {
         performApiTest(false);
     });
     
-    $('#ctm-auto-test-toggle').on('click', function() {
+    $('#ctm-toggle-auto-test').on('click', function() {
         const button = $(this);
         autoTestEnabled = !autoTestEnabled;
         
         if (autoTestEnabled) {
-            button.removeClass('bg-gray-600').addClass('bg-green-600').html('<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Auto-Test: ON');
+            button.removeClass('bg-gray-600 hover:bg-gray-700').addClass('bg-green-600 hover:bg-green-700').html('<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Auto-Test: ON');
             startCountdown();
         } else {
-            button.removeClass('bg-green-600').addClass('bg-gray-600').html('<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Auto-Test: OFF');
+            button.removeClass('bg-green-600 hover:bg-green-700').addClass('bg-gray-600 hover:bg-gray-700').html('<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Auto-Test: OFF');
             clearInterval(countdownTimer);
             $('#ctm-countdown').text('Auto-test disabled');
         }

@@ -22,7 +22,7 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
                 </div>
                 <!-- Move buttons here -->
                 <div class="flex gap-2">
-                    <button id="ctm-change-api-btn" type="button" class="bg-[#324a85] hover:bg-[#16294f] text-white px-3 py-1 rounded font-medium transition text-sm"><?php _e('Change API Keys', 'call-tracking-metrics'); ?></button>
+                    <button id="ctm-change-api-btn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded font-medium transition text-sm"><?php _e('Change API Keys', 'call-tracking-metrics'); ?></button>
                     <button id="ctm-disable-api-btn" type="button" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded font-medium transition text-sm"><?php _e('Disable API / Start Over', 'call-tracking-metrics'); ?></button>
                 </div>
             </div>
