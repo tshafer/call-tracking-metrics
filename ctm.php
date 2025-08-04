@@ -42,6 +42,23 @@ if (!defined('ABSPATH') && !defined('CTM_TESTING') && php_sapi_name() !== 'cli')
     exit('Direct access forbidden.');
 }
 
+// Set up error handling to prevent blank pages
+set_error_handler(function($severity, $message, $file, $line) {
+    if (!(error_reporting() & $severity)) {
+        return;
+    }
+    error_log("CTM Plugin Error: $message in $file on line $line");
+    return true;
+});
+
+// Set up exception handler
+set_exception_handler(function($exception) {
+    error_log("CTM Plugin Exception: " . $exception->getMessage() . " in " . $exception->getFile() . " on line " . $exception->getLine());
+    if (is_admin()) {
+        echo '<div class="wrap"><div class="notice notice-error"><p>Plugin Error: Call Tracking Metrics encountered an error. Please check the error logs or contact support.</p></div></div>';
+    }
+});
+
 // Load Composer autoloader for dependency management
 require_once __DIR__ . '/vendor/autoload.php';
 

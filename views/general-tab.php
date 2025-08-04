@@ -1,5 +1,32 @@
 <?php
 // General tab view
+
+// Ensure required variables are defined with defaults
+$apiStatus = $apiStatus ?? 'not_connected';
+$apiKey = $apiKey ?? '';
+$apiSecret = $apiSecret ?? '';
+
+// Add error handling to prevent blank pages
+try {
+    // Validate that required WordPress functions are available
+    if (!function_exists('wp_nonce_field')) {
+        throw new Exception('WordPress core functions not available');
+    }
+    
+    if (!function_exists('_e')) {
+        throw new Exception('WordPress translation functions not available');
+    }
+    
+    if (!function_exists('esc_attr')) {
+        throw new Exception('WordPress escaping functions not available');
+    }
+    
+} catch (Exception $e) {
+    // Log the error and show a user-friendly message
+    error_log('CTM Plugin Error: ' . $e->getMessage());
+    echo '<div class="wrap"><div class="notice notice-error"><p>Plugin Error: Unable to load Call Tracking Metrics settings. Please contact support.</p></div></div>';
+    return;
+}
 ?>
 <form method="post" action="" class="space-y-6">
     <?php wp_nonce_field('ctm_save_settings', 'ctm_settings_nonce'); ?>
@@ -60,7 +87,7 @@
                 <div id="api-test-logs" class="hidden mt-6 p-6 bg-gray-50 border border-gray-200 rounded-lg max-h-96 overflow-y-auto">
                     <div class="flex items-center justify-between mb-4">
                         <h4 class="font-semibold text-gray-700 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 text-blue-500 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                             <?php _e('API Test Results', 'call-tracking-metrics'); ?>
