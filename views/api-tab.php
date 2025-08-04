@@ -22,8 +22,19 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
                 </div>
                 <!-- Move buttons here -->
                 <div class="flex gap-2">
-                    <button id="ctm-change-api-btn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded font-medium transition text-sm"><?php _e('Change API Keys', 'call-tracking-metrics'); ?></button>
-                    <button id="ctm-disable-api-btn" type="button" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded font-medium transition text-sm"><?php _e('Disable API / Start Over', 'call-tracking-metrics'); ?></button>
+                    <button id="ctm-change-api-btn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-medium transition text-sm flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <?php _e('Change API Keys', 'call-tracking-metrics'); ?>
+                    </button>
+                    <button id="ctm-disable-api-btn" type="button" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-medium transition text-sm flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"/>
+                        </svg>
+                        <?php _e('Disable API / Start Over', 'call-tracking-metrics'); ?>
+                    </button>
                 </div>
             </div>
             
@@ -119,8 +130,18 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
                                         <input type="text" id="ctm_new_api_secret" name="ctm_new_api_secret" class="w-full border border-gray-300 rounded px-3 py-2" required autocomplete="off">
                                     </div>
                                     <div class="flex justify-end gap-2 mt-6">
-                                        <button type="button" id="ctm-cancel-change-api" class="bg-gray-200 hover:bg-gray-300 !text-white px-4 py-2 rounded"><?php _e('Cancel', 'call-tracking-metrics'); ?></button>
-                                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"><?php _e('Save', 'call-tracking-metrics'); ?></button>
+                                        <button type="button" id="ctm-cancel-change-api" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded flex items-center gap-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                            </svg>
+                                            <?php _e('Cancel', 'call-tracking-metrics'); ?>
+                                        </button>
+                                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center gap-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                            </svg>
+                                            <?php _e('Save', 'call-tracking-metrics'); ?>
+                                        </button>
                                     </div>
                                 </form>
                                 <button id="ctm-close-change-api" class="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl leading-none">&times;</button>
@@ -132,8 +153,18 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
                                 <h3 class="text-lg font-semibold mb-4 text-red-700"><?php _e('Disable API / Start Over', 'call-tracking-metrics'); ?></h3>
                                 <p class="mb-6 text-gray-700"><?php _e('Are you sure you want to disable the API and clear all credentials? This cannot be undone.', 'call-tracking-metrics'); ?></p>
                                 <div class="flex justify-end gap-2">
-                                    <button type="button" id="ctm-cancel-disable-api" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded"><?php _e('Cancel', 'call-tracking-metrics'); ?></button>
-                                    <button type="button" id="ctm-confirm-disable-api" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"><?php _e('Disable API', 'call-tracking-metrics'); ?></button>
+                                    <button type="button" id="ctm-cancel-disable-api" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                        <?php _e('Cancel', 'call-tracking-metrics'); ?>
+                                    </button>
+                                    <button type="button" id="ctm-confirm-disable-api" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                        <?php _e('Disable API', 'call-tracking-metrics'); ?>
+                                    </button>
                                 </div>
                                 <button id="ctm-close-disable-api" class="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl leading-none">&times;</button>
                             </div>
@@ -161,20 +192,23 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
             
             <div class="p-6">
                 <div class="flex items-center space-x-4 mb-4">
-                    <button id="ctm-test-api-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    <button id="ctm-test-api-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
-                        Test Now
+                        <?php _e('Test API Connection', 'call-tracking-metrics'); ?>
                     </button>
-                    <button id="ctm-toggle-auto-test" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    <button id="ctm-toggle-auto-test" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
-                        Auto-Test: ON
+                        <?php _e('Auto-Test: OFF', 'call-tracking-metrics'); ?>
                     </button>
-                    <button id="ctm-clear-logs-btn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200">
-                        Clear Logs
+                    <button id="ctm-clear-logs-btn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        <?php _e('Clear Logs', 'call-tracking-metrics'); ?>
                     </button>
                 </div>
                 

@@ -113,7 +113,10 @@ $system_info_report = ctm_get_system_info_report();
             <h3 class="text-2xl font-extrabold text-gray-900"><?php _e('System Information Panel', 'call-tracking-metrics'); ?></h3>
         </div>
         <div class="flex justify-center my-4">
-            <button id="ctm-export-system-info" class="bg-gray-600 hover:bg-gray-700 text-white font-medium px-6 py-2 rounded-xl transition  gap-2 whitespace-nowrap" type="button">
+            <button id="ctm-export-system-info" class="bg-gray-600 hover:bg-gray-700 text-white font-medium px-6 py-2 rounded-xl transition flex items-center gap-2 whitespace-nowrap" type="button">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
                 <span><?php _e('Export System Info', 'call-tracking-metrics'); ?></span>
             </button>
         </div>
@@ -583,62 +586,66 @@ function updateSectionFields(section, data) {
     // Attach email system info form handler after DOM is loaded
 
 document.addEventListener('DOMContentLoaded', function() {
-  const emailSystemForm = document.getElementById('email-system-form');
-  if (emailSystemForm) {
-    console.log('[CTM] Email system form found');
-    emailSystemForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-      console.log('[CTM] Email System Info form submitted');
+    // Auto-load system info on page load
+    console.log('[CTM] Page loaded, auto-loading system info');
+    refreshSystemInfo();
+    
+    const emailSystemForm = document.getElementById('email-system-form');
+    if (emailSystemForm) {
+        console.log('[CTM] Email system form found');
+        emailSystemForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('[CTM] Email System Info form submitted');
 
-      const button = document.getElementById('send-system-email-btn');
-      const originalText = button.textContent;
+            const button = document.getElementById('send-system-email-btn');
+            const originalText = button.textContent;
 
-      button.disabled = true;
-      button.textContent = 'Sending...';
+            button.disabled = true;
+            button.textContent = 'Sending...';
 
-      const emailTo = document.getElementById('system_email_to').value;
-      const subject = document.getElementById('system_email_subject').value;
-      const message = document.getElementById('system_email_message').value;
+            const emailTo = document.getElementById('system_email_to').value;
+            const subject = document.getElementById('system_email_subject').value;
+            const message = document.getElementById('system_email_message').value;
 
-      console.log('[CTM] Email form data:', { emailTo, subject, message });
+            console.log('[CTM] Email form data:', { emailTo, subject, message });
 
-      const formData = new FormData();
-      formData.append('action', 'ctm_email_system_info');
-      formData.append('email_to', emailTo);
-      formData.append('subject', subject);
-      formData.append('message', message);
-      formData.append('nonce', '<?= wp_create_nonce('ctm_email_system_info') ?>');
+            const formData = new FormData();
+            formData.append('action', 'ctm_email_system_info');
+            formData.append('email_to', emailTo);
+            formData.append('subject', subject);
+            formData.append('message', message);
+            formData.append('nonce', '<?= wp_create_nonce('ctm_email_system_info') ?>');
 
-      console.log('[CTM] Sending AJAX request to:', '<?= admin_url('admin-ajax.php') ?>');
+            console.log('[CTM] Sending AJAX request to:', '<?= admin_url('admin-ajax.php') ?>');
 
-      fetch('<?= admin_url('admin-ajax.php') ?>', {
-        method: 'POST',
-        body: formData
-      })
-      .then(response => {
-        console.log('[CTM] Email response status:', response.status);
-        return response.json();
-      })
-      .then(data => {
-        console.log('[CTM] Email AJAX response:', data);
-        if (data.success) {
-          ctmShowToast('System information email sent successfully!', 'success');
-          hideEmailSystemForm();
-        } else {
-          console.error('[CTM] Email failed:', data.data);
-          ctmShowToast('Failed to send email: ' + (data.data?.message || 'Unknown error'), 'error');
-        }
-      })
-      .catch(error => {
-        console.error('[CTM] Email AJAX error:', error);
-        ctmShowToast('Network error while sending email: ' + error.message, 'error');
-      })
-      .finally(() => {
-        button.disabled = false;
-        button.textContent = originalText;
-      });
-    });
-  }
+            fetch('<?= admin_url('admin-ajax.php') ?>', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('[CTM] Email response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('[CTM] Email AJAX response:', data);
+                if (data.success) {
+                    ctmShowToast('System information email sent successfully!', 'success');
+                    hideEmailSystemForm();
+                } else {
+                    console.error('[CTM] Email failed:', data.data);
+                    ctmShowToast('Failed to send email: ' + (data.data?.message || 'Unknown error'), 'error');
+                }
+            })
+            .catch(error => {
+                console.error('[CTM] Email AJAX error:', error);
+                ctmShowToast('Network error while sending email: ' + error.message, 'error');
+            })
+            .finally(() => {
+                button.disabled = false;
+                button.textContent = originalText;
+            });
+        });
+    }
 });
 
 

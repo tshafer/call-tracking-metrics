@@ -416,7 +416,33 @@ if (window.performance) {
 }
 
 // Measure DOM Content Loaded with multiple fallback methods
-// Removed automatic measurement on page load - only measure when manually triggered
+// Auto-load performance metrics on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('[CTM] DOM Content Loaded - measuring performance');
+    performanceData.domContentLoaded = performance.now() - performanceData.navigationStart;
+    storePerformanceMetrics();
+});
+
+window.addEventListener('load', function() {
+    console.log('[CTM] Page Load Complete - measuring final performance');
+    performanceData.loadComplete = performance.now() - performanceData.navigationStart;
+    
+    // Measure additional load times
+    if (window.performance && window.performance.getEntriesByType) {
+        const navigationEntries = window.performance.getEntriesByType('navigation');
+        if (navigationEntries.length > 0) {
+            const nav = navigationEntries[0];
+            performanceData.domContentLoaded = nav.domContentLoadedEventEnd - nav.navigationStart;
+            performanceData.loadComplete = nav.loadEventEnd - nav.navigationStart;
+        }
+    }
+    
+    storePerformanceMetrics();
+    
+    // Auto-refresh performance metrics on page load
+    console.log('[CTM] Auto-loading performance metrics');
+    refreshPerformance();
+});
 
 // Store performance metrics in localStorage
 function storePerformanceMetrics() {
