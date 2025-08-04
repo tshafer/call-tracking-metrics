@@ -135,20 +135,22 @@ class Options
     /**
      * Register the settings page in the WordPress admin menu
      * 
-     * Adds the CallTrackingMetrics settings page under the WordPress
-     * Settings menu with appropriate permissions and callback.
+     * Adds the CallTrackingMetrics settings page as a primary menu item
+     * in the WordPress admin sidebar with appropriate permissions and callback.
      * 
      * @since 2.0.0
      * @return void
      */
     public function registerSettingsPage(): void
     {
-        add_options_page(
-            'CallTrackingMetrics',           // Page title
-            'CallTrackingMetrics',           // Menu title
+        add_menu_page(
+            __('CallTrackingMetrics', 'call-tracking-metrics'),           // Page title
+            __('CallTrackingMetrics', 'call-tracking-metrics'),           // Menu title
             'manage_options',                // Capability required
             'call-tracking-metrics',         // Menu slug
-            [$this, 'renderSettingsPage']   // Callback function
+            [$this, 'renderSettingsPage'],   // Callback function
+            'dashicons-chart-area',          // Icon (chart icon for analytics)
+            30                                // Position (after Posts, before Media)
         );
     }
 
