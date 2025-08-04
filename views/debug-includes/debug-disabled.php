@@ -51,29 +51,26 @@ function toggleDebugMode() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showDebugMessage(data.data.message, 'success');
+            ctmShowToast(data.data.message, 'success');
             
-            // Update the entire debug tab content
-            const debugTabContent = document.querySelector('.bg-gray-50.p-6.rounded-b-lg');
-            if (debugTabContent) {
-                debugTabContent.innerHTML = data.data.updated_content;
+            // Update button text and state
+            const button = document.getElementById('toggle-debug-btn');
+            if (data.data.debug_enabled) {
+                button.textContent = '<?php _e('Disable Debug Mode', 'call-tracking-metrics'); ?>';
+                button.className = button.className.replace('bg-green-600 hover:bg-green-700', 'bg-red-600 hover:bg-red-700');
+                
+                // Show success message
+                ctmShowToast('<?php _e('Debug logging is now active. All plugin activity will be recorded.', 'call-tracking-metrics'); ?>', 'info');
             } else {
-                // Fallback: reload the page if we can't find the tab content
-                window.location.reload();
+                button.textContent = '<?php _e('Enable Debug Mode', 'call-tracking-metrics'); ?>';
+                button.className = button.className.replace('bg-red-600 hover:bg-red-700', 'bg-green-600 hover:bg-green-700');
+                
+                // Show success message
+                ctmShowToast('<?php _e('Debug logging has been stopped. Existing logs are preserved.', 'call-tracking-metrics'); ?>', 'info');
             }
             
-            // Show additional feedback
-            setTimeout(() => {
-                const action = data.data.action;
-                if (action === 'enabled') {
-                    showDebugMessage('<?php _e('Debug logging is now active. All plugin activity will be recorded.', 'call-tracking-metrics'); ?>', 'info');
-                } else {
-                    showDebugMessage('<?php _e('Debug logging has been stopped. Existing logs are preserved.', 'call-tracking-metrics'); ?>', 'info');
-                }
-            }, 1000);
-            
         } else {
-            showDebugMessage(data.data.message || <?php _e('Failed to toggle debug mode', 'call-tracking-metrics'); ?>, 'error');
+            ctmShowToast(data.data.message || '<?php _e('Failed to toggle debug mode', 'call-tracking-metrics'); ?>', 'error');
             // Re-enable button on error
             button.disabled = false;
             button.textContent = originalText;
@@ -81,7 +78,7 @@ function toggleDebugMode() {
     })
     .catch(error => {
         console.error('Error toggling debug mode:', error);
-        showDebugMessage('<?php _e('Network error occurred while toggling debug mode', 'call-tracking-metrics'); ?>', 'error');
+            ctmShowToast('<?php _e('Network error occurred while toggling debug mode', 'call-tracking-metrics'); ?>', 'error');
         // Re-enable button on error
         button.disabled = false;
         button.textContent = originalText;

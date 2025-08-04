@@ -78,10 +78,6 @@
                         <span><?php _e('Gravity Forms', 'call-tracking-metrics'); ?></span>
                         <span id="check-gf" class="health-indicator">⏳</span>
                     </div>
-                    <div class="flex items-center justify-between text-sm">
-                        <span><?php _e('Field Mappings', 'call-tracking-metrics'); ?></span>
-                        <span id="check-field-mappings" class="health-indicator">⏳</span>
-                    </div>
                 </div>
             </div>
 
@@ -302,7 +298,6 @@ function runHealthCheck() {
                 'Account Access': 'check-account-access',
                 'Contact Form 7': 'check-cf7',
                 'Gravity Forms': 'check-gf',
-                'Field Mappings': 'check-field-mappings',
                 'PHP Version': 'check-php-version',
                 'cURL Extension': 'check-curl',
                 'SSL Support': 'check-ssl',
@@ -477,7 +472,6 @@ function getRecommendedActions(checkName, status) {
         'Account Access': 'Ensure your API key has proper permissions in your CallTrackingMetrics account.',
         'Contact Form 7': 'Install and activate the Contact Form 7 plugin, or disable CF7 integration in settings.',
         'Gravity Forms': 'Install and activate Gravity Forms, or disable GF integration in settings.',
-        'Field Mappings': 'Configure field mappings in the Field Mapping tab to connect form fields to CTM.',
         'PHP Version (7.4+)': 'Contact your hosting provider to upgrade PHP to version 7.4 or higher.',
         'cURL Extension': 'Contact your hosting provider to enable the cURL PHP extension.',
         'SSL Support': 'Ensure your server has SSL/TLS support enabled for secure API communications.',

@@ -374,6 +374,33 @@ $system_info_report = ctm_get_system_info_report();
     </div>
 </div>
 
+<!-- Email System Info Modal -->
+<div id="email-system-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Email System Information</h3>
+            <form id="email-system-form">
+                <div class="mb-4">
+                    <label for="system_email_to" class="block text-sm font-medium text-gray-700 mb-2">Email To:</label>
+                    <input type="email" id="system_email_to" name="email_to" value="<?= esc_attr($notification_email ?? get_option('admin_email')) ?>" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="mb-4">
+                    <label for="system_email_subject" class="block text-sm font-medium text-gray-700 mb-2">Subject:</label>
+                    <input type="text" id="system_email_subject" name="subject" value="System Information Report - <?= get_bloginfo('name') ?>" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="mb-4">
+                    <label for="system_email_message" class="block text-sm font-medium text-gray-700 mb-2">Additional Message (Optional):</label>
+                    <textarea id="system_email_message" name="message" rows="3" placeholder="Add any additional context or notes..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="hideEmailSystemForm()" class="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Cancel</button>
+                    <button type="submit" id="send-system-email-btn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Send Email</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 // Use the PHP-generated report for JS
 const SYSTEM_INFO_REPORT = <?= json_encode($system_info_report) ?>;
@@ -433,7 +460,7 @@ function updateSectionFields(section, data) {
                 button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
                 button.classList.add('bg-green-600', 'hover:bg-green-700');
                 
-                showDebugMessage('System information copied to clipboard!', 'success');
+                ctmShowToast('System information copied to clipboard!', 'success');
                 
                 // Reset button after 3 seconds
                 setTimeout(() => {
@@ -473,7 +500,7 @@ function updateSectionFields(section, data) {
                     button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
                     button.classList.add('bg-green-600', 'hover:bg-green-700');
                     
-                    showDebugMessage('System information copied to clipboard!', 'success');
+                    ctmShowToast('System information copied to clipboard!', 'success');
                     
                     // Reset button after 3 seconds
                     setTimeout(() => {
@@ -492,7 +519,7 @@ function updateSectionFields(section, data) {
                 button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
                 button.classList.add('bg-red-600', 'hover:bg-red-700');
                 
-                showDebugMessage('Failed to copy to clipboard. Please copy the information manually from the display above.', 'error');
+                ctmShowToast('Failed to copy to clipboard. Please copy the information manually from the display above.', 'error');
                 
                 // Reset button after 3 seconds
                 setTimeout(() => {
@@ -508,11 +535,49 @@ function updateSectionFields(section, data) {
 
     // Email System Information
     function emailSystemInfo() {
-        document.getElementById('email-system-modal')?.classList.remove('hidden');
+        console.log('[CTM] Email System Info button clicked');
+        
+        const modal = document.getElementById('email-system-modal');
+        console.log('[CTM] Modal element found:', modal);
+        
+        if (modal) {
+            console.log('[CTM] Modal classes before:', modal.className);
+            modal.classList.remove('hidden');
+            console.log('[CTM] Modal classes after:', modal.className);
+            console.log('[CTM] Modal is now visible');
+            
+            // Test if modal is actually visible
+            setTimeout(() => {
+                const isVisible = !modal.classList.contains('hidden');
+                console.log('[CTM] Modal visibility check:', isVisible);
+                if (!isVisible) {
+                    console.error('[CTM] Modal is still hidden after removing hidden class');
+                    ctmShowToast('Modal visibility issue detected', 'error');
+                }
+            }, 100);
+        } else {
+            console.error('[CTM] Email system modal not found!');
+            ctmShowToast('Email modal not found. Please refresh the page.', 'error');
+            
+            // Try to create a simple alert as fallback
+            const email = prompt('Enter email address to send system info to:');
+            if (email && email.includes('@')) {
+                console.log('[CTM] Using fallback email prompt:', email);
+                // You could add a simple AJAX call here as fallback
+                ctmShowToast('Fallback email function not implemented yet', 'warning');
+            }
+        }
     }
 
     function hideEmailSystemForm() {
-        document.getElementById('email-system-modal')?.classList.add('hidden');
+        console.log('[CTM] Hiding email system form');
+        const modal = document.getElementById('email-system-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+            console.log('[CTM] Modal hidden successfully');
+        } else {
+            console.error('[CTM] Modal not found when trying to hide');
+        }
     }
 
     // Attach email system info form handler after DOM is loaded
@@ -520,6 +585,7 @@ function updateSectionFields(section, data) {
 document.addEventListener('DOMContentLoaded', function() {
   const emailSystemForm = document.getElementById('email-system-form');
   if (emailSystemForm) {
+    console.log('[CTM] Email system form found');
     emailSystemForm.addEventListener('submit', function(e) {
       e.preventDefault();
       console.log('[CTM] Email System Info form submitted');
@@ -530,30 +596,42 @@ document.addEventListener('DOMContentLoaded', function() {
       button.disabled = true;
       button.textContent = 'Sending...';
 
+      const emailTo = document.getElementById('system_email_to').value;
+      const subject = document.getElementById('system_email_subject').value;
+      const message = document.getElementById('system_email_message').value;
+
+      console.log('[CTM] Email form data:', { emailTo, subject, message });
+
       const formData = new FormData();
       formData.append('action', 'ctm_email_system_info');
-      formData.append('email_to', document.getElementById('system_email_to').value);
-      formData.append('subject', document.getElementById('system_email_subject').value);
-      formData.append('message', document.getElementById('system_email_message').value);
+      formData.append('email_to', emailTo);
+      formData.append('subject', subject);
+      formData.append('message', message);
       formData.append('nonce', '<?= wp_create_nonce('ctm_email_system_info') ?>');
+
+      console.log('[CTM] Sending AJAX request to:', '<?= admin_url('admin-ajax.php') ?>');
 
       fetch('<?= admin_url('admin-ajax.php') ?>', {
         method: 'POST',
         body: formData
       })
-      .then(response => response.json())
+      .then(response => {
+        console.log('[CTM] Email response status:', response.status);
+        return response.json();
+      })
       .then(data => {
         console.log('[CTM] Email AJAX response:', data);
         if (data.success) {
           ctmShowToast('System information email sent successfully!', 'success');
           hideEmailSystemForm();
         } else {
+          console.error('[CTM] Email failed:', data.data);
           ctmShowToast('Failed to send email: ' + (data.data?.message || 'Unknown error'), 'error');
         }
       })
       .catch(error => {
         console.error('[CTM] Email AJAX error:', error);
-        ctmShowToast('Network error while sending email', 'error');
+        ctmShowToast('Network error while sending email: ' + error.message, 'error');
       })
       .finally(() => {
         button.disabled = false;
@@ -577,7 +655,7 @@ function refreshSystemInfo() {
         Refreshing...
     `;
     
-    showDebugMessage('Refreshing system information...', 'info');
+    ctmShowToast('Refreshing system information...', 'info');
     
     const formData = new FormData();
     formData.append('action', 'ctm_refresh_system_info');
@@ -594,17 +672,17 @@ function refreshSystemInfo() {
             if (data.data && data.data.system_info) {
                 updateSystemInfoDisplay(data.data.system_info);
             }
-            showDebugMessage('System information refreshed successfully', 'success');
+            ctmShowToast('System information refreshed successfully', 'success');
         } else {
             const errorMessage = (data && data.data && data.data.message) || 
                                 (data && data.message) || 
-                                'Unknown error occurred';
-            showDebugMessage('Failed to refresh system info: ' + errorMessage, 'error');
+                                'Failed to refresh system information';
+            ctmShowToast('Failed to refresh system info: ' + errorMessage, 'error');
         }
     })
     .catch(error => {
-        console.error('System info refresh error:', error);
-        showDebugMessage('Error refreshing system information: ' + error.message, 'error');
+        console.error('Error refreshing system info:', error);
+        ctmShowToast('Error refreshing system information: ' + error.message, 'error');
     })
     .finally(() => {
         // Restore button state

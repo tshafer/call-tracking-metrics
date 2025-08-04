@@ -894,56 +894,78 @@ class SystemAjax {
      */
     public function ajaxEmailSystemInfo(): void
     {
-        check_ajax_referer('ctm_email_system_info', 'nonce');
-        
-        $email_to = sanitize_email($_POST['email_to'] ?? '');
-        $subject = sanitize_text_field($_POST['subject'] ?? '');
-        $additional_message = sanitize_textarea_field($_POST['message'] ?? '');
-        
-        if (!$email_to) {
-            wp_send_json_error(['message' => 'Email address is required']);
-            return;
-        }
-        
-        if (!$subject) {
-            $subject = 'System Information Report - ' . \get_bloginfo('name');
-        }
-        
-        // Generate comprehensive system information (HTML)
-        $system_info_html = $this->generateSystemInfoReport(true);
+        try {
+            error_log('CTM: Email system info request received');
+            check_ajax_referer('ctm_email_system_info', 'nonce');
+            
+            $email_to = sanitize_email($_POST['email_to'] ?? '');
+            $subject = sanitize_text_field($_POST['subject'] ?? '');
+            $additional_message = sanitize_textarea_field($_POST['message'] ?? '');
+            
+            error_log("CTM: Email system info - To: {$email_to}, Subject: {$subject}");
+            
+            if (!$email_to) {
+                error_log('CTM: No email address provided');
+                wp_send_json_error(['message' => 'Email address is required']);
+                return;
+            }
+            
+            if (!is_email($email_to)) {
+                error_log("CTM: Invalid email address: {$email_to}");
+                wp_send_json_error(['message' => 'Invalid email address']);
+                return;
+            }
+            
+            if (!$subject) {
+                $subject = 'System Information Report - ' . \get_bloginfo('name');
+            }
+            
+            error_log("CTM: Generating system info report");
+            
+            // Generate comprehensive system information (HTML)
+            $system_info_html = $this->generateSystemInfoReport(true);
 
-        // Prepare email content as HTML
-        $email_body = '<div style="font-family: Arial, sans-serif; color: #222; background: #f9f9f9; padding: 24px;">';
-        $email_body .= '<div style="max-width: 700px; margin: 0 auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); padding: 32px;">';
-        $email_body .= '<h2 style="color: #2563eb; margin-top: 0;">System Information Report</h2>';
-        $email_body .= '<p style="color: #666; font-size: 14px; margin-bottom: 24px;">Generated: <strong>' . esc_html(current_time('Y-m-d H:i:s')) . '</strong></p>';
-        
-        if ($additional_message) {
-            $email_body .= '<div style="margin-bottom: 24px; padding: 16px; background: #f1f5f9; border-left: 4px solid #2563eb; border-radius: 4px;">';
-            $email_body .= '<strong>Message from sender:</strong><br>';
-            $email_body .= nl2br(esc_html($additional_message));
-            $email_body .= '</div>';
-        }
+            // Prepare email content as HTML
+            $email_body = '<div style="font-family: Arial, sans-serif; color: #222; background: #f9f9f9; padding: 24px;">';
+            $email_body .= '<div style="max-width: 700px; margin: 0 auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); padding: 32px;">';
+            $email_body .= '<h2 style="color: #2563eb; margin-top: 0;">System Information Report</h2>';
+            $email_body .= '<p style="color: #666; font-size: 14px; margin-bottom: 24px;">Generated: <strong>' . esc_html(current_time('Y-m-d H:i:s')) . '</strong></p>';
+            
+            if ($additional_message) {
+                $email_body .= '<div style="margin-bottom: 24px; padding: 16px; background: #f1f5f9; border-left: 4px solid #2563eb; border-radius: 4px;">';
+                $email_body .= '<strong>Message from sender:</strong><br>';
+                $email_body .= nl2br(esc_html($additional_message));
+                $email_body .= '</div>';
+            }
 
-        $email_body .= $system_info_html;
-        $email_body .= '</div></div>';
+            $email_body .= $system_info_html;
+            $email_body .= '</div></div>';
 
-        // Send email as HTML
-        $headers = [
-            'Content-Type: text/html; charset=UTF-8',
-            'From: ' . \get_bloginfo('name') . ' <' . \get_option('admin_email') . '>'
-        ];
-        
-        $sent = wp_mail($email_to, $subject, $email_body, $headers);
-        
-        if ($sent) {
-            wp_send_json_success([
-                'message' => 'System information email sent successfully to ' . $email_to
-            ]);
-        } else {
-            wp_send_json_error([
-                'message' => 'Failed to send email. Please check your email configuration.'
-            ]);
+            // Send email as HTML
+            $headers = [
+                'Content-Type: text/html; charset=UTF-8',
+                'From: ' . \get_bloginfo('name') . ' <' . \get_option('admin_email') . '>'
+            ];
+            
+            error_log("CTM: Attempting to send system info email to {$email_to}");
+            
+            $sent = wp_mail($email_to, $subject, $email_body, $headers);
+            
+            error_log("CTM: wp_mail result for system info: " . ($sent ? 'true' : 'false'));
+            
+            if ($sent) {
+                wp_send_json_success([
+                    'message' => 'System information email sent successfully to ' . $email_to
+                ]);
+            } else {
+                wp_send_json_error([
+                    'message' => 'Failed to send email. Please check your email configuration.'
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            error_log("CTM: Exception while emailing system info: " . $e->getMessage());
+            wp_send_json_error(['message' => 'Error sending email: ' . $e->getMessage()]);
         }
     }
 
