@@ -37,6 +37,7 @@ class AdminOptionsTest extends TestCase
         \Brain\Monkey\Functions\when('add_menu_page')->alias(function(...$args) use (&$called) {
             $called = true;
         });
+        \Brain\Monkey\Functions\when('__')->justReturn('CallTrackingMetrics');
         $options = new Options();
         $options->registerSettingsPage();
         $this->assertTrue($called, 'add_menu_page should be called');
