@@ -50,19 +50,7 @@
                     </div>
                 </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div>
-                        <label class="block mb-2 text-gray-700 font-medium"><?php _e('API Base URL', 'call-tracking-metrics'); ?></label>
-                        <input type="url" id="ctm_api_base_url" name="ctm_api_base_url" value="<?= esc_attr(get_option('ctm_api_base_url', 'https://api.calltrackingmetrics.com')) ?>" class="block w-full rounded border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="https://api.calltrackingmetrics.com" />
-                        <p class="text-sm text-gray-500 mt-1"><?php _e('Leave empty to use the default API URL', 'call-tracking-metrics'); ?></p>
-                    </div>
-                    <div>
-                        <label class="block mb-2 text-gray-700 font-medium"><?php _e('Current API URL', 'call-tracking-metrics'); ?></label>
-                        <div class="bg-gray-100 p-3 rounded border text-sm font-mono text-gray-700">
-                            <?= esc_html(ctm_get_api_url()) ?>
-                        </div>
-                    </div>
-                </div>
+
                 
                 <div class="text-center mb-6">
                     <!-- Test API Connection Button -->
