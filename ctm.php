@@ -62,6 +62,11 @@ set_exception_handler(function($exception) {
 // Load Composer autoloader for dependency management
 require_once __DIR__ . '/vendor/autoload.php';
 
+// Define plugin file constant for use throughout the plugin
+if (!defined('CTM_PLUGIN_FILE')) {
+    define('CTM_PLUGIN_FILE', __FILE__);
+}
+
 // Import required classes
 use CTM\Service\ApiService;
 use CTM\Service\CF7Service;

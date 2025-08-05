@@ -143,15 +143,52 @@ class Options
      */
     public function registerSettingsPage(): void
     {
+        // Get the logo file URL
+        $logo_url = plugins_url('assets/images/ctm_logo-mark_cyan_400x400.png', CTM_PLUGIN_FILE);
+        $logo_path = plugin_dir_path(CTM_PLUGIN_FILE) . 'assets/images/ctm_logo-mark_cyan_400x400.png';
+        
+        // Use custom icon if file exists, otherwise fallback to dashicon
+        $icon_url = file_exists($logo_path) ? $logo_url : 'dashicons-chart-area';
+        
         add_menu_page(
             __('CallTrackingMetrics', 'call-tracking-metrics'),           // Page title
             __('Call Tracking', 'call-tracking-metrics'),                 // Menu title (shortened)
             'manage_options',                // Capability required
             'call-tracking-metrics',         // Menu slug
             [$this, 'renderSettingsPage'],   // Callback function
-            'dashicons-chart-area',          // Icon (chart icon for analytics)
+            $icon_url,                       // Custom icon or fallback
             30                                // Position (after Posts, before Media)
         );
+        
+        // Add CSS for custom menu icon
+        add_action('admin_head', [$this, 'addMenuIconCSS']);
+    }
+    
+    /**
+     * Add CSS for custom menu icon
+     * 
+     * @since 2.0.0
+     * @return void
+     */
+    public function addMenuIconCSS(): void
+    {
+        echo '<style>
+        #adminmenu .toplevel_page_call-tracking-metrics .wp-menu-image img {
+            width: 23px;
+            height: 23px;
+            padding: 0;
+            margin: 0;
+            border-radius: 2px;
+            vertical-align: middle;
+            display: inline-block;
+            top: 7px;
+            position: relative;
+        }
+        #adminmenu .toplevel_page_call-tracking-metrics .wp-menu-image:before {
+            display: none;
+        }
+      
+        </style>';
     }
 
     /**

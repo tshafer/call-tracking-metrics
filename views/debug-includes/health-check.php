@@ -25,15 +25,31 @@
     
     <div class="space-y-4">
         <!-- Overall Health Score -->
-        <div class="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-4">
+        <div class="bg-gradient-to-br from-green-50 via-blue-50 to-green-100 border border-green-200 rounded-xl p-6 shadow-sm">
             <div class="flex items-center justify-between">
-                <div>
-                    <h4 class="text-lg font-semibold text-green-800"><?php _e('Overall Health Score', 'call-tracking-metrics'); ?></h4>
-                    <p class="text-sm text-green-600"><?php _e('System status assessment', 'call-tracking-metrics'); ?></p>
+                <div class="flex items-center gap-3">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-sm">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <h4 class="text-xl font-bold text-green-800 !mb-0 !mt-0"><?php _e('Overall Health Score', 'call-tracking-metrics'); ?></h4>
+                            <button onclick="showHealthScoreInfo()" class="text-green-600 hover:text-green-800 transition-colors p-1 rounded-full hover:bg-green-100" title="<?php _e('How is the health score calculated?', 'call-tracking-metrics'); ?>">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <p class="text-sm text-green-600 font-medium !mt-1"><?php _e('System status assessment', 'call-tracking-metrics'); ?></p>
+                    </div>
                 </div>
                 <div class="text-right">
-                    <div id="health-score" class="text-3xl font-bold text-green-600">--</div>
-                    <div class="text-sm text-green-700"><?php _e('out of 100', 'call-tracking-metrics'); ?></div>
+                    <div id="health-score" class="text-4xl font-bold text-green-600 mb-1">--</div>
+                    <div class="text-sm text-green-700 font-medium"><?php _e('out of 100', 'call-tracking-metrics'); ?></div>
                 </div>
             </div>
         </div>
@@ -488,10 +504,398 @@ function getRecommendedActions(checkName, status) {
     return recommendations[checkName] || 'Please contact support for assistance with this issue.';
 }
 
+// Silent health check function for auto-loading (no toast notifications)
+function runHealthCheckSilent() {
+    console.log('[CTM] Running silent health check...');
+    
+    const formData = new FormData();
+    formData.append('action', 'ctm_health_check');
+    formData.append('nonce', '<?= wp_create_nonce('ctm_health_check') ?>');
+    
+    console.log('[CTM] Sending health check request...');
+    
+    fetch('<?= admin_url('admin-ajax.php') ?>', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        console.log('[CTM] Health check response status:', response.status);
+        return response.json();
+    })
+    .then(response => {
+        console.log('[CTM] Health check response:', response);
+        if (response.success) {
+            const checks = response.data.checks || [];
+            console.log('[CTM] Processing', checks.length, 'health checks');
+            
+            // Update health indicators silently
+            checks.forEach(check => {
+                // Map check names to indicator IDs
+                const nameToIdMap = {
+                    'API Key': 'check-api-key',
+                    'API Connection': 'check-api-connection',
+                    'Account Access': 'check-account-access',
+                    'Contact Form 7': 'check-cf7',
+                    'Gravity Forms': 'check-gf',
+                    'Field Mappings': 'check-field-mappings',
+                    'PHP Version': 'check-php-version',
+                    'cURL Extension': 'check-curl',
+                    'SSL Support': 'check-ssl',
+                    'Memory Limit': 'check-memory',
+                    'Plugin Version': 'check-plugin-version',
+                    'Database Tables': 'check-database-tables',
+                    'File Permissions': 'check-file-permissions',
+                    'Debug Mode': 'check-debug-mode'
+                };
+                
+                const indicatorId = nameToIdMap[check.name];
+                const indicator = document.getElementById(indicatorId);
+                
+                if (indicator) {
+                    indicator.textContent = check.status === 'pass' ? '✅' : 
+                                          check.status === 'warning' ? '⚠️' : '❌';
+                    indicator.className = `health-indicator ${check.status === 'pass' ? 'text-green-600' : 
+                                                           check.status === 'warning' ? 'text-yellow-600' : 'text-red-600'}`;
+                    console.log('[CTM] Updated indicator for', check.name, 'to', check.status);
+                } else {
+                    console.log('[CTM] Indicator not found for', check.name, '(ID:', indicatorId, ')');
+                }
+            });
+            
+            // Update overall health score silently
+            const healthScore = document.getElementById('health-score');
+            if (healthScore) {
+                const passedChecks = checks.filter(c => c.status === 'pass').length;
+                const totalChecks = checks.length;
+                const score = Math.round((passedChecks / totalChecks) * 100);
+                
+                healthScore.textContent = score;
+                healthScore.className = score >= 80 ? 'text-3xl font-bold text-green-600' :
+                                       score >= 60 ? 'text-3xl font-bold text-yellow-600' :
+                                       'text-3xl font-bold text-red-600';
+                console.log('[CTM] Updated health score to', score);
+            } else {
+                console.log('[CTM] Health score element not found');
+            }
+        } else {
+            console.error('[CTM] Health check failed:', response);
+        }
+    })
+    .catch(error => {
+        console.error('[CTM] Health check error:', error);
+    });
+}
 
+// Auto-load health check on page load (silent)
 document.addEventListener('DOMContentLoaded', function() {
-    runHealthCheck();
+    console.log('[CTM] DOM Content Loaded - starting silent health check');
+    runHealthCheckSilent();
 });
+
+// Show health score information modal
+function showHealthScoreInfo() {
+    // Create modal overlay
+    const modalOverlay = document.createElement('div');
+    modalOverlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    modalOverlay.style.zIndex = '9999';
+    
+    // Create modal content
+    modalOverlay.innerHTML = `
+        <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full mx-4 p-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-start justify-between mb-8">
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
+                        <div class="text-3xl">📊</div>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-1">Health Score Calculation</h3>
+                        <p class="text-gray-600">How your plugin health score is calculated</p>
+                    </div>
+                </div>
+                <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-full hover:bg-gray-100">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="space-y-8">
+                <!-- Score Formula -->
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <h4 class="text-xl font-bold text-blue-800">Score Formula</h4>
+                    </div>
+                    <div class="text-blue-700">
+                        <div class="bg-blue-100 border border-blue-200 rounded-lg p-4 mb-3">
+                            <p class="font-mono text-lg font-semibold">Health Score = (Passed Checks ÷ Total Checks) × 100</p>
+                        </div>
+                        <p class="text-sm">Example: 11 passed checks out of 14 total = <span class="font-bold text-blue-800">(11 ÷ 14) × 100 = 79%</span></p>
+                    </div>
+                </div>
+
+                <!-- Color Coding -->
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z"></path>
+                            </svg>
+                        </div>
+                        <h4 class="text-xl font-bold text-green-800">Score Color Coding</h4>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white border border-green-200 rounded-lg p-4 flex items-center gap-3">
+                            <div class="w-6 h-6 bg-green-500 rounded-full shadow-sm"></div>
+                            <div>
+                                <div class="font-bold text-green-800">80-100%</div>
+                                <div class="text-sm text-green-600">Excellent</div>
+                            </div>
+                        </div>
+                        <div class="bg-white border border-yellow-200 rounded-lg p-4 flex items-center gap-3">
+                            <div class="w-6 h-6 bg-yellow-500 rounded-full shadow-sm"></div>
+                            <div>
+                                <div class="font-bold text-yellow-800">60-79%</div>
+                                <div class="text-sm text-yellow-600">Good</div>
+                            </div>
+                        </div>
+                        <div class="bg-white border border-red-200 rounded-lg p-4 flex items-center gap-3">
+                            <div class="w-6 h-6 bg-red-500 rounded-full shadow-sm"></div>
+                            <div>
+                                <div class="font-bold text-red-800">0-59%</div>
+                                <div class="text-sm text-red-600">Needs Attention</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Health Checks Breakdown -->
+                <div>
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                            </svg>
+                        </div>
+                        <h4 class="text-xl font-bold text-gray-800">Health Checks Breakdown</h4>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        
+                        <!-- API Configuration -->
+                        <div class="bg-white border border-blue-200 rounded-xl p-5 shadow-sm">
+                            <div class="flex items-center gap-2 mb-4">
+                                <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                                    </svg>
+                                </div>
+                                <h5 class="font-bold text-blue-700">API Configuration (3 checks)</h5>
+                            </div>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <span class="text-gray-700">API Key</span>
+                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ❌ Fail</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <span class="text-gray-700">API Connection</span>
+                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ❌ Fail</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2">
+                                    <span class="text-gray-700">Account Access</span>
+                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ❌ Fail</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Integration -->
+                        <div class="bg-white border border-purple-200 rounded-xl p-5 shadow-sm">
+                            <div class="flex items-center gap-2 mb-4">
+                                <div class="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </div>
+                                <h5 class="font-bold text-purple-700">Form Integration (3 checks)</h5>
+                            </div>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <span class="text-gray-700">Contact Form 7</span>
+                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ⚠️ Warning</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <span class="text-gray-700">Gravity Forms</span>
+                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ⚠️ Warning</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2">
+                                    <span class="text-gray-700">Field Mappings</span>
+                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ⚠️ Warning</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Server Requirements -->
+                        <div class="bg-white border border-orange-200 rounded-xl p-5 shadow-sm">
+                            <div class="flex items-center gap-2 mb-4">
+                                <div class="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path>
+                                    </svg>
+                                </div>
+                                <h5 class="font-bold text-orange-700">Server Requirements (4 checks)</h5>
+                            </div>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <span class="text-gray-700">PHP Version</span>
+                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ⚠️ Warning</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <span class="text-gray-700">cURL Extension</span>
+                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ❌ Fail</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <span class="text-gray-700">SSL Support</span>
+                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ❌ Fail</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2">
+                                    <span class="text-gray-700">Memory Limit</span>
+                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ⚠️ Warning</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Plugin Status -->
+                        <div class="bg-white border border-red-200 rounded-xl p-5 shadow-sm">
+                            <div class="flex items-center gap-2 mb-4">
+                                <div class="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m0 0V1a1 1 0 011-1h2a1 1 0 011 1v3M7 4H5a1 1 0 00-1 1v3m0 0v8a2 2 0 002 2h10a2 2 0 002-2V8m0 0V5a1 1 0 00-1-1h-2M7 4h10"></path>
+                                    </svg>
+                                </div>
+                                <h5 class="font-bold text-red-700">Plugin Status (4 checks)</h5>
+                            </div>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <span class="text-gray-700">Plugin Version</span>
+                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Always Pass</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <span class="text-gray-700">Database Tables</span>
+                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ❌ Fail</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <span class="text-gray-700">File Permissions</span>
+                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ⚠️ Warning</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2">
+                                    <span class="text-gray-700">Debug Mode</span>
+                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ⚠️ Warning</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Impact Levels -->
+                <div class="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 bg-yellow-500 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <h4 class="text-xl font-bold text-yellow-800">Impact Levels</h4>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div class="bg-white border border-red-200 rounded-lg p-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="w-4 h-4 bg-red-500 rounded-full"></div>
+                                <span class="font-bold text-red-700">High Impact (❌ Fail)</span>
+                            </div>
+                            <p class="text-red-600 text-xs">API Key, API Connection, Account Access, cURL Extension, SSL Support, Database Tables</p>
+                        </div>
+                        <div class="bg-white border border-yellow-200 rounded-lg p-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="w-4 h-4 bg-yellow-500 rounded-full"></div>
+                                <span class="font-bold text-yellow-700">Medium Impact (⚠️ Warning)</span>
+                            </div>
+                            <p class="text-yellow-600 text-xs">Form Integrations, Field Mappings, PHP Version, Memory Limit, File Permissions, Debug Mode</p>
+                        </div>
+                        <div class="bg-white border border-green-200 rounded-lg p-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="w-4 h-4 bg-green-500 rounded-full"></div>
+                                <span class="font-bold text-green-700">Low Impact (✅ Always Pass)</span>
+                            </div>
+                            <p class="text-green-600 text-xs">Plugin Version</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Improvement Tips -->
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <h4 class="text-xl font-bold text-green-800">To Reach 100% Score</h4>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <ul class="space-y-2 text-sm text-green-700">
+                            <li class="flex items-start gap-2">
+                                <div class="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                                <span>Configure API credentials and test connection</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <div class="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                                <span>Install optional form plugins (CF7, Gravity Forms)</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <div class="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                                <span>Configure field mappings for forms</span>
+                            </li>
+                        </ul>
+                        <ul class="space-y-2 text-sm text-green-700">
+                            <li class="flex items-start gap-2">
+                                <div class="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                                <span>Enable debug mode for troubleshooting</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <div class="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                                <span>Ensure server meets all requirements (PHP 7.4+, cURL, SSL)</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <div class="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                                <span>Verify file permissions are correct</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end mt-8">
+                <button onclick="this.closest('.fixed').remove()" 
+                        class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-3 rounded-xl text-sm font-semibold transition-all duration-200 shadow-lg hover:shadow-xl">
+                    Got it!
+                </button>
+            </div>
+        </div>
+    `;
+    
+    // Close modal when clicking overlay
+    modalOverlay.addEventListener('click', function(e) {
+        if (e.target === modalOverlay) {
+            modalOverlay.remove();
+        }
+    });
+    
+    // Add to page
+    document.body.appendChild(modalOverlay);
+}
 
 </script>
  

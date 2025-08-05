@@ -16,7 +16,7 @@
         <div class="flex justify-center my-4 gap-2">
             <button onclick="toggleAutoRefresh()" id="auto-refresh-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-4 py-2 rounded-xl transition text-sm flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
                 <?php _e('Auto-refresh: OFF', 'call-tracking-metrics'); ?>
             </button>
@@ -273,18 +273,32 @@ let autoRefreshEnabled = false;
             clearInterval(autoRefreshInterval);
             autoRefreshInterval = null;
             autoRefreshEnabled = false;
-            button.textContent = 'Auto: OFF';
-            button.classList.remove('bg-green-600', 'hover:bg-green-700');
-            button.classList.add('bg-gray-600', 'hover:bg-gray-700');
-            showDebugMessage('Auto-refresh disabled', 'info');
+            
+            // Update button text and icon for OFF state
+            button.innerHTML = `
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Auto: OFF
+            `;
+            button.classList.remove('bg-green-600', 'hover:bg-green-700', '!text-white');
+            button.classList.add('bg-gray-200', 'hover:bg-gray-300', 'text-gray-800');
+            ctmShowToast('Auto-refresh disabled', 'info');
         } else {
             // Enable auto-refresh
             autoRefreshInterval = setInterval(refreshPerformance, 30000); // Refresh every 30 seconds
             autoRefreshEnabled = true;
-            button.textContent = 'Auto: ON';
-            button.classList.remove('bg-gray-600', 'hover:bg-gray-700');
-            button.classList.add('bg-green-600', 'hover:bg-green-700');
-            showDebugMessage('Auto-refresh enabled (30s intervals)', 'success');
+            
+            // Update button text and icon for ON state
+            button.innerHTML = `
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Auto: ON
+            `;
+            button.classList.remove('bg-gray-200', 'hover:bg-gray-300', 'text-gray-800');
+            button.classList.add('bg-green-600', 'hover:bg-green-700', '!text-white');
+            ctmShowToast('Auto-refresh enabled (30s intervals)', 'success');
         }
     }
 
@@ -358,28 +372,179 @@ let autoRefreshEnabled = false;
                 updateElement('frontend-queries', data.frontend_queries || '--');
                 updateElement('cron-jobs', data.cron_jobs || '--');
                 
-                // Real-time Metrics
-                updateElement('server-load', data.server_load || '--');
+                // API Performance
+                updateElement('api-response-time', data.api_response_time || '--');
+                updateElement('api-calls-24h', data.api_calls_24h || '--');
+                updateElement('api-success-rate', data.api_success_rate || '--');
+                updateElement('api-error-rate', data.api_error_rate || '--');
+                
+                // Security & Health
+                updateElement('ssl-status', data.ssl_status || '--');
+                updateElement('firewall-status', data.firewall_status || '--');
+                updateElement('backup-status', data.backup_status || '--');
+                updateElement('update-status', data.update_status || '--');
+                
+                // System Resources
                 updateElement('disk-usage', data.disk_usage || '--');
-                updateElement('network-io', data.network_io || '--');
-                updateElement('active-sessions', data.active_sessions || '--');
+                updateElement('disk-free', data.disk_free || '--');
+                updateElement('cpu-load', data.cpu_load || '--');
+                updateElement('memory-available', data.memory_available || '--');
+                
+                // Network & Connectivity
+                updateElement('server-response', data.server_response || '--');
+                updateElement('cdn-status', data.cdn_status || '--');
+                updateElement('dns-resolution', data.dns_resolution || '--');
+                updateElement('connection-speed', data.connection_speed || '--');
+                
+                // User Activity
+                updateElement('active-users', data.active_users || '--');
+                updateElement('sessions-today', data.sessions_today || '--');
+                updateElement('page-views', data.page_views || '--');
+                updateElement('bounce-rate', data.bounce_rate || '--');
+                
+                // Error Tracking
+                updateElement('error-count', data.error_count || '--');
                 updateElement('error-rate', data.error_rate || '--');
+                updateElement('last-error', data.last_error || '--');
+                updateElement('error-trend', data.error_trend || '--');
+                
+                // Performance Trends
+                updateElement('load-trend', data.load_trend || '--');
+                updateElement('memory-trend', data.memory_trend || '--');
+                updateElement('query-trend', data.query_trend || '--');
+                updateElement('performance-score', data.performance_score || '--');
+                
+                // Last Updated
                 updateElement('last-updated', data.last_updated || '--');
                 
-                showDebugMessage('Performance metrics updated successfully!', 'success');
+                ctmShowToast('Performance metrics updated successfully!', 'success');
             } else {
-                showDebugMessage('Failed to refresh performance metrics: ' + (response.data?.message || 'Unknown error'), 'error');
+                ctmShowToast('Failed to refresh performance metrics: ' + (response.data?.message || 'Unknown error'), 'error');
             }
         })
         .catch(error => {
             console.error('Performance refresh error:', error);
-            showDebugMessage('Failed to refresh performance metrics. Please try again.', 'error');
+            ctmShowToast('Failed to refresh performance metrics. Please try again.', 'error');
         })
         .finally(() => {
             if (button) {
                 button.disabled = false;
                 button.textContent = 'Refresh';
             }
+        });
+    }
+
+    // Silent refresh function for auto-loading (no toast)
+    function refreshPerformanceSilent() {
+        // Get stored client-side metrics
+        const clientMetrics = getStoredPerformanceMetrics();
+
+        const formData = new FormData();
+        formData.append('action', 'ctm_get_performance_metrics');
+        formData.append('nonce', '<?= wp_create_nonce('ctm_get_performance_metrics') ?>');
+        if (clientMetrics) {
+            formData.append('client_metrics', JSON.stringify(clientMetrics));
+        }
+
+        fetch('<?= admin_url('admin-ajax.php') ?>', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(response => {
+            if (response.success) {
+                const data = response.data;
+                
+                // Update all performance metrics silently (same as refreshPerformance but without toasts)
+                updateElement('memory-usage', data.memory_usage || '--');
+                updateElement('memory-percentage', data.memory_percentage || '--');
+                updateElement('page-load-time', data.page_load_time || '--');
+                updateElement('load-time-status', data.server_response || '--');
+                updateElement('db-queries', data.db_queries || '--');
+                updateElement('query-time', data.query_time || '--');
+                updateElement('api-calls', data.api_calls || '--');
+                updateElement('api-response-time', data.api_response_time || '--');
+                
+                // Memory & Processing
+                updateElement('current-memory', data.current_memory || '--');
+                updateElement('peak-memory', data.peak_memory || '--');
+                updateElement('memory-limit', data.memory_limit || '--');
+                updateElement('cpu-usage', data.cpu_usage || '--');
+                updateElement('execution-time', data.execution_time || '--');
+                updateElement('time-limit', data.time_limit || '--');
+                
+                // Database Performance
+                updateElement('total-queries', data.total_queries || '--');
+                updateElement('total-query-time', data.total_query_time || '--');
+                updateElement('slow-queries', data.slow_queries || '--');
+                updateElement('cache-hits', data.cache_hits || '--');
+                updateElement('cache-misses', data.cache_misses || '--');
+                updateElement('db-version', data.db_version || '--');
+                
+                // Page Load Performance
+                updateElement('ttfb', data.ttfb || '--');
+                updateElement('dom-ready', data.dom_ready || '--');
+                updateElement('load-complete', data.load_complete || '--');
+                updateElement('scripts-loaded', data.scripts_loaded || '--');
+                updateElement('styles-loaded', data.styles_loaded || '--');
+                updateElement('images-loaded', data.images_loaded || '--');
+                
+                // WordPress Performance
+                updateElement('active-plugins', data.active_plugins || '--');
+                updateElement('theme-load-time', data.theme_load_time || '--');
+                updateElement('plugin-load-time', data.plugin_load_time || '--');
+                updateElement('admin-queries', data.admin_queries || '--');
+                updateElement('frontend-queries', data.frontend_queries || '--');
+                updateElement('cron-jobs', data.cron_jobs || '--');
+                
+                // API Performance
+                updateElement('api-response-time', data.api_response_time || '--');
+                updateElement('api-calls-24h', data.api_calls_24h || '--');
+                updateElement('api-success-rate', data.api_success_rate || '--');
+                updateElement('api-error-rate', data.api_error_rate || '--');
+                
+                // Security & Health
+                updateElement('ssl-status', data.ssl_status || '--');
+                updateElement('firewall-status', data.firewall_status || '--');
+                updateElement('backup-status', data.backup_status || '--');
+                updateElement('update-status', data.update_status || '--');
+                
+                // System Resources
+                updateElement('disk-usage', data.disk_usage || '--');
+                updateElement('disk-free', data.disk_free || '--');
+                updateElement('cpu-load', data.cpu_load || '--');
+                updateElement('memory-available', data.memory_available || '--');
+                
+                // Network & Connectivity
+                updateElement('server-response', data.server_response || '--');
+                updateElement('cdn-status', data.cdn_status || '--');
+                updateElement('dns-resolution', data.dns_resolution || '--');
+                updateElement('connection-speed', data.connection_speed || '--');
+                
+                // User Activity
+                updateElement('active-users', data.active_users || '--');
+                updateElement('sessions-today', data.sessions_today || '--');
+                updateElement('page-views', data.page_views || '--');
+                updateElement('bounce-rate', data.bounce_rate || '--');
+                
+                // Error Tracking
+                updateElement('error-count', data.error_count || '--');
+                updateElement('error-rate', data.error_rate || '--');
+                updateElement('last-error', data.last_error || '--');
+                updateElement('error-trend', data.error_trend || '--');
+                
+                // Performance Trends
+                updateElement('load-trend', data.load_trend || '--');
+                updateElement('memory-trend', data.memory_trend || '--');
+                updateElement('query-trend', data.query_trend || '--');
+                updateElement('performance-score', data.performance_score || '--');
+                
+                // Last Updated
+                updateElement('last-updated', data.last_updated || '--');
+            }
+        })
+        .catch(error => {
+            console.error('Performance silent refresh error:', error);
         });
     }
 
@@ -446,9 +611,9 @@ window.addEventListener('load', function() {
     
     storePerformanceMetrics();
     
-    // Auto-refresh performance metrics on page load
+    // Auto-load performance metrics on page load (without toast)
     console.log('[CTM] Auto-loading performance metrics');
-    refreshPerformance();
+    refreshPerformanceSilent();
 });
 
 // Store performance metrics in localStorage

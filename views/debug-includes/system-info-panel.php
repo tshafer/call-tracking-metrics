@@ -125,19 +125,40 @@ $system_info_report = ctm_get_system_info_report();
     <!-- Quick Stats Grid -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center" data-metric="php_version">
-            <div class="text-2xl font-bold text-blue-600" data-field="php_version"><?= esc_html($system_info['php_version']) ?></div>
+            <div class="flex items-center justify-center mb-1">
+                <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                </svg>
+                <div class="text-2xl font-bold text-blue-600" data-field="php_version"><?= esc_html($system_info['php_version']) ?></div>
+            </div>
             <div class="text-xs text-blue-700"><?php _e('PHP Version', 'call-tracking-metrics'); ?></div>
         </div>
         <div class="bg-green-50 border border-green-200 rounded-lg p-3 text-center" data-metric="wp_version">
-            <div class="text-2xl font-bold text-green-600" data-field="wp_version"><?= esc_html($system_info['wp_version']) ?></div>
+            <div class="flex items-center justify-center mb-1">
+                <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path>
+                </svg>
+                <div class="text-2xl font-bold text-green-600" data-field="wp_version"><?= esc_html($system_info['wp_version']) ?></div>
+            </div>
             <div class="text-xs text-green-700"><?php _e('WordPress', 'call-tracking-metrics'); ?></div>
         </div>
         <div class="bg-purple-50 border border-purple-200 rounded-lg p-3 text-center" data-metric="memory_usage">
-            <div class="text-2xl font-bold text-purple-600" data-field="memory_usage"><?= esc_html($system_info['memory_usage']) ?></div>
+            <div class="flex items-center justify-center mb-1">
+                <svg class="w-5 h-5 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
+                </svg>
+                <div class="text-2xl font-bold text-purple-600" data-field="memory_usage"><?= esc_html($system_info['memory_usage']) ?></div>
+            </div>
             <div class="text-xs text-purple-700"><?php _e('Memory Usage', 'call-tracking-metrics'); ?></div>
         </div>
         <div class="bg-orange-50 border border-orange-200 rounded-lg p-3 text-center" data-metric="db_queries">
-            <div class="text-2xl font-bold text-orange-600" data-field="db_queries"><?= esc_html($system_info['db_queries']) ?></div>
+            <div class="flex items-center justify-center mb-1">
+                <svg class="w-5 h-5 text-orange-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+                </svg>
+                <div class="text-2xl font-bold text-orange-600" data-field="db_queries"><?= esc_html($system_info['db_queries']) ?></div>
+            </div>
             <div class="text-xs text-orange-700"><?php _e('DB Queries', 'call-tracking-metrics'); ?></div>
         </div>
     </div>
@@ -594,9 +615,9 @@ function updateSectionFields(section, data) {
     // Attach email system info form handler after DOM is loaded
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Auto-load system info on page load
+    // Auto-load system info on page load (without toast notification)
     console.log('[CTM] Page loaded, auto-loading system info');
-    refreshSystemInfo();
+    refreshSystemInfoSilent();
     
     const emailSystemForm = document.getElementById('email-system-form');
     if (emailSystemForm) {
@@ -656,22 +677,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-
-function refreshSystemInfo() {
-    const button = document.getElementById('refresh-system-btn');
-    const originalText = button.textContent;
-    
-    // Show loading state
-    button.disabled = true;
-    button.innerHTML = `
-        <svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-        </svg>
-        Refreshing...
-    `;
-    
-    ctmShowToast('Refreshing system information...', 'info');
-    
+// Silent refresh function for auto-loading (no toast)
+function refreshSystemInfoSilent() {
     const formData = new FormData();
     formData.append('action', 'ctm_refresh_system_info');
     formData.append('nonce', '<?= wp_create_nonce('ctm_refresh_system_info') ?>');
@@ -681,34 +688,85 @@ function refreshSystemInfo() {
         body: formData
     })
     .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Update system info panels with fresh data
-            if (data.data && data.data.system_info) {
-                updateSystemInfoDisplay(data.data.system_info);
-            }
-            ctmShowToast('System information refreshed successfully', 'success');
-        } else {
-            const errorMessage = (data && data.data && data.data.message) || 
-                                (data && data.message) || 
-                                'Failed to refresh system information';
-            ctmShowToast('Failed to refresh system info: ' + errorMessage, 'error');
+    .then(response => {
+        if (response.success) {
+            const data = response.data;
+            
+            // Update all system info fields silently
+            updateSystemInfoFields(data);
         }
     })
     .catch(error => {
         console.error('Error refreshing system info:', error);
-        ctmShowToast('Error refreshing system information: ' + error.message, 'error');
-    })
-    .finally(() => {
-        // Restore button state
-        button.disabled = false;
-        button.innerHTML = `
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-            </svg>
-            Refresh System Info
-        `;
     });
+}
+
+// Function to update system info fields with new data
+function updateSystemInfoFields(data) {
+    if (!data || !data.system_info) return;
+    
+    const systemInfo = data.system_info;
+    
+    // Update quick stats
+    updateElement('php_version', systemInfo.php_version || '--');
+    updateElement('wp_version', systemInfo.wp_version || '--');
+    updateElement('memory_usage', systemInfo.memory_usage || '--');
+    updateElement('db_queries', systemInfo.db_queries || '--');
+    
+    // Update WordPress Environment fields
+    if (systemInfo.wordpress_env) {
+        updateElement('version', systemInfo.wordpress_env.version || '--');
+        updateElement('language', systemInfo.wordpress_env.language || '--');
+        updateElement('debug_mode', systemInfo.wordpress_env.debug_mode || '--');
+        updateElement('memory_limit', systemInfo.wordpress_env.memory_limit || '--');
+        updateElement('multisite', systemInfo.wordpress_env.multisite || '--');
+        updateElement('timezone', systemInfo.wordpress_env.timezone || '--');
+    }
+    
+    // Update Server Environment fields
+    if (systemInfo.server_env) {
+        updateElement('php_version', systemInfo.server_env.php_version || '--');
+        updateElement('server_software', systemInfo.server_env.server_software || '--');
+        updateElement('os', systemInfo.server_env.os || '--');
+        updateElement('memory_limit', systemInfo.server_env.memory_limit || '--');
+    }
+    
+    // Update Database fields
+    if (systemInfo.database) {
+        updateElement('db_version', systemInfo.database.version || '--');
+        updateElement('db_size', systemInfo.database.size || '--');
+        updateElement('db_charset', systemInfo.database.charset || '--');
+        updateElement('db_collation', systemInfo.database.collation || '--');
+    }
+    
+    // Update Plugin fields
+    if (systemInfo.plugins) {
+        updateElement('active_plugins', systemInfo.plugins.active_count || '--');
+        updateElement('total_plugins', systemInfo.plugins.total_count || '--');
+        updateElement('plugin_updates', systemInfo.plugins.updates_available || '--');
+    }
+    
+    // Update Theme fields
+    if (systemInfo.theme) {
+        updateElement('theme_name', systemInfo.theme.name || '--');
+        updateElement('theme_version', systemInfo.theme.version || '--');
+        updateElement('theme_author', systemInfo.theme.author || '--');
+    }
+    
+    // Update Performance fields
+    if (systemInfo.performance) {
+        updateElement('load_time', systemInfo.performance.load_time || '--');
+        updateElement('memory_peak', systemInfo.performance.memory_peak || '--');
+        updateElement('query_count', systemInfo.performance.query_count || '--');
+    }
+}
+
+// Helper function to update element text content
+function updateElement(elementId, value) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.textContent = value;
+    }
 }
 
 function showDebugMessage(message, type = 'info') {
