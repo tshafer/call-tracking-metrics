@@ -27,7 +27,7 @@
         <!-- Overall Health Score -->
         <div class="bg-gradient-to-br from-green-50 via-blue-50 to-green-100 border border-green-200 rounded-xl p-6 shadow-sm">
             <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-4">
                     <div class="flex-shrink-0">
                         <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-sm">
                             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -36,15 +36,15 @@
                         </div>
                     </div>
                     <div class="flex-1">
-                        <div class="flex items-center gap-2 mb-1">
-                            <h4 class="text-xl font-bold text-green-800 !mb-0 !mt-0"><?php _e('Overall Health Score', 'call-tracking-metrics'); ?></h4>
-                            <button onclick="showHealthScoreInfo()" class="text-green-600 hover:text-green-800 transition-colors p-1 rounded-full hover:bg-green-100" title="<?php _e('How is the health score calculated?', 'call-tracking-metrics'); ?>">
+                        <div class="flex items-center gap-3 mb-2">
+                            <h4 class="text-xl font-bold text-green-800"><?php _e('Overall Health Score', 'call-tracking-metrics'); ?></h4>
+                            <button onclick="showHealthScoreInfo()" class="text-green-600 hover:text-green-800 transition-colors p-1.5 rounded-full hover:bg-green-100 flex items-center justify-center" title="<?php _e('How is the health score calculated?', 'call-tracking-metrics'); ?>">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
                             </button>
                         </div>
-                        <p class="text-sm text-green-600 font-medium !mt-1"><?php _e('System status assessment', 'call-tracking-metrics'); ?></p>
+                        <p class="text-sm text-green-600 font-medium"><?php _e('System status assessment', 'call-tracking-metrics'); ?></p>
                     </div>
                 </div>
                 <div class="text-right">
