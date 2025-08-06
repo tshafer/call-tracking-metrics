@@ -216,10 +216,27 @@ class Options
      */
     public function renderSettingsPage(): void
     {
-        // Process form submissions if this is a POST request
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $this->handleFormSubmission();
+        // Add success message if settings were updated - use WordPress admin notices
+        if (isset($_GET['settings-updated']) && $_GET['settings-updated'] === 'true') {
+            add_action('admin_notices', function() {
+                echo '<div class="notice notice-success is-dismissible" style="margin: 20px 0; padding: 20px; font-size: 16px; background: #d4edda; border: 2px solid #28a745; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><p style="margin: 0; font-weight: bold; color: #155724;"><strong>' . __('Settings saved successfully!', 'call-tracking-metrics') . '</strong></p></div>';
+            });
         }
+        
+        // Also check for any POST data that indicates a form was submitted
+        if (!empty($_POST) && !isset($_GET['settings-updated'])) {
+            add_action('admin_notices', function() {
+                echo '<div class="notice notice-success is-dismissible" style="margin: 20px 0; padding: 20px; font-size: 16px; background: #d4edda; border: 2px solid #28a745; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><p style="margin: 0; font-weight: bold; color: #155724;"><strong>' . __('Settings saved successfully!', 'call-tracking-metrics') . '</strong></p></div>';
+            });
+        }
+        
+        // Test message to verify admin_notices is working
+        add_action('admin_notices', function() {
+            echo '<div class="notice notice-info is-dismissible"><p>Test: Admin notices hook is working!</p></div>';
+        });
+        
+        // Handle form submissions first
+        $this->handleFormSubmission();
         
         // Determine API connection status for conditional UI elements
         $apiKey = get_option('ctm_api_key');
@@ -235,11 +252,6 @@ class Options
         
         // Generate plugin notices (missing dependencies, etc.)
         $notices = $this->generateNotices();
-        
-        // Add success message if settings were updated - this will be displayed as a large banner at the top
-        if (isset($_GET['settings-updated']) && $_GET['settings-updated'] === 'true') {
-            array_unshift($notices, '<div class="notice notice-success is-dismissible" style="margin: 20px 0; padding: 20px; font-size: 16px; background: #d4edda; border: 2px solid #28a745; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><p style="margin: 0; font-weight: bold; color: #155724;"><strong>' . __('Settings saved successfully!', 'call-tracking-metrics') . '</strong></p></div>');
-        }
         
         // Determine active tab from URL parameter
         $active_tab = $_GET['tab'] ?? 'general';
