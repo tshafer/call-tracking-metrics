@@ -19,70 +19,38 @@ class AdminAjaxFormImportAjaxTest extends TestCase
         \Brain\Monkey\setUp();
         $this->initalMonkey();
 
-        // Mock FormImportService
-        $this->formImportService = $this->createMock(FormImportService::class);
+        // Create a simple stub for FormImportService instead of using createMock
+        $this->formImportService = new class extends FormImportService {
+            public function __construct() {
+                // Empty constructor to avoid parent dependencies
+            }
+            
+            public function getAvailableForms(string $apiKey, string $apiSecret): ?array {
+                return [
+                    ['id' => 'CTM123', 'name' => 'Updated Form', 'fields' => []],
+                    ['id' => 'CTM456', 'name' => 'Updated GF Form', 'fields' => []]
+                ];
+            }
+            
+            public function convertToCF7Format(array $ctmForm): string {
+                return '[text* updated-name] [email* updated-email] [submit "Updated Send"]';
+            }
+            
+            public function convertToGFFormat(array $ctmForm, string $formTitle): array {
+                return [
+                    'title' => 'Updated GF Form',
+                    'fields' => [
+                        ['id' => 1, 'label' => 'Updated Name', 'type' => 'text']
+                    ]
+                ];
+            }
+        };
+        
         $this->formImportAjax = new FormImportAjax($this->formImportService);
 
-        // Mock WordPress classes
-        if (!class_exists('WPCF7_ContactForm')) {
-            eval('class WPCF7_ContactForm {
-                private $id;
-                private $properties = [];
-                
-                public static function get_instance($id) { 
-                    if ($id == "123") {
-                        $form = new self();
-                        $form->id = $id;
-                        $form->properties = ["form" => "[text* your-name] [email* your-email] [submit \"Send\"]", "title" => "Test CF7 Form"];
-                        return $form;
-                    }
-                    return null;
-                }
-                
-                public function prop($key) { 
-                    return isset($this->properties[$key]) ? $this->properties[$key] : null;
-                }
-                
-                public function title() { 
-                    return $this->properties["title"] ?? "Test Form";
-                }
-                
-                public function form_html() {
-                    return "<form><input type=\"text\" name=\"your-name\" required><input type=\"email\" name=\"your-email\" required><button type=\"submit\">Send</button></form>";
-                }
-                
-                public function set_properties($props) {
-                    $this->properties = array_merge($this->properties, $props);
-                }
-                
-                public function save() {
-                    return true;
-                }
-            }');
-        }
+        // WordPress classes are mocked in MonkeyTrait
 
-        if (!class_exists('GFAPI')) {
-            eval('class GFAPI {
-                public static function get_form($id) { 
-                    if ($id == "456") {
-                        return [
-                            "id" => $id,
-                            "title" => "Test GF Form",
-                            "fields" => [
-                                ["id" => 1, "label" => "Name", "type" => "text", "isRequired" => true],
-                                ["id" => 2, "label" => "Email", "type" => "email", "isRequired" => true],
-                                ["id" => 3, "label" => "Message", "type" => "textarea", "isRequired" => false]
-                            ]
-                        ];
-                    }
-                    return null;
-                }
-                
-                public static function update_form($form) {
-                    return true;
-                }
-            }');
-        }
+        // GFAPI class is mocked in MonkeyTrait
 
         // Mock global WordPress functions
         \Brain\Monkey\Functions\when('wp_verify_nonce')->justReturn(true);
@@ -94,7 +62,6 @@ class AdminAjaxFormImportAjaxTest extends TestCase
         \Brain\Monkey\Functions\when('esc_html')->returnArg();
         \Brain\Monkey\Functions\when('esc_attr')->returnArg();
         \Brain\Monkey\Functions\when('do_shortcode')->returnArg();
-        \Brain\Monkey\Functions\when('nl2br')->returnArg();
         
         // Mock wp_send_json_* functions
         \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($data) {
@@ -210,15 +177,6 @@ class AdminAjaxFormImportAjaxTest extends TestCase
 
     public function testUpdateFormSuccessfulCF7Update()
     {
-        // Mock FormImportService methods
-        $this->formImportService->method('getAvailableForms')
-            ->willReturn([
-                ['id' => 'CTM123', 'name' => 'Updated Form', 'fields' => []]
-            ]);
-
-        $this->formImportService->method('convertToCF7Format')
-            ->willReturn('[text* updated-name] [email* updated-email] [submit "Updated Send"]');
-
         $_POST = [
             'nonce' => 'valid_nonce',
             'wp_form_id' => '123',
@@ -239,20 +197,6 @@ class AdminAjaxFormImportAjaxTest extends TestCase
 
     public function testUpdateFormSuccessfulGFUpdate()
     {
-        // Mock FormImportService methods
-        $this->formImportService->method('getAvailableForms')
-            ->willReturn([
-                ['id' => 'CTM456', 'name' => 'Updated GF Form', 'fields' => []]
-            ]);
-
-        $this->formImportService->method('convertToGFFormat')
-            ->willReturn([
-                'title' => 'Updated GF Form',
-                'fields' => [
-                    ['id' => 1, 'label' => 'Updated Name', 'type' => 'text']
-                ]
-            ]);
-
         $_POST = [
             'nonce' => 'valid_nonce',
             'wp_form_id' => '456',
@@ -518,9 +462,15 @@ class AdminAjaxFormImportAjaxTest extends TestCase
 
     public function testUpdateFormWithMissingCTMForm()
     {
-        // Mock FormImportService to return empty forms array
-        $this->formImportService->method('getAvailableForms')
-            ->willReturn([]);
+        // Create a new stub that returns empty forms array
+        $emptyFormImportService = new class extends FormImportService {
+            public function __construct() {}
+            public function getAvailableForms(string $apiKey, string $apiSecret): ?array {
+                return []; // Empty array
+            }
+        };
+        
+        $formImportAjax = new FormImportAjax($emptyFormImportService);
 
         $_POST = [
             'nonce' => 'valid_nonce',
@@ -530,7 +480,7 @@ class AdminAjaxFormImportAjaxTest extends TestCase
         ];
 
         ob_start();
-        $this->formImportAjax->updateForm();
+        $formImportAjax->updateForm();
         $output = ob_get_clean();
 
         $response = json_decode($output, true);

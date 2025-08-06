@@ -29,7 +29,7 @@ trait MonkeyTrait
             }
             return true;
         }));
-        $mock('plugin_dir_path', fn() => \Brain\Monkey\Functions\when('plugin_dir_path')->alias(function($file) { return __DIR__ . '/../../'; }));
+        $mock('plugin_dir_path', fn() => \Brain\Monkey\Functions\when('plugin_dir_path')->alias(function($file) { return dirname($file) . '/'; }));
         $mock('plugin_dir_url', fn() => \Brain\Monkey\Functions\when('plugin_dir_url')->alias(function($file) { return '/'; }));
         $mock('home_url', fn() => \Brain\Monkey\Functions\when('home_url')->justReturn('http://example.com'));
         $mock('admin_url', fn() => \Brain\Monkey\Functions\when('admin_url')->justReturn('http://example.com/wp-admin/'));
@@ -59,16 +59,57 @@ trait MonkeyTrait
         // Plugin class stubs
         if (!class_exists('WPCF7_ContactForm')) {
             eval('class WPCF7_ContactForm {
+                private $properties = [];
+                
                 public static function find() { return []; }
-                public static function get_instance($id = null) { return new self(); }
+                public static function get_instance($id = null) { 
+                    if ($id && $id != "999") { // Return null for non-existent form ID 999
+                        $form = new self();
+                        $form->properties = ["form" => "[text* your-name] [email* your-email] [submit \"Send\"]", "title" => "Test Form"];
+                        return $form;
+                    }
+                    return null;
+                }
                 public function id() { return 2; }
-                public function title() { return "Test Form"; }
+                public function title() { return $this->properties["title"] ?? "Test Form"; }
+                public function prop($key) { 
+                    return isset($this->properties[$key]) ? $this->properties[$key] : null;
+                }
+                public function form_html() {
+                    return "<form><input type=\"text\" name=\"your-name\" required><input type=\"email\" name=\"your-email\" required><button type=\"submit\">Send</button></form>";
+                }
+                public function set_properties($props) {
+                    $this->properties = array_merge($this->properties, $props);
+                    return true;
+                }
+                public function save() {
+                    return true;
+                }
             }');
         }
         if (!class_exists('GFAPI')) {
             eval('class GFAPI {
                 public static function get_forms() { return []; }
-                public static function get_form($id = null) { return []; }
+                public static function get_form($id = null) { 
+                    if ($id == "456") {
+                        return [
+                            "id" => $id,
+                            "title" => "Test GF Form",
+                            "fields" => [
+                                ["id" => 1, "label" => "Name", "type" => "text", "isRequired" => true],
+                                ["id" => 2, "label" => "Email", "type" => "email", "isRequired" => true],
+                                ["id" => 3, "label" => "Message", "type" => "textarea", "isRequired" => false]
+                            ]
+                        ];
+                    }
+                    return [];
+                }
+                public static function update_form($form) {
+                    return true;
+                }
+                public static function count_entries($form_id) {
+                    return 5;
+                }
             }');
         }
         \Brain\Monkey\Functions\when('get_locale')->justReturn('en_US');
@@ -85,6 +126,7 @@ trait MonkeyTrait
         $mock('home_url', fn() => \Brain\Monkey\Functions\when('home_url')->justReturn('https://example.com'));
         $mock('check_ajax_referer', fn() => \Brain\Monkey\Functions\when('check_ajax_referer')->justReturn(true));
         $mock('sanitize_text_field', fn() => \Brain\Monkey\Functions\when('sanitize_text_field')->alias(fn($v) => $v));
+        $mock('_n', fn() => \Brain\Monkey\Functions\when('_n')->alias(function($single, $plural, $number) { return $number == 1 ? $single : $plural; }));
         // $mock('wp_send_json_success', fn() => \Brain\Monkey\Functions\when('wp_send_json_success')->justReturn(null));
         // $mock('wp_send_json_error', fn() => \Brain\Monkey\Functions\when('wp_send_json_error')->justReturn(null));
         $mock('update_option', fn() => \Brain\Monkey\Functions\when('update_option')->justReturn(true));

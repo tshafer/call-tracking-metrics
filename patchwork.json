@@ -26,6 +26,7 @@
     "defined",
     "constant",
     "version_compare",
-    "dirname"
+    "dirname",
+    "date"
   ]
 } 

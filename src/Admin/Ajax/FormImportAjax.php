@@ -940,9 +940,6 @@ class FormImportAjax
             throw new \Exception('Contact Form 7 form not found');
         }
 
-        // Get the form HTML
-        ob_start();
-        
         // Try to render using CF7's built-in methods
         try {
             // Use CF7's shortcode rendering
@@ -962,8 +959,6 @@ class FormImportAjax
         } catch (\Exception $e) {
             $preview = $this->generateBasicCF7Preview($cf7Form);
         }
-        
-        $output = ob_get_clean();
         
         // Wrap in a styled container
         return '<div class="ctm-form-preview bg-gray-50 p-6 rounded-lg border">' . 

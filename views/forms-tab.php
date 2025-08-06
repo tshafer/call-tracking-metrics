@@ -19,6 +19,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Helper function to truncate long CTM form IDs
+if (!function_exists('truncate_ctm_id')) {
 function truncate_ctm_id($id, $max_length = 20) {
     if (empty($id) || $id === 'N/A') {
         return $id;
@@ -32,6 +33,7 @@ function truncate_ctm_id($id, $max_length = 20) {
     $end_length = 8;
     
     return substr($id, 0, $start_length) . '...' . substr($id, -$end_length);
+}
 }
 ?>
 
