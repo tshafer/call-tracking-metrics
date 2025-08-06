@@ -23,6 +23,7 @@ try {
     return;
 }
 ?>
+
 <!-- Success Notices at the very top of the page -->
 <?php if (!empty($notices)): ?>
     <div class="mb-6">

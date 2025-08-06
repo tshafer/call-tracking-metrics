@@ -466,43 +466,6 @@ function toggleRawData() {
     rawDataIcon.classList.toggle('rotate-90');
 }
 
-// Ensure ctmShowToast is available
-if (typeof window.ctmShowToast !== 'function') {
-    window.ctmShowToast = function(message, type = 'info') {
-        let container = document.getElementById('ctm-toast-container');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'ctm-toast-container';
-            container.style.position = 'fixed';
-            container.style.top = '1.5rem';
-            container.style.right = '1.5rem';
-            container.style.zIndex = '9999';
-            document.body.appendChild(container);
-        }
-        // Remove any existing toasts after a short delay
-        Array.from(container.children).forEach(child => {
-            child.style.opacity = 0;
-            setTimeout(() => child.remove(), 500);
-        });
-        // Toast color based on type
-        let bg = 'bg-blue-600';
-        if (type === 'success') bg = 'bg-green-600';
-        if (type === 'error') bg = 'bg-red-600';
-        if (type === 'warning') bg = 'bg-yellow-600';
-        // Create toast element
-        const toast = document.createElement('div');
-        toast.className = `${bg} text-white px-4 py-2 rounded shadow mb-2 transition-opacity duration-500`;
-        toast.style.opacity = 1;
-        toast.textContent = message;
-        container.appendChild(toast);
-        // Fade out and remove after 3 seconds
-        setTimeout(() => {
-            toast.style.opacity = 0;
-            setTimeout(() => toast.remove(), 500);
-        }, 3000);
-    };
-}
-
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     // Override checkbox logic for readOnly
@@ -514,17 +477,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Form submission handler for API credentials
+    // Form submission handler for API credentials - only when API is not connected
     const apiForm = document.querySelector('form');
     const saveBtn = document.getElementById('save-api-btn');
+    const apiTestLogs = document.getElementById('api-test-logs');
     
-    if (apiForm && saveBtn) {
+    // Only prevent form submission if we're on the API credentials form (not connected state)
+    if (apiForm && saveBtn && apiTestLogs) {
+        console.log('API credentials form detected, preventing normal submission');
         apiForm.addEventListener('submit', function(e) {
             e.preventDefault(); // Prevent default form submission
             
             // Run API test instead
             testApiConnection();
         });
+    } else {
+        console.log('Normal form submission allowed (API connected or other form)');
     }
     
     // Countdown timer for API test

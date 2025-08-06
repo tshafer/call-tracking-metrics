@@ -151,6 +151,9 @@ class Options
         
         // Add CSS for custom menu icon
         add_action('admin_head', [$this, 'addMenuIconCSS']);
+        
+        // Add admin notices for settings page
+        add_action('admin_notices', [$this, 'displaySettingsNotices']);
     }
     
     /**
@@ -216,25 +219,6 @@ class Options
      */
     public function renderSettingsPage(): void
     {
-        // Add success message if settings were updated - use WordPress admin notices
-        if (isset($_GET['settings-updated']) && $_GET['settings-updated'] === 'true') {
-            add_action('admin_notices', function() {
-                echo '<div class="notice notice-success is-dismissible" style="margin: 20px 0; padding: 20px; font-size: 16px; background: #d4edda; border: 2px solid #28a745; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><p style="margin: 0; font-weight: bold; color: #155724;"><strong>' . __('Settings saved successfully!', 'call-tracking-metrics') . '</strong></p></div>';
-            });
-        }
-        
-        // Also check for any POST data that indicates a form was submitted
-        if (!empty($_POST) && !isset($_GET['settings-updated'])) {
-            add_action('admin_notices', function() {
-                echo '<div class="notice notice-success is-dismissible" style="margin: 20px 0; padding: 20px; font-size: 16px; background: #d4edda; border: 2px solid #28a745; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><p style="margin: 0; font-weight: bold; color: #155724;"><strong>' . __('Settings saved successfully!', 'call-tracking-metrics') . '</strong></p></div>';
-            });
-        }
-        
-        // Test message to verify admin_notices is working
-        add_action('admin_notices', function() {
-            echo '<div class="notice notice-info is-dismissible"><p>Test: Admin notices hook is working!</p></div>';
-        });
-        
         // Handle form submissions first
         $this->handleFormSubmission();
         
@@ -261,6 +245,34 @@ class Options
         
         // Render the complete settings page
         $this->renderer->renderView('settings-page', compact('notices', 'active_tab', 'tab_content', 'apiStatus'));
+    }
+
+    /**
+     * Display admin notices for settings page
+     * 
+     * Shows success messages when settings are saved successfully.
+     * This method is hooked to admin_notices to ensure proper timing.
+     * 
+     * @since 2.0.0
+     * @return void
+     */
+    public function displaySettingsNotices(): void
+    {
+        // Only show notices on our settings page
+        $screen = get_current_screen();
+        if (!$screen || $screen->id !== 'toplevel_page_call-tracking-metrics') {
+            return;
+        }
+        
+        // Add success message if settings were updated
+        if (isset($_GET['settings-updated']) && $_GET['settings-updated'] === 'true') {
+            echo '<div class="notice notice-success is-dismissible" style="margin: 20px 0; padding: 20px; font-size: 16px; background: #d4edda; border: 2px solid #28a745; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><p style="margin: 0; font-weight: bold; color: #155724;"><strong>' . __('Settings saved successfully!', 'call-tracking-metrics') . '</strong></p></div>';
+        }
+        
+        // // Also check for any POST data that indicates a form was submitted
+        // if (!empty($_POST) && !isset($_GET['settings-updated'])) {
+        //     echo '<div class="notice notice-success is-dismissible" style="margin: 20px 0; padding: 20px; font-size: 16px; background: #d4edda; border: 2px solid #28a745; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><p style="margin: 0; font-weight: bold; color: #155724;"><strong>' . __('Settings saved successfully!', 'call-tracking-metrics') . '</strong></p></div>';
+        // }
     }
 
     /**
@@ -544,7 +556,7 @@ class Options
         // Redirect to prevent form resubmission with success message
         $referer = wp_get_referer();
         if (!$referer) {
-            $referer = admin_url('options-general.php?page=call-tracking-metrics&tab=general');
+            $referer = admin_url('admin.php?page=call-tracking-metrics&tab=general');
         }
         wp_redirect(add_query_arg(['tab' => 'general', 'settings-updated' => 'true'], $referer));
         exit;

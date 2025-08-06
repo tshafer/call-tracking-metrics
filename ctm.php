@@ -342,9 +342,21 @@ class CallTrackingMetrics
      */
     private function registerConditionalHooks(): void
     {
-        // Add dashboard widget if enabled in settings
-        if (get_option('ctm_api_dashboard_enabled')) {
-            add_action('wp_dashboard_setup', [$this->adminOptions, 'addDashboardWidget']);
+        // Always register the dashboard widget hook, but check the setting inside
+        add_action('wp_dashboard_setup', [$this, 'maybeAddDashboardWidget']);
+    }
+    
+    /**
+     * Conditionally add dashboard widget based on settings
+     * 
+     * @since 2.0.0
+     * @return void
+     */
+    public function maybeAddDashboardWidget(): void
+    {
+        // Only add dashboard widget if enabled in settings
+        if (get_option('ctm_dashboard_enabled')) {
+            $this->adminOptions->addDashboardWidget();
         }
     }
 

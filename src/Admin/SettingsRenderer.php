@@ -117,7 +117,7 @@ class SettingsRenderer
         $trackingEnabled = get_option('ctm_api_tracking_enabled');
         $cf7Enabled = get_option('ctm_api_cf7_enabled');
         $gfEnabled = get_option('ctm_api_gf_enabled');
-        $dashboardEnabled = get_option('ctm_api_dashboard_enabled');
+        $dashboardEnabled = get_option('ctm_dashboard_enabled');
         $trackingScript = get_option('call_track_account_script');
         if (!$trackingScript) {
             $trackingScript = get_option('ctm_api_tracking_script');
