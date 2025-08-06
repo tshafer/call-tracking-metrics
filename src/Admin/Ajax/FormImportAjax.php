@@ -91,6 +91,15 @@ class FormImportAjax
                 wp_send_json_error(['message' => 'Failed to load forms from CallTrackingMetrics']);
             }
 
+            // Add import status to each form
+            if ($forms) {
+                foreach ($forms as &$form) {
+                    $importInfo = $this->formImportService->getImportedFormInfo($form['id']);
+                    $form['import_status'] = $importInfo;
+                }
+                unset($form); // Break reference
+            }
+
             wp_send_json_success([
                 'forms' => $forms,
                 'message' => count($forms) . ' forms loaded successfully'

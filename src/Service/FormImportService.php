@@ -1067,4 +1067,50 @@ class FormImportService
             'errors' => $errors
         ];
     }
+
+    /**
+     * Check if a CTM form is already imported
+     * 
+     * @since 2.0.0
+     * @param string $ctmFormId The CTM form ID to check
+     * @return array|null Import info if found, null otherwise
+     */
+    public function getImportedFormInfo(string $ctmFormId): ?array
+    {
+        // Check Contact Form 7
+        if (class_exists('WPCF7_ContactForm')) {
+            $cf7Forms = \WPCF7_ContactForm::find(['posts_per_page' => -1]);
+            foreach ($cf7Forms as $form) {
+                $importedCtmId = get_post_meta($form->id(), '_ctm_form_id', true);
+                if ($importedCtmId === $ctmFormId) {
+                    return [
+                        'type' => 'cf7',
+                        'form_id' => $form->id(),
+                        'form_title' => $form->title(),
+                        'import_date' => get_post_meta($form->id(), '_ctm_import_date', true),
+                        'edit_url' => admin_url('admin.php?page=wpcf7&post=' . $form->id() . '&action=edit')
+                    ];
+                }
+            }
+        }
+
+        // Check Gravity Forms
+        if (class_exists('GFAPI')) {
+            $gfForms = \GFAPI::get_forms();
+            foreach ($gfForms as $form) {
+                $importedCtmId = gform_get_meta($form['id'], '_ctm_form_id');
+                if ($importedCtmId === $ctmFormId) {
+                    return [
+                        'type' => 'gf',
+                        'form_id' => $form['id'],
+                        'form_title' => $form['title'],
+                        'import_date' => gform_get_meta($form['id'], '_ctm_import_date'),
+                        'edit_url' => admin_url('admin.php?page=gf_edit_forms&id=' . $form['id'])
+                    ];
+                }
+            }
+        }
+
+        return null;
+    }
 } 

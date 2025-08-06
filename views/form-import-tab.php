@@ -257,7 +257,21 @@ jQuery(document).ready(function($) {
         select.append('<option value=""><?php _e('Choose a form...', 'call-tracking-metrics'); ?></option>');
         
         availableForms.forEach(function(form) {
-            select.append(`<option value="${form.id}" data-form='${JSON.stringify(form)}'>${form.name}</option>`);
+            let optionText = form.name;
+            let optionClass = '';
+            
+            // Check if form is already imported
+            if (form.import_status) {
+                const importType = form.import_status.type === 'cf7' ? 'Contact Form 7' : 'Gravity Forms';
+                optionText += ` ✓ (Already imported to ${importType})`;
+                optionClass = 'imported-form';
+            }
+            
+            const option = $(`<option value="${form.id}" data-form='${JSON.stringify(form)}'>${optionText}</option>`);
+            if (optionClass) {
+                option.addClass(optionClass);
+            }
+            select.append(option);
         });
     }
 
@@ -267,6 +281,9 @@ jQuery(document).ready(function($) {
         const targetType = $('#ctm-target-type').val();
         const formTitleSection = $('#ctm-form-title-section');
         const actionButtons = $('#ctm-action-buttons');
+        
+        // Clear any existing import status messages
+        $('.ctm-import-status-notice').remove();
         
         if (formId && targetType) {
             formTitleSection.removeClass('hidden');
@@ -278,6 +295,31 @@ jQuery(document).ready(function($) {
                 const formData = selectedOption.data('form');
                 if (formData && formData.name) {
                     $('#ctm-form-title').val(formData.name);
+                    
+                    // Show import status notice if form is already imported
+                    if (formData.import_status) {
+                        const importType = formData.import_status.type === 'cf7' ? 'Contact Form 7' : 'Gravity Forms';
+                        const notice = $(`
+                            <div class="ctm-import-status-notice bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                                <div class="flex items-start">
+                                    <svg class="w-5 h-5 text-blue-400 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <div>
+                                        <h4 class="text-blue-800 font-medium mb-1">Form Already Imported</h4>
+                                        <p class="text-blue-700 text-sm mb-3">This form has already been imported to ${importType} as "${formData.import_status.form_title}".</p>
+                                        <a href="${formData.import_status.edit_url}" target="_blank" class="inline-flex items-center px-3 py-1 text-sm font-medium text-blue-600 bg-blue-100 rounded-md hover:bg-blue-200 transition-colors">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                            </svg>
+                                            Edit Existing Form
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        `);
+                        formTitleSection.before(notice);
+                    }
                 }
             }
         } else {
@@ -303,11 +345,12 @@ jQuery(document).ready(function($) {
         // Clear form title
         $('#ctm-form-title').val('');
         
-        // Clear any success/error messages
+        // Clear any success/error messages and import status notices
         $('.ctm-message').remove();
+        $('.ctm-import-status-notice').remove();
         
         // Re-enable preview button if it was disabled
-        $('#ctm-preview-form').prop('disabled', false).text('Preview Form');
+        $('#ctm-preview-form').prop('disabled', false).text('<?php _e('Preview Form', 'call-tracking-metrics'); ?>');
         
         console.log('Form state cleared');
     }
@@ -664,5 +707,17 @@ jQuery(document).ready(function($) {
     font-weight: 500;
     cursor: not-allowed;
     opacity: 0.6;
+}
+
+/* Styling for imported forms in select dropdown */
+.imported-form {
+    background-color: #f0f9ff !important;
+    color: #0369a1 !important;
+    font-weight: 500;
+}
+
+#ctm-form-select option.imported-form {
+    background-color: #f0f9ff;
+    color: #0369a1;
 }
 </style> 
