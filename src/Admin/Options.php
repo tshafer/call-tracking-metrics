@@ -285,7 +285,7 @@ class Options
         
         // Add success message if settings were updated
         if (isset($_GET['settings-updated']) && $_GET['settings-updated'] === 'true') {
-            echo '<div class="notice notice-success is-dismissible" style="margin: 20px 0; padding: 20px; font-size: 16px; background: #d4edda; border: 2px solid #28a745; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><p style="margin: 0; font-weight: bold; color: #155724;"><strong>' . __('Settings saved successfully!', 'call-tracking-metrics') . '</strong></p></div>';
+            echo '<div class="notice notice-success is-dismissible"><p><strong>CallTrackingMetrics:</strong> ' . __('Settings saved successfully!', 'call-tracking-metrics') . '</p></div>';
         }
         
         // // Also check for any POST data that indicates a form was submitted
