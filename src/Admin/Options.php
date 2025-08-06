@@ -219,32 +219,48 @@ class Options
      */
     public function renderSettingsPage(): void
     {
-        // Handle form submissions first
-        $this->handleFormSubmission();
-        
-        // Determine API connection status for conditional UI elements
-        $apiKey = get_option('ctm_api_key');
-        $apiSecret = get_option('ctm_api_secret');
-        $apiStatus = 'not_tested';
-        
-        // Test API connection if credentials are available
-        if ($apiKey && $apiSecret) {
-            $apiService = new \CTM\Service\ApiService(\ctm_get_api_url());
-            $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
-            $apiStatus = ($accountInfo && isset($accountInfo['account'])) ? 'connected' : 'not_connected';
+        try {
+            // Handle form submissions first
+            $this->handleFormSubmission();
+            
+            // Determine API connection status for conditional UI elements
+            $apiKey = get_option('ctm_api_key');
+            $apiSecret = get_option('ctm_api_secret');
+            $apiStatus = 'not_tested';
+            
+            // Test API connection if credentials are available
+            if ($apiKey && $apiSecret) {
+                try {
+                    $apiService = new \CTM\Service\ApiService(\ctm_get_api_url());
+                    $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
+                    $apiStatus = ($accountInfo && isset($accountInfo['account'])) ? 'connected' : 'not_connected';
+                } catch (\Exception $e) {
+                    // Log the error but don't break the page
+                    if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                        $this->loggingSystem->logActivity('API connection test failed: ' . $e->getMessage(), 'error');
+                    }
+                    $apiStatus = 'not_connected';
+                }
+            }
+            
+            // Generate plugin notices (missing dependencies, etc.)
+            $notices = $this->generateNotices();
+            
+            // Determine active tab from URL parameter
+            $active_tab = $_GET['tab'] ?? 'general';
+            
+            // Generate content for the active tab
+            $tab_content = $this->getTabContent($active_tab);
+            
+            // Render the complete settings page
+            $this->renderer->renderView('settings-page', compact('notices', 'active_tab', 'tab_content', 'apiStatus'));
+        } catch (\Exception $e) {
+            // Log the error and show a user-friendly message
+            if ($this->loggingSystem) {
+                $this->loggingSystem->logActivity('Settings page error: ' . $e->getMessage(), 'error');
+            }
+            echo '<div class="wrap"><div class="notice notice-error"><p>Plugin Error: Unable to load Call Tracking Metrics settings. Please contact support.</p></div></div>';
         }
-        
-        // Generate plugin notices (missing dependencies, etc.)
-        $notices = $this->generateNotices();
-        
-        // Determine active tab from URL parameter
-        $active_tab = $_GET['tab'] ?? 'general';
-        
-        // Generate content for the active tab
-        $tab_content = $this->getTabContent($active_tab);
-        
-        // Render the complete settings page
-        $this->renderer->renderView('settings-page', compact('notices', 'active_tab', 'tab_content', 'apiStatus'));
     }
 
     /**
@@ -369,7 +385,7 @@ class Options
             );
             
             // Redirect to prevent form resubmission
-            wp_redirect(admin_url('admin.php?page=ctm-settings&tab=debug'));
+            wp_redirect(admin_url('admin.php?page=call-tracking-metrics&tab=debug'));
             exit;
         }
         
@@ -378,7 +394,7 @@ class Options
             // Log the clear action before clearing (so it gets recorded)
             $this->loggingSystem->logActivity('All debug logs cleared', 'system');
             $this->loggingSystem->clearAllLogs();
-            wp_redirect(admin_url('admin.php?page=ctm-settings&tab=debug'));
+            wp_redirect(admin_url('admin.php?page=call-tracking-metrics&tab=debug'));
             exit;
         }
         
@@ -387,7 +403,7 @@ class Options
             $log_date = sanitize_text_field($_POST['log_date']);
             $this->loggingSystem->logActivity("Log cleared for date: {$log_date}", 'system');
             $this->loggingSystem->clearDayLog($log_date);
-            wp_redirect(admin_url('admin.php?page=ctm-settings&tab=debug'));
+            wp_redirect(admin_url('admin.php?page=call-tracking-metrics&tab=debug'));
             exit;
         }
         
@@ -404,7 +420,7 @@ class Options
                 $this->loggingSystem->logActivity("Failed to email log for date: {$log_date} to: {$email_to}", 'error');
             }
             
-            wp_redirect(admin_url('admin.php?page=ctm-settings&tab=debug'));
+            wp_redirect(admin_url('admin.php?page=call-tracking-metrics&tab=debug'));
             exit;
         }
         
@@ -420,7 +436,7 @@ class Options
             update_option('ctm_log_notification_email', sanitize_email($_POST['log_notification_email'] ?? ''));
             
             $this->loggingSystem->logActivity("Log settings updated - Retention: {$retention_days} days", 'system');
-            wp_redirect(admin_url('admin.php?page=ctm-settings&tab=debug'));
+            wp_redirect(admin_url('admin.php?page=call-tracking-metrics&tab=debug'));
             exit;
         }
         
@@ -488,13 +504,13 @@ class Options
         $debugEnabled = isset($_POST['ctm_debug_enabled']) ? 1 : 0;
         
         // Auto-disable integrations if required plugins are not available
-        if (!is_plugin_active('contact-form-7/wp-contact-form-7.php') && !class_exists('WPCF7_ContactForm') && !function_exists('wpcf7_contact_form')) {
+        $cf7_plugin_active = function_exists('is_plugin_active') ? is_plugin_active('contact-form-7/wp-contact-form-7.php') : false;
+        if (!$cf7_plugin_active && !class_exists('WPCF7_ContactForm') && !function_exists('wpcf7_contact_form')) {
             $cf7Enabled = false;
             $this->loggingSystem->logActivity('Contact Form 7 integration auto-disabled - plugin not available', 'config');
         } else {
             // Debug: Log what we found for CF7
             if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
-                $cf7_plugin_active = is_plugin_active('contact-form-7/wp-contact-form-7.php');
                 $cf7_class_exists = class_exists('WPCF7_ContactForm');
                 $cf7_function_exists = function_exists('wpcf7_contact_form');
                 $this->loggingSystem->logActivity("CF7 detection - Plugin active: " . ($cf7_plugin_active ? 'true' : 'false') . ", Class exists: " . ($cf7_class_exists ? 'true' : 'false') . ", Function exists: " . ($cf7_function_exists ? 'true' : 'false'), 'debug');
@@ -579,14 +595,14 @@ class Options
         $changes_made = false;
         
         // Check Contact Form 7 integration
-        if (!is_plugin_active('contact-form-7/wp-contact-form-7.php') && !class_exists('WPCF7_ContactForm') && !function_exists('wpcf7_contact_form') && get_option('ctm_api_cf7_enabled', false)) {
+        $cf7_plugin_active = function_exists('is_plugin_active') ? is_plugin_active('contact-form-7/wp-contact-form-7.php') : false;
+        if (!$cf7_plugin_active && !class_exists('WPCF7_ContactForm') && !function_exists('wpcf7_contact_form') && get_option('ctm_api_cf7_enabled', false)) {
             update_option('ctm_api_cf7_enabled', false);
             $this->loggingSystem->logActivity('Contact Form 7 integration auto-disabled - plugin not available', 'config');
             $changes_made = true;
         } else {
             // Debug: Log what we found for CF7 in auto-disable check
             if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
-                $cf7_plugin_active = is_plugin_active('contact-form-7/wp-contact-form-7.php');
                 $cf7_class_exists = class_exists('WPCF7_ContactForm');
                 $cf7_function_exists = function_exists('wpcf7_contact_form');
                 $cf7_enabled = get_option('ctm_api_cf7_enabled', false);
