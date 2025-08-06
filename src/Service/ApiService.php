@@ -48,7 +48,7 @@ class ApiService
      * @since 1.0.0
      * @var int
      */
-    private int $timeout = 30;
+    private int $timeout = 15;
 
     /**
      * User agent string for API requests
@@ -248,11 +248,14 @@ class ApiService
             $hasMorePages = $page < $totalPages;
             $page++;
             
-            // Safety check to prevent infinite loops
-            if ($page > 100) {
-                error_log('CTM API Error: Pagination limit exceeded (100 pages)');
-                break;
+                    // Safety check to prevent infinite loops
+        if ($page > 50) {
+            $is_production_pagination = !defined('WP_DEBUG') || !WP_DEBUG || !defined('WP_DEBUG_LOG') || !WP_DEBUG_LOG;
+            if (!$is_production_pagination) {
+                error_log('CTM API Error: Pagination limit exceeded (50 pages)');
             }
+            break;
+        }
         }
         
         return [
@@ -494,9 +497,14 @@ class ApiService
     {
         $url = $this->baseUrl . $endpoint;
         
-        error_log('CTM Debug: makeRequest - URL: ' . $url);
-        error_log('CTM Debug: makeRequest - Method: ' . $method);
-        error_log('CTM Debug: makeRequest - Content-Type: ' . $contentType);
+        // Check if we're in production environment (no debug logging)
+        $is_production = !defined('WP_DEBUG') || !WP_DEBUG || !defined('WP_DEBUG_LOG') || !WP_DEBUG_LOG;
+        
+        // Only log in debug mode to prevent excessive logging in production
+        if (!$is_production) {
+            error_log('CTM Debug: makeRequest - URL: ' . $url);
+            error_log('CTM Debug: makeRequest - Method: ' . $method);
+        }
         
         $args = [
             'method'  => strtoupper($method),
@@ -507,11 +515,9 @@ class ApiService
                 'Content-Type' => $contentType,
             ],
         ];
+        
         if (!empty($apiKey) && !empty($apiSecret)) {
             $args['headers']['Authorization'] = 'Basic ' . base64_encode($apiKey . ':' . $apiSecret);
-            error_log('CTM Debug: makeRequest - Authorization header set');
-        } else {
-            error_log('CTM Debug: makeRequest - No authorization credentials provided');
         }
         
         // Handle body encoding
@@ -523,40 +529,39 @@ class ApiService
             } else {
                 $args['body'] = $data;
             }
-            error_log('CTM Debug: makeRequest - Request body: ' . $args['body']);
         }
         
-        error_log('CTM Debug: makeRequest - Making wp_remote_request');
         $response = \wp_remote_request($url, $args);
         
         if (is_wp_error($response)) {
             $errorMessage = 'HTTP request failed: ' . $response->get_error_message();
-            error_log('CTM Debug: makeRequest - WP Error: ' . $errorMessage);
+            if (!$is_production) {
+                error_log('CTM Debug: makeRequest - WP Error: ' . $errorMessage);
+            }
             throw new \Exception($errorMessage);
         }
         
         $statusCode = \wp_remote_retrieve_response_code($response);
         $body = \wp_remote_retrieve_body($response);
         
-        error_log('CTM Debug: makeRequest - Response status: ' . $statusCode);
-        error_log('CTM Debug: makeRequest - Response body length: ' . strlen($body));
-        error_log('CTM Debug: makeRequest - Response body: ' . substr($body, 0, 500) . (strlen($body) > 500 ? '...' : ''));
-        
         if ($statusCode >= 400) {
             $errorMessage = 'HTTP ' . $statusCode . ' error: ' . $body;
-            error_log('CTM Debug: makeRequest - HTTP Error: ' . $errorMessage);
+            if (!$is_production) {
+                error_log('CTM Debug: makeRequest - HTTP Error: ' . $errorMessage);
+            }
             throw new \Exception($errorMessage);
         }
         
         $result = json_decode($body, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             $errorMessage = 'Invalid JSON response: ' . json_last_error_msg();
-            error_log('CTM Debug: makeRequest - JSON Error: ' . $errorMessage);
-            error_log('CTM Debug: makeRequest - Raw response: ' . $body);
+            if (!$is_production) {
+                error_log('CTM Debug: makeRequest - JSON Error: ' . $errorMessage);
+                error_log('CTM Debug: makeRequest - Raw response: ' . substr($body, 0, 500));
+            }
             throw new \Exception($errorMessage);
         }
         
-        error_log('CTM Debug: makeRequest - Successfully decoded JSON response');
         return $result;
     }
 

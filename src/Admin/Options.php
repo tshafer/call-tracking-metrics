@@ -228,10 +228,13 @@ class Options
             $apiSecret = get_option('ctm_api_secret');
             $apiStatus = 'not_tested';
             
-            // Test API connection if credentials are available
+            // Test API connection if credentials are available (with timeout)
             if ($apiKey && $apiSecret) {
                 try {
+                    // Set a timeout for API calls to prevent 502 errors
+                    set_time_limit(10); // 10 second timeout
                     $apiService = new \CTM\Service\ApiService(\ctm_get_api_url());
+                    $apiService->setTimeout(10); // Reduce timeout for settings page
                     $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
                     $apiStatus = ($accountInfo && isset($accountInfo['account'])) ? 'connected' : 'not_connected';
                 } catch (\Exception $e) {

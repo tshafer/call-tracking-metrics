@@ -55,9 +55,9 @@ class LoggingSystem
         
         $daily_logs[] = $log_entry;
         
-        // Keep only last 1000 entries per day to prevent memory issues
-        if (count($daily_logs) > 1000) {
-            $daily_logs = array_slice($daily_logs, -1000);
+        // Keep only last 500 entries per day to prevent memory issues
+        if (count($daily_logs) > 500) {
+            $daily_logs = array_slice($daily_logs, -500);
         }
         
         \update_option("ctm_daily_log_{$log_date}", $daily_logs);
@@ -361,9 +361,9 @@ class LoggingSystem
         
         $daily_logs[] = $log_entry;
         
-        // Keep only last 1000 entries per day to prevent memory issues
-        if (count($daily_logs) > 1000) {
-            $daily_logs = array_slice($daily_logs, -1000);
+        // Keep only last 500 entries per day to prevent memory issues
+        if (count($daily_logs) > 500) {
+            $daily_logs = array_slice($daily_logs, -500);
         }
         
         \update_option("ctm_daily_log_{$log_date}", $daily_logs);
