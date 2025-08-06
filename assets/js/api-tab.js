@@ -188,6 +188,14 @@ jQuery(document).ready(function($) {
         clearTestLogs();
     });
     
+    // Technical Details Toggle
+    $('#ctm-toggle-technical').on('click', function() {
+        const content = $('#ctm-technical-content');
+        const icon = $(this).find('svg');
+        content.toggleClass('hidden');
+        icon.toggleClass('rotate-90');
+    });
+    
     // Modal logic for Change API Keys
     $('#ctm-change-api-btn').on('click', function() {
         $('#ctm-change-api-modal').removeClass('hidden');
@@ -251,8 +259,6 @@ jQuery(document).ready(function($) {
         });
     });
     
-    // Initialize
-    clearTestLogs();
     
     // Add initial connection status
     if (ctmApiData.initial_connected) {
@@ -262,13 +268,6 @@ jQuery(document).ready(function($) {
     // Start auto-testing
     startCountdown(); // Start countdown immediately on page load
     
-    // Helper functions
-    function clearTestLogs() {
-        $('#ctm-test-logs').html('<div class="text-gray-500 italic">Auto-testing every 10 minutes. Click "Test Now" for manual test...</div>');
-        $('#ctm-progress-container').addClass('hidden');
-        $('#ctm-progress-bar').css('width', '0%');
-        $('#ctm-progress-percent').text('0%');
-    }
     
     function appendLog(type, message) {
         const logs = $('#ctm-test-logs');
@@ -356,62 +355,118 @@ jQuery(document).ready(function($) {
         const technicalDetails = $('#ctm-technical-details');
         const techDetailsContent = $('#ctm-tech-details-content');
         technicalDetails.removeClass('hidden');
+        
         let detailsHTML = '';
+        
+        // Request Metadata Section
         if (data.metadata) {
             detailsHTML += `
-                <div class="mb-4">
-                    <h6 class="font-semibold text-gray-700 mb-2 flex items-center gap-1">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        Request Metadata
-                    </h6>
-                    <div class="grid grid-cols-2 gap-2 text-xs">
-                        <div><strong>Request ID:</strong> <code class="bg-gray-200 px-1 rounded">${data.metadata.request_id?.substring(0, 8) || 'N/A'}</code></div>
-                        <div><strong>Timestamp:</strong> ${data.metadata.timestamp || 'N/A'}</div>
-                        <div><strong>WordPress:</strong> ${data.metadata.wordpress_version || 'N/A'}</div>
-                        <div><strong>PHP:</strong> ${data.metadata.php_version || 'N/A'}</div>
-                        <div><strong>Plugin:</strong> ${data.metadata.plugin_version || 'N/A'}</div>
-                        <div><strong>Auth Method:</strong> ${data.metadata.auth_method || 'N/A'}</div>
+                <div class="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+                    <div class="flex items-center space-x-2 mb-3">
+                        <div class="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                            <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <h4 class="text-sm font-semibold text-gray-900">Request Metadata</h4>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Request ID:</span>
+                            <span class="font-mono font-medium text-gray-900">${data.metadata.request_id?.substring(0, 8) || 'N/A'}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">WordPress:</span>
+                            <span class="font-medium text-gray-900">${data.metadata.wordpress_version || 'N/A'}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Plugin:</span>
+                            <span class="font-medium text-gray-900">${data.metadata.plugin_version || 'N/A'}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Timestamp:</span>
+                            <span class="font-medium text-gray-900">${data.metadata.timestamp || 'N/A'}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">PHP:</span>
+                            <span class="font-medium text-gray-900">${data.metadata.php_version || 'N/A'}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Auth Method:</span>
+                            <span class="font-medium text-gray-900">${data.metadata.auth_method || 'N/A'}</span>
+                        </div>
                     </div>
                 </div>
             `;
         }
+        
+        // Performance Metrics Section
         if (data.performance) {
             detailsHTML += `
-                <div class="mb-4">
-                    <h6 class="font-semibold text-gray-700 mb-2 flex items-center gap-1">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
-                        Performance Metrics
-                    </h6>
-                    <div class="grid grid-cols-2 gap-2 text-xs">
-                        <div><strong>Total Time:</strong> ${data.performance.total_execution_time}ms</div>
-                        <div><strong>API Response:</strong> ${data.performance.api_response_time}ms</div>
-                        <div><strong>Details Response:</strong> ${data.performance.details_response_time || 'N/A'}ms</div>
-                        <div><strong>Network Overhead:</strong> ${data.performance.network_overhead?.toFixed(1) || 'N/A'}ms</div>
+                <div class="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+                    <div class="flex items-center space-x-2 mb-3">
+                        <div class="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                            <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                        </div>
+                        <h4 class="text-sm font-semibold text-gray-900">Performance Metrics</h4>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Total Time:</span>
+                            <span class="font-medium text-gray-900">${data.performance.total_execution_time}ms</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Details Response:</span>
+                            <span class="font-medium text-gray-900">${data.performance.details_response_time || 'N/A'}ms</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">API Response:</span>
+                            <span class="font-medium text-gray-900">${data.performance.api_response_time}ms</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Network Overhead:</span>
+                            <span class="font-medium text-gray-900">${data.performance.network_overhead?.toFixed(1) || 'N/A'}ms</span>
+                        </div>
                     </div>
                 </div>
             `;
         }
+        
+        // API Endpoints Section
         if (data.metadata) {
             detailsHTML += `
-                <div class="mb-4">
-                    <h6 class="font-semibold text-gray-700 mb-2 flex items-center gap-1">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
-                        </svg>
-                        API Endpoints
-                    </h6>
-                    <div class="space-y-1 text-xs">
-                        <div><strong>Base URL:</strong> <code class="bg-gray-200 px-1 rounded">${data.metadata.api_endpoint || 'N/A'}</code></div>
-                        <div><strong>Account:</strong> <code class="bg-gray-200 px-1 rounded">${data.metadata.account_endpoint || 'N/A'}</code></div>
-                        ${data.metadata.details_endpoint ? `<div><strong>Details:</strong> <code class="bg-gray-200 px-1 rounded">${data.metadata.details_endpoint}</code></div>` : ''}
+                <div class="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+                    <div class="flex items-center space-x-2 mb-3">
+                        <div class="w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center">
+                            <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                            </svg>
+                        </div>
+                        <h4 class="text-sm font-semibold text-gray-900">API Endpoints</h4>
+                    </div>
+                    <div class="space-y-2 text-xs">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Base URL:</span>
+                            <span class="font-mono font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded">${data.metadata.api_endpoint || 'N/A'}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Account:</span>
+                            <span class="font-mono font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded">${data.metadata.account_endpoint || 'N/A'}</span>
+                        </div>
+                        ${data.metadata.details_endpoint ? `
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Details:</span>
+                            <span class="font-mono font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded">${data.metadata.details_endpoint}</span>
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
             `;
         }
+        
+        // Connection Quality Section
         if (data.connection_quality) {
             const quality = data.connection_quality;
             const qualityBadgeColor = quality.color === 'green' ? 'bg-green-100 text-green-800' :
@@ -419,20 +474,23 @@ jQuery(document).ready(function($) {
                                       quality.color === 'yellow' ? 'bg-yellow-100 text-yellow-800' : 
                                       'bg-red-100 text-red-800';
             detailsHTML += `
-                <div class="mb-4">
-                    <h6 class="font-semibold text-gray-700 mb-2 flex items-center gap-1">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                        Connection Quality
-                    </h6>
-                    <div class="flex items-center gap-2 text-xs">
-                        <span class="px-2 py-1 rounded ${qualityBadgeColor} font-semibold">${quality.rating.toUpperCase()}</span>
-                        <span>${quality.total_time}ms total response time</span>
+                <div class="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+                    <div class="flex items-center space-x-2 mb-3">
+                        <div class="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
+                            <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                            </svg>
+                        </div>
+                        <h4 class="text-sm font-semibold text-gray-900">Connection Quality</h4>
+                    </div>
+                    <div class="flex items-center space-x-2 text-xs">
+                        <span class="px-2 py-1 rounded ${qualityBadgeColor} font-medium">${quality.rating.toUpperCase()}</span>
+                        <span class="text-gray-600">${quality.total_time}ms total response time</span>
                     </div>
                 </div>
             `;
         }
+        
         // Raw Response Data (collapsible)
         const sanitizedData = JSON.parse(JSON.stringify(data));
         if (sanitizedData.account_info?.account) {
@@ -441,20 +499,31 @@ jQuery(document).ready(function($) {
         }
         const jsonString = JSON.stringify(sanitizedData, null, 2);
         detailsHTML += `
-            <div class="mb-2">
-                <button type="button" onclick="jQuery('#ctm-raw-data-content').toggleClass('hidden'); jQuery('#ctm-raw-data-icon').toggleClass('rotate-90');" class="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-800 transition">
+            <div class="bg-white border border-gray-200 rounded-lg p-4">
+                <button type="button" id="ctm-toggle-raw-data" class="flex items-center space-x-2 text-xs text-gray-600 hover:text-gray-800 transition-colors w-full text-left">
                     <svg id="ctm-raw-data-icon" class="w-3 h-3 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                     </svg>
-                    Raw API Response (JSON)
+                    <span>Raw API Response (JSON)</span>
                 </button>
-                <div id="ctm-raw-data-content" class="hidden mt-2 p-2 bg-gray-50 rounded border">
-                    <div class="mb-1 text-gray-600 text-xs"><strong>Complete API Response:</strong> (sensitive data removed)</div>
-                    <pre class="whitespace-pre-wrap text-xs overflow-x-auto">${escapeHtml(jsonString)}</pre>
+                <div id="ctm-raw-data-content" class="hidden mt-3">
+                    <div class="bg-gray-50 border border-gray-200 rounded p-3">
+                        <div class="text-xs text-gray-600 mb-2">Complete API Response (sensitive data removed)</div>
+                        <pre class="whitespace-pre-wrap text-xs overflow-x-auto text-gray-800">${escapeHtml(jsonString)}</pre>
+                    </div>
                 </div>
             </div>
         `;
+        
         techDetailsContent.html(detailsHTML);
+        
+        // Add event handler for raw data toggle
+        $('#ctm-toggle-raw-data').on('click', function() {
+            const content = $('#ctm-raw-data-content');
+            const icon = $('#ctm-raw-data-icon');
+            content.toggleClass('hidden');
+            icon.toggleClass('rotate-90');
+        });
     }
     
     function escapeHtml(text) {
