@@ -335,6 +335,150 @@ class FormImportService
     }
 
     /**
+     * Check for duplicate forms in Contact Form 7
+     * 
+     * @since 2.0.0
+     * @param array $ctmForm The CTM form data
+     * @param string $formTitle The title for the new form
+     * @return array|null Duplicate form info or null if no duplicate
+     */
+    public function checkForCF7Duplicate(array $ctmForm, string $formTitle): ?array
+    {
+        if (!class_exists('WPCF7_ContactForm')) {
+            return null;
+        }
+
+        // Get all CF7 forms
+        $cf7Forms = \WPCF7_ContactForm::find();
+        
+        if (empty($cf7Forms)) {
+            return null;
+        }
+
+        // Generate the CF7 content for comparison
+        $newFormContent = $this->convertToCF7Format($ctmForm);
+        
+        foreach ($cf7Forms as $existingForm) {
+            // Check if the form content is identical
+            $existingContent = $existingForm->prop('form');
+            
+            // Normalize whitespace for comparison
+            $normalizedNew = preg_replace('/\s+/', ' ', trim($newFormContent));
+            $normalizedExisting = preg_replace('/\s+/', ' ', trim($existingContent));
+            
+            if ($normalizedNew === $normalizedExisting) {
+                return [
+                    'form_id' => $existingForm->id(),
+                    'form_title' => $existingForm->title(),
+                    'form_content' => $existingContent,
+                    'edit_url' => admin_url('admin.php?page=wpcf7&post=' . $existingForm->id() . '&action=edit')
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Check for duplicate forms in Gravity Forms
+     * 
+     * @since 2.0.0
+     * @param array $ctmForm The CTM form data
+     * @param string $formTitle The title for the new form
+     * @return array|null Duplicate form info or null if no duplicate
+     */
+    public function checkForGFDuplicate(array $ctmForm, string $formTitle): ?array
+    {
+        if (!class_exists('GFAPI')) {
+            return null;
+        }
+
+        // Get all GF forms
+        $gfForms = \GFAPI::get_forms();
+        
+        if (empty($gfForms)) {
+            return null;
+        }
+
+        // Generate the GF structure for comparison
+        $newFormData = $this->convertToGFFormat($ctmForm, $formTitle);
+        
+        foreach ($gfForms as $existingForm) {
+            // Get full form details
+            $fullForm = \GFAPI::get_form($existingForm['id']);
+            
+            if (!$fullForm || empty($fullForm['fields'])) {
+                continue;
+            }
+
+            // Compare field structures (excluding IDs and form-specific data)
+            if ($this->compareGFFormStructures($newFormData, $fullForm)) {
+                return [
+                    'form_id' => $existingForm['id'],
+                    'form_title' => $existingForm['title'],
+                    'form_data' => $fullForm,
+                    'edit_url' => admin_url('admin.php?page=gf_edit_forms&id=' . $existingForm['id'])
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Compare two GF form structures for similarity
+     * 
+     * @since 2.0.0
+     * @param array $form1 First form data
+     * @param array $form2 Second form data
+     * @return bool True if forms are structurally identical
+     */
+    private function compareGFFormStructures(array $form1, array $form2): bool
+    {
+        $fields1 = $form1['fields'] ?? [];
+        $fields2 = $form2['fields'] ?? [];
+
+        if (count($fields1) !== count($fields2)) {
+            return false;
+        }
+
+        // Sort fields by label for comparison
+        usort($fields1, function($a, $b) {
+            return strcmp($a['label'] ?? '', $b['label'] ?? '');
+        });
+        
+        usort($fields2, function($a, $b) {
+            $labelA = is_object($b) ? $b->label : ($b['label'] ?? '');
+            $labelB = is_object($a) ? $a->label : ($a['label'] ?? '');
+            return strcmp($labelA, $labelB);
+        });
+
+        // Compare each field
+        for ($i = 0; $i < count($fields1); $i++) {
+            $field1 = $fields1[$i];
+            $field2 = $fields2[$i];
+            
+            // Convert field2 object to array if needed
+            if (is_object($field2)) {
+                $field2 = [
+                    'label' => $field2->label ?? '',
+                    'type' => $field2->type ?? '',
+                    'isRequired' => $field2->isRequired ?? false
+                ];
+            }
+
+            // Compare key properties
+            if (($field1['label'] ?? '') !== ($field2['label'] ?? '') ||
+                ($field1['type'] ?? '') !== ($field2['type'] ?? '') ||
+                ($field1['isRequired'] ?? false) !== ($field2['isRequired'] ?? false)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Import a form to Contact Form 7
      * 
      * @since 2.0.0
@@ -405,13 +549,20 @@ class FormImportService
                 error_log('CTM Debug: importToCF7 - WPCF7_ContactForm::get_instance method not available');
             }
 
-            error_log('CTM Debug: importToCF7 - Import completed successfully');
+            // Store CTM metadata for tracking imported forms
+            update_post_meta($postId, '_ctm_imported', true);
+            update_post_meta($postId, '_ctm_form_id', $ctmForm['id'] ?? '');
+            update_post_meta($postId, '_ctm_import_date', current_time('mysql'));
+            update_post_meta($postId, '_ctm_form_data', json_encode($ctmForm));
+            
+            error_log('CTM Debug: importToCF7 - Import completed successfully with CTM metadata');
             
             return [
                 'success' => true,
                 'form_id' => $postId,
                 'form_title' => $formTitle,
-                'message' => 'Form imported successfully to Contact Form 7'
+                'message' => 'Form imported successfully to Contact Form 7',
+                'ctm_form_id' => $ctmForm['id'] ?? ''
             ];
 
         } catch (\Exception $e) {
@@ -450,11 +601,18 @@ class FormImportService
                 return ['success' => false, 'error' => 'Failed to create form: ' . $formId->get_error_message()];
             }
 
+            // Store CTM metadata for tracking imported forms
+            gform_update_meta($formId, '_ctm_imported', true);
+            gform_update_meta($formId, '_ctm_form_id', $ctmForm['id'] ?? '');
+            gform_update_meta($formId, '_ctm_import_date', current_time('mysql'));
+            gform_update_meta($formId, '_ctm_form_data', json_encode($ctmForm));
+
             return [
                 'success' => true,
                 'form_id' => $formId,
                 'form_title' => $formTitle,
-                'message' => 'Form imported successfully to Gravity Forms'
+                'message' => 'Form imported successfully to Gravity Forms',
+                'ctm_form_id' => $ctmForm['id'] ?? ''
             ];
 
         } catch (\Exception $e) {
@@ -470,7 +628,7 @@ class FormImportService
      * @param array $ctmForm The CTM form data
      * @return string The CF7 form content
      */
-    private function convertToCF7Format(array $ctmForm): string
+    public function convertToCF7Format(array $ctmForm): string
     {
         $formContent = '';
         
@@ -501,6 +659,11 @@ class FormImportService
                 $fieldLabel = $field['label'] ?? $fieldName;
                 $required = isset($field['required']) && $field['required'] ? '*' : '';
                 $halfWidth = isset($field['half_width']) && $field['half_width'] ? ' class="half-width"' : '';
+                
+                // Handle document fields by name if type doesn't match
+                if (stripos($fieldLabel, 'document') !== false && !in_array($fieldType, ['file_upload', 'file', 'document', 'upload'])) {
+                    $fieldType = 'document';
+                }
                 
                 error_log("CTM Debug: convertToCF7Format - Processing field {$index}: {$fieldName} (type: {$fieldType}, required: " . ($required ? 'yes' : 'no') . ", label: {$fieldLabel})");
                 
@@ -573,6 +736,7 @@ class FormImportService
                     case 'file_upload':
                     case 'file':
                     case 'upload':
+                    case 'document':
                         $fileType = $field['file_type'] ?? '';
                         $formContent .= "[file{$required} {$fieldName}]";
                         error_log("CTM Debug: convertToCF7Format - Added file field: [file{$required} {$fieldName}]");
@@ -713,7 +877,7 @@ class FormImportService
      * @param string $formTitle The form title
      * @return array The GF form data
      */
-    private function convertToGFFormat(array $ctmForm, string $formTitle): array
+    public function convertToGFFormat(array $ctmForm, string $formTitle): array
     {
         $formData = [
             'title' => $formTitle,
@@ -768,6 +932,11 @@ class FormImportService
                 $required = isset($field['required']) && $field['required'];
                 $halfWidth = isset($field['half_width']) && $field['half_width'];
                 
+                // Handle document fields by name if type doesn't match
+                if (stripos($fieldLabel, 'document') !== false && !in_array($fieldType, ['file_upload', 'file', 'document', 'upload'])) {
+                    $fieldType = 'document';
+                }
+                
                 $gfField = [
                     'id' => $fieldId,
                     'label' => $fieldLabel,
@@ -800,7 +969,7 @@ class FormImportService
                 }
 
                 // Handle file upload fields
-                if (in_array($fieldType, ['file_upload', 'file', 'upload'])) {
+                if (in_array($fieldType, ['file_upload', 'file', 'upload', 'document'])) {
                     $gfField['multipleFiles'] = false;
                     $gfField['allowedExtensions'] = $field['file_type'] ?? '';
                 }
@@ -858,6 +1027,7 @@ class FormImportService
             'file_upload' => 'fileupload',
             'file' => 'fileupload',
             'upload' => 'fileupload',
+            'document' => 'fileupload',
             'information' => 'html',
             'captcha' => 'captcha'
         ];

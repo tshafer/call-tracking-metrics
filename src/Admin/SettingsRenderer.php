@@ -85,7 +85,7 @@ class SettingsRenderer
         clearstatcache();
         $realViewPath = realpath($viewPath) ?: $viewPath;
         if (!file_exists($realViewPath)) {
-            // Suppress error message if running under PHPUnit
+            // Suppress error message if running under PHPUnit or in test environment
             if (!defined('PHPUNIT_RUNNING') && (!isset($_SERVER['argv']) || stripos(implode(' ', $_SERVER['argv']), 'phpunit') === false)) {
                 echo "<div style='color:red'>View not found: $viewPath</div>";
             }
@@ -253,6 +253,43 @@ class SettingsRenderer
     }
 
     /**
+     * Get forms management tab content
+     * 
+     * Generates the content for the forms management tab including
+     * lists of existing CF7 and GF forms with edit links.
+     * 
+     * @since 2.0.0
+     * @return string The rendered forms management tab content HTML
+     */
+    public function getFormsTabContent(): string
+    {
+        $apiKey = get_option('ctm_api_key');
+        $apiSecret = get_option('ctm_api_secret');
+        $cf7_available = class_exists('WPCF7_ContactForm');
+        $gf_available = class_exists('GFAPI');
+        
+        // Get CF7 forms
+        $cf7_forms = [];
+        if ($cf7_available) {
+            $cf7_forms = $this->getCF7Forms();
+        }
+        
+        // Get GF forms
+        $gf_forms = [];
+        if ($gf_available) {
+            $gf_forms = $this->getGForms();
+        }
+        
+        ob_start();
+        
+        $this->renderView('forms-tab', compact(
+            'apiKey', 'apiSecret', 'cf7_available', 'gf_available', 'cf7_forms', 'gf_forms'
+        ));
+        
+        return ob_get_clean();
+    }
+
+    /**
      * Get documentation tab content
      * 
      * Generates the content for the documentation tab including
@@ -322,9 +359,56 @@ class SettingsRenderer
         $cf7_forms = \WPCF7_ContactForm::find(['posts_per_page' => -1]);
         
         foreach ($cf7_forms as $form) {
+            // Only include forms that were imported from CTM
+            $isCtmImported = get_post_meta($form->id(), '_ctm_imported', true);
+            if (!$isCtmImported) {
+                continue;
+            }
+            
             $forms[] = [
                 'id' => $form->id(),
                 'title' => $form->title(),
+                'date_created' => get_post_field('post_date', $form->id()),
+                'date_modified' => get_post_field('post_modified', $form->id()),
+                'ctm_form_id' => get_post_meta($form->id(), '_ctm_form_id', true),
+                'ctm_import_date' => get_post_meta($form->id(), '_ctm_import_date', true),
+            ];
+        }
+        
+        return $forms;
+    }
+
+    /**
+     * Get Gravity Forms for mapping interface
+     * 
+     * @since 2.0.0
+     * @return array Array of GF forms with id and title
+     */
+    protected function getGForms(): array
+    {
+        if (!class_exists('GFAPI')) {
+            return [];
+        }
+        
+        $forms = [];
+        $gf_forms = \GFAPI::get_forms();
+        
+        foreach ($gf_forms as $form) {
+            // Only include forms that were imported from CTM
+            $isCtmImported = gform_get_meta($form['id'], '_ctm_imported');
+            if (!$isCtmImported) {
+                continue;
+            }
+            
+            $forms[] = [
+                'id' => $form['id'],
+                'title' => $form['title'],
+                'date_created' => $form['date_created'],
+                'date_modified' => $form['date_modified'] ?? $form['date_created'],
+                'is_active' => $form['is_active'],
+                'entries' => \GFAPI::count_entries($form['id']),
+                'ctm_form_id' => gform_get_meta($form['id'], '_ctm_form_id'),
+                'ctm_import_date' => gform_get_meta($form['id'], '_ctm_import_date'),
             ];
         }
         

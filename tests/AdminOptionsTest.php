@@ -13,9 +13,20 @@ class AdminOptionsTest extends TestCase
         parent::setUp();
         \Brain\Monkey\setUp();
         $this->initalMonkey();
+        
+        // Define constants needed for tests
+        if (!defined('CTM_PLUGIN_FILE')) {
+            define('CTM_PLUGIN_FILE', __FILE__);
+        }
+        
         \Brain\Monkey\Functions\when('settings_fields')->alias(function() { echo '<!--settings_fields-->'; });
         \Brain\Monkey\Functions\when('do_settings_sections')->alias(function() { echo '<!--do_settings_sections-->'; });
         \Brain\Monkey\Functions\when('ctm_get_api_url')->justReturn('https://api.calltrackingmetrics.com');
+        \Brain\Monkey\Functions\when('plugins_url')->justReturn('http://example.com/plugin-url');
+        \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn('/path/to/plugin/');
+        \Brain\Monkey\Functions\when('add_action')->justReturn(true);
+        \Brain\Monkey\Functions\when('add_menu_page')->justReturn(true);
+        \Brain\Monkey\Functions\when('__')->justReturn('CallTrackingMetrics');
     }
     protected function tearDown(): void
     {

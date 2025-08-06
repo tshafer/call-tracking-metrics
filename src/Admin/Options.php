@@ -133,8 +133,8 @@ class Options
     public function registerSettingsPage(): void
     {
         // Get the logo file URL
-        $logo_url = plugins_url('assets/images/ctm_logo-mark_cyan_400x400.png', CTM_PLUGIN_FILE);
-        $logo_path = plugin_dir_path(CTM_PLUGIN_FILE) . 'assets/images/ctm_logo-mark_cyan_400x400.png';
+        $logo_url = \plugins_url('assets/images/ctm_logo-mark_cyan_400x400.png', CTM_PLUGIN_FILE);
+        $logo_path = \plugin_dir_path(CTM_PLUGIN_FILE) . 'assets/images/ctm_logo-mark_cyan_400x400.png';
         
         // Use custom icon if file exists, otherwise fallback to dashicon
         $icon_url = file_exists($logo_path) ? $logo_url : 'dashicons-chart-area';
@@ -331,6 +331,8 @@ class Options
                 return $this->renderer->getApiTabContent();
             case 'import':
                 return $this->renderer->getFormImportTabContent();
+            case 'forms':
+                return $this->renderer->getFormsTabContent();
             case 'documentation':
                 return $this->renderer->getDocumentationTabContent();
             case 'debug':

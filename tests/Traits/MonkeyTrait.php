@@ -98,8 +98,14 @@ trait MonkeyTrait
         $mock('fopen', fn() => \Brain\Monkey\Functions\when('fopen')->justReturn(true));
         $mock('fputcsv', fn() => \Brain\Monkey\Functions\when('fputcsv')->justReturn(true));
         $mock('fclose', fn() => \Brain\Monkey\Functions\when('fclose')->justReturn(true));
+        
+        // WordPress metadata functions for CTM import tracking
+        $mock('update_post_meta', fn() => \Brain\Monkey\Functions\when('update_post_meta')->justReturn(true));
+        $mock('get_post_meta', fn() => \Brain\Monkey\Functions\when('get_post_meta')->justReturn(''));
+        $mock('current_time', fn() => \Brain\Monkey\Functions\when('current_time')->justReturn('2024-01-01 12:00:00'));
+        $mock('gform_update_meta', fn() => \Brain\Monkey\Functions\when('gform_update_meta')->justReturn(true));
+        $mock('gform_get_meta', fn() => \Brain\Monkey\Functions\when('gform_get_meta')->justReturn(''));
         $mock('unlink', fn() => \Brain\Monkey\Functions\when('unlink')->justReturn(true));
-        $mock('current_time', fn() => \Brain\Monkey\Functions\when('current_time')->justReturn('2024-01-01 00:00:00'));
         $mock('get_current_user_id', fn() => \Brain\Monkey\Functions\when('get_current_user_id')->justReturn(1));
         $mock('wp_generate_uuid4', fn() => \Brain\Monkey\Functions\when('wp_generate_uuid4')->justReturn('uuid-1234'));
         $mock('wp_cache_get_stats', fn() => \Brain\Monkey\Functions\when('wp_cache_get_stats')->justReturn(['hits' => 100, 'misses' => 10]));

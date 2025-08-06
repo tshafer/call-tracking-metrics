@@ -94,17 +94,17 @@ $has_form_plugins = $cf7_available || $gf_available;
                         </div>
                     </div>
 
-                    <!-- Form Title -->
-                    <div class="mt-6">
+                    <!-- Form Title (Hidden until form and target selected) -->
+                    <div id="ctm-form-title-section" class="mt-6 hidden">
                         <label class="block mb-2 text-gray-600 font-medium"><?php _e('Form Title', 'call-tracking-metrics'); ?></label>
                         <input type="text" id="ctm-form-title" class="block w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-base" 
                                placeholder="<?php _e('Enter a title for the imported form...', 'call-tracking-metrics'); ?>">
                     </div>
 
-                    <!-- Action Buttons -->
-                    <div class="flex gap-4 mt-6">
-                        <button type="button" id="ctm-preview-form" class="bg-gray-500 hover:bg-gray-600 text-white font-bold px-6 py-3 rounded-lg shadow transition">
-                            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <!-- Action Buttons (Hidden until form and target selected) -->
+                    <div id="ctm-action-buttons" class="flex gap-4 mt-6 hidden">
+                        <button type="button" id="ctm-preview-form" class="bg-blue-500 hover:bg-blue-600 text-white font-medium px-4 py-2 rounded-lg shadow transition">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                             </svg>
@@ -117,12 +117,39 @@ $has_form_plugins = $cf7_available || $gf_available;
                             <?php _e('Import Form', 'call-tracking-metrics'); ?>
                         </button>
                     </div>
-                </div>
 
-                <!-- Preview Area -->
-                <div id="ctm-preview-area" class="hidden">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4"><?php _e('Form Preview', 'call-tracking-metrics'); ?></h3>
-                    <div id="ctm-preview-content" class="bg-gray-50 rounded-lg p-6 border border-gray-200"></div>
+                    <!-- Inline Preview Area -->
+                    <div id="ctm-preview-area" class="hidden mt-6 border-t border-gray-200 pt-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-lg font-semibold text-gray-800 flex items-center">
+                                <svg class="w-5 h-5 text-blue-600 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                                <?php _e('Form Preview', 'call-tracking-metrics'); ?>
+                            </h4>
+                            <button type="button" id="ctm-close-preview" class="text-gray-400 hover:text-gray-600 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <!-- Preview Loading -->
+                        <div id="ctm-preview-loading" class="hidden">
+                            <div class="flex flex-col items-center justify-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                                <svg class="animate-spin h-8 w-8 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <p class="text-gray-600 font-medium"><?php _e('Generating form preview...', 'call-tracking-metrics'); ?></p>
+                                <p class="text-gray-500 text-sm mt-1"><?php _e('This may take a few seconds', 'call-tracking-metrics'); ?></p>
+                            </div>
+                        </div>
+                        
+                        <!-- Preview Content -->
+                        <div id="ctm-preview-content" class="bg-white border border-gray-200 rounded-lg p-6"></div>
+                    </div>
                 </div>
 
                 <!-- Import Status -->
@@ -234,15 +261,82 @@ jQuery(document).ready(function($) {
         });
     }
 
-    // Preview form
+    // Check if both form and target are selected to show form title and action buttons
+    function checkFormSelections() {
+        const formId = $('#ctm-form-select').val();
+        const targetType = $('#ctm-target-type').val();
+        const formTitleSection = $('#ctm-form-title-section');
+        const actionButtons = $('#ctm-action-buttons');
+        
+        if (formId && targetType) {
+            formTitleSection.removeClass('hidden');
+            actionButtons.removeClass('hidden');
+            
+            // Auto-populate form title when both selections are made
+            const selectedOption = $('#ctm-form-select option:selected');
+            if (selectedOption.length) {
+                const formData = selectedOption.data('form');
+                if (formData && formData.name) {
+                    $('#ctm-form-title').val(formData.name);
+                }
+            }
+        } else {
+            formTitleSection.addClass('hidden');
+            actionButtons.addClass('hidden');
+            clearFormState();
+        }
+    }
+
+    // Clear all form state when selections change
+    function clearFormState() {
+        console.log('Clearing form state...');
+        
+        // Hide and clear preview area
+        const previewArea = $('#ctm-preview-area');
+        const previewContent = $('#ctm-preview-content');
+        const previewLoading = $('#ctm-preview-loading');
+        
+        previewArea.addClass('hidden');
+        previewContent.addClass('hidden').html('');
+        previewLoading.addClass('hidden');
+        
+        // Clear form title
+        $('#ctm-form-title').val('');
+        
+        // Clear any success/error messages
+        $('.ctm-message').remove();
+        
+        // Re-enable preview button if it was disabled
+        $('#ctm-preview-form').prop('disabled', false).text('Preview Form');
+        
+        console.log('Form state cleared');
+    }
+
+    // Listen for changes in form and target selection
+    $('#ctm-form-select, #ctm-target-type').on('change', checkFormSelections);
+
+    // Preview form (optional, non-blocking)
     $('#ctm-preview-form').on('click', function() {
         const formId = $('#ctm-form-select').val();
         const targetType = $('#ctm-target-type').val();
+        
+        console.log('Preview form clicked:', { formId, targetType });
         
         if (!formId || !targetType) {
             showMessage('error', 'Please select both a form and target type.');
             return;
         }
+        
+        const button = $(this);
+        const previewArea = $('#ctm-preview-area');
+        const previewLoading = $('#ctm-preview-loading');
+        const previewContent = $('#ctm-preview-content');
+        
+        // Show preview area and loading state
+        previewArea.removeClass('hidden');
+        previewLoading.removeClass('hidden');
+        previewContent.addClass('hidden');
+        button.prop('disabled', true).text('Generating...');
         
         $.ajax({
             url: ajaxurl,
@@ -254,17 +348,50 @@ jQuery(document).ready(function($) {
                 target_type: targetType
             },
             success: function(response) {
-                if (response.success) {
-                    $('#ctm-preview-content').html(response.data.preview);
-                    $('#ctm-preview-area').removeClass('hidden');
+                console.log('Preview AJAX success:', response);
+                
+                // Check if response has the expected structure
+                if (!response || typeof response !== 'object') {
+                    console.error('Invalid response format:', response);
+                    previewArea.addClass('hidden');
+                    showMessage('error', 'Invalid response from server');
+                    return;
+                }
+                
+                if (response.success && response.data && response.data.preview) {
+                    console.log('Preview HTML length:', response.data.preview.length);
+                    console.log('Preview HTML:', response.data.preview);
+                    previewContent.html(response.data.preview);
+                    previewLoading.addClass('hidden');
+                    previewContent.removeClass('hidden');
+                    
+                    // Debug: Check if content was actually added
+                    console.log('Preview content after setting HTML:', previewContent.html().length);
                 } else {
-                    showMessage('error', response.data.message);
+                    // Handle error cases with safe property access
+                    const errorMessage = (response.data && response.data.message) 
+                        ? response.data.message 
+                        : (response.message || 'Unknown error occurred');
+                    
+                    console.log('Preview failed:', errorMessage);
+                    previewArea.addClass('hidden');
+                    showMessage('error', errorMessage);
                 }
             },
-            error: function() {
+            error: function(xhr, status, error) {
+                console.log('Preview AJAX error:', { xhr, status, error });
+                previewArea.addClass('hidden');
                 showMessage('error', 'Failed to generate preview. Please try again.');
+            },
+            complete: function() {
+                button.prop('disabled', false).text('<?php _e('Preview Form', 'call-tracking-metrics'); ?>');
             }
         });
+    });
+
+    // Close preview
+    $('#ctm-close-preview').on('click', function() {
+        $('#ctm-preview-area').addClass('hidden');
     });
 
     // Import form
@@ -301,7 +428,74 @@ jQuery(document).ready(function($) {
             },
             success: function(response) {
                 if (response.success) {
-                    $('#ctm-success-message').text(response.data.message);
+                    // Check if duplicate was found
+                    if (response.data.duplicate_found) {
+                        // Show duplicate warning with options
+                        const existingForm = response.data.existing_form;
+                        const duplicateHtml = `
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                                <div class="flex items-start">
+                                    <svg class="w-5 h-5 text-yellow-400 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                                    </svg>
+                                    <div class="flex-1">
+                                        <h4 class="text-yellow-800 font-medium mb-2">Duplicate Form Detected</h4>
+                                        <p class="text-yellow-700 text-sm mb-4">${response.data.message}</p>
+                                        <div class="flex flex-wrap gap-2">
+                                            <a href="${existingForm.edit_url}" target="_blank" class="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 hover:text-blue-700 transition-colors">
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                </svg>
+                                                Edit Existing Form
+                                            </a>
+                                            <button type="button" id="ctm-force-import" class="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-orange-500 rounded-md hover:bg-orange-600 transition-colors">
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                                </svg>
+                                                Import Anyway
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        $('#ctm-success-message').html(duplicateHtml);
+                        success.removeClass('hidden');
+                        
+                        // Handle force import button
+                        $('#ctm-force-import').on('click', function() {
+                            // Re-run import with force flag
+                            importFormWithForce();
+                        });
+                        
+                        return;
+                    }
+                    
+                    // Normal success - create a link to the imported form
+                    let formLink = '';
+                    if (response.data.form_id) {
+                        const targetType = $('#ctm-target-type').val();
+                        if (targetType === 'cf7') {
+                            // Contact Form 7 edit link
+                            formLink = `<br><br><a href="${ajaxurl.replace('admin-ajax.php', 'admin.php')}?page=wpcf7&post=${response.data.form_id}&action=edit" target="_blank" class="inline-flex items-center px-3 py-1 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 hover:text-blue-700 transition-colors">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                </svg>
+                                Edit Form in Contact Form 7
+                            </a>`;
+                        } else if (targetType === 'gf') {
+                            // Gravity Forms edit link
+                            formLink = `<br><br><a href="${ajaxurl.replace('admin-ajax.php', 'admin.php')}?page=gf_edit_forms&id=${response.data.form_id}" target="_blank" class="inline-flex items-center px-3 py-1 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 hover:text-blue-700 transition-colors">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                </svg>
+                                Edit Form in Gravity Forms
+                            </a>`;
+                        }
+                    }
+                    
+                    $('#ctm-success-message').html(response.data.message + formLink);
                     success.removeClass('hidden');
                     // Reset form
                     $('#ctm-form-select').val('');
@@ -323,6 +517,76 @@ jQuery(document).ready(function($) {
             }
         });
     });
+
+    // Force import function for when user chooses to import despite duplicates
+    function importFormWithForce() {
+        const formId = $('#ctm-form-select').val();
+        const targetType = $('#ctm-target-type').val();
+        const formTitle = $('#ctm-form-title').val();
+        
+        const button = $('#ctm-force-import');
+        const loading = $('#ctm-import-loading');
+        const success = $('#ctm-import-success');
+        const error = $('#ctm-import-error');
+        
+        button.prop('disabled', true).text('Importing...');
+        loading.removeClass('hidden');
+        success.addClass('hidden');
+        error.addClass('hidden');
+        
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'ctm_import_form',
+                nonce: nonce,
+                ctm_form_id: formId,
+                target_type: targetType,
+                form_title: formTitle,
+                force_duplicate: 'true'
+            },
+            success: function(response) {
+                if (response.success && response.data.form_id) {
+                    // Create a link to the imported form
+                    let formLink = '';
+                    if (targetType === 'cf7') {
+                        formLink = `<br><br><a href="${ajaxurl.replace('admin-ajax.php', 'admin.php')}?page=wpcf7&post=${response.data.form_id}&action=edit" target="_blank" class="inline-flex items-center px-3 py-1 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 hover:text-blue-700 transition-colors">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                            Edit Form in Contact Form 7
+                        </a>`;
+                    } else if (targetType === 'gf') {
+                        formLink = `<br><br><a href="${ajaxurl.replace('admin-ajax.php', 'admin.php')}?page=gf_edit_forms&id=${response.data.form_id}" target="_blank" class="inline-flex items-center px-3 py-1 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 hover:text-blue-700 transition-colors">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                            Edit Form in Gravity Forms
+                        </a>`;
+                    }
+                    
+                    $('#ctm-success-message').html(response.data.message + formLink);
+                    success.removeClass('hidden');
+                    // Reset form
+                    $('#ctm-form-select').val('');
+                    $('#ctm-target-type').val('');
+                    $('#ctm-form-title').val('');
+                    $('#ctm-preview-area').addClass('hidden');
+                } else {
+                    $('#ctm-error-message').text(response.data.message || 'Import failed. Please try again.');
+                    error.removeClass('hidden');
+                }
+            },
+            error: function() {
+                $('#ctm-error-message').text('Import failed. Please try again.');
+                error.removeClass('hidden');
+            },
+            complete: function() {
+                button.prop('disabled', false);
+                loading.addClass('hidden');
+            }
+        });
+    }
 
     // Auto-populate form title when form is selected
     $('#ctm-form-select').on('change', function() {
@@ -352,6 +616,21 @@ jQuery(document).ready(function($) {
 <style>
 .ctm-preview-cf7, .ctm-preview-gf {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Smooth transitions for preview loading */
+#ctm-preview-loading, #ctm-preview-content {
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+#ctm-preview-loading.hidden, #ctm-preview-content.hidden {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+#ctm-preview-loading:not(.hidden), #ctm-preview-content:not(.hidden) {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .form-field {
