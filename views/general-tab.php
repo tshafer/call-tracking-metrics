@@ -238,15 +238,20 @@ try {
                 <?php endif; ?>
                 
                 <!-- Gravity Forms Integration -->
-                <label class="flex items-center mb-2 <?= (!class_exists('GFAPI')) ? 'opacity-50 cursor-not-allowed' : '' ?>">
+                <?php 
+                $gf_plugin_active = function_exists('is_plugin_active') ? is_plugin_active('gravityforms/gravityforms.php') : false;
+                $gf_class_exists = class_exists('GFAPI');
+                $gf_available = $gf_plugin_active || $gf_class_exists;
+                ?>
+                <label class="flex items-center mb-2 <?= (!$gf_available) ? 'opacity-50 cursor-not-allowed' : '' ?>">
                     <input type="checkbox" 
                            name="ctm_api_gf_enabled" 
                            value="1"
                            <?= checked($gfEnabled, 1, false) ?> 
-                           <?= (!class_exists('GFAPI')) ? 'disabled' : '' ?>
-                           class="mr-2 rounded border-gray-300 focus:ring-blue-500 <?= (!class_exists('GFAPI')) ? 'opacity-50 cursor-not-allowed' : '' ?>" />
-                    <span class="<?= (!class_exists('GFAPI')) ? 'text-gray-400' : '' ?>"><?php _e('Enable Gravity Forms Integration', 'call-tracking-metrics'); ?></span>
-                    <?php if (!class_exists('GFAPI')): ?>
+                           <?= (!$gf_available) ? 'disabled' : '' ?>
+                           class="mr-2 rounded border-gray-300 focus:ring-blue-500 <?= (!$gf_available) ? 'opacity-50 cursor-not-allowed' : '' ?>" />
+                    <span class="<?= (!$gf_available) ? 'text-gray-400' : '' ?>"><?php _e('Enable Gravity Forms Integration', 'call-tracking-metrics'); ?></span>
+                    <?php if (!$gf_available): ?>
                         <span class="ml-2 text-xs text-red-600 font-medium"><?php _e('(Plugin required)', 'call-tracking-metrics'); ?></span>
                     <?php endif; ?>
                 </label>
@@ -256,7 +261,7 @@ try {
                 </div>
                 
                 <!-- Dismissible warning banner -->
-                <?php if (!class_exists('GFAPI')): ?>
+                <?php if (!$gf_available): ?>
                     <div id="gf-notice" class="bg-yellow-50 border-l-2 border-yellow-400 text-yellow-800 p-1.5 rounded flex items-center justify-between gap-1 mb-3 mt-2 text-xs ml-6">
                         <div class="flex items-center justify-between w-full gap-1">
                             <span class="font-semibold"><?php _e('Gravity Forms is not installed or activated.', 'call-tracking-metrics'); ?></span>

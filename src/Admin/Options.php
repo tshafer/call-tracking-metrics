@@ -526,16 +526,18 @@ class Options
         
         // Only auto-disable GF if the user didn't explicitly try to enable it
         $user_tried_to_enable_gf = isset($_POST['ctm_api_gf_enabled']);
+        $gf_plugin_active = function_exists('is_plugin_active') ? is_plugin_active('gravityforms/gravityforms.php') : false;
         $gf_class_exists = class_exists('GFAPI');
         $gf_function_exists = function_exists('gravity_form');
+        $gf_available = $gf_plugin_active || $gf_class_exists;
         
         // Debug: Always log GF detection for troubleshooting
         if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
-            $this->loggingSystem->logActivity("GF detection - Class exists: " . ($gf_class_exists ? 'true' : 'false') . ", Function exists: " . ($gf_function_exists ? 'true' : 'false') . ", User tried to enable: " . ($user_tried_to_enable_gf ? 'true' : 'false'), 'debug');
+            $this->loggingSystem->logActivity("GF detection - Plugin active: " . ($gf_plugin_active ? 'true' : 'false') . ", Class exists: " . ($gf_class_exists ? 'true' : 'false') . ", Function exists: " . ($gf_function_exists ? 'true' : 'false') . ", Available: " . ($gf_available ? 'true' : 'false') . ", User tried to enable: " . ($user_tried_to_enable_gf ? 'true' : 'false'), 'debug');
         }
         
-        // Only require GFAPI class, not the gravity_form function
-        if (!$gf_class_exists && !$user_tried_to_enable_gf) {
+        // Only auto-disable if not available and user didn't try to enable
+        if (!$gf_available && !$user_tried_to_enable_gf) {
             $gfEnabled = false;
             $this->loggingSystem->logActivity('Gravity Forms integration auto-disabled - plugin not available', 'config');
             // Add admin notice for GF auto-disable
@@ -631,16 +633,18 @@ class Options
         
         // Check Gravity Forms integration - only auto-disable if currently enabled but plugin not available
         $gf_currently_enabled = get_option('ctm_api_gf_enabled', false);
+        $gf_plugin_active = function_exists('is_plugin_active') ? is_plugin_active('gravityforms/gravityforms.php') : false;
         $gf_class_exists = class_exists('GFAPI');
         $gf_function_exists = function_exists('gravity_form');
+        $gf_available = $gf_plugin_active || $gf_class_exists;
         
         // Debug: Log what we found for GF in auto-disable check
         if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
-            $this->loggingSystem->logActivity("GF auto-disable check - Class exists: " . ($gf_class_exists ? 'true' : 'false') . ", Function exists: " . ($gf_function_exists ? 'true' : 'false') . ", Currently enabled: " . ($gf_currently_enabled ? 'true' : 'false'), 'debug');
+            $this->loggingSystem->logActivity("GF auto-disable check - Plugin active: " . ($gf_plugin_active ? 'true' : 'false') . ", Class exists: " . ($gf_class_exists ? 'true' : 'false') . ", Function exists: " . ($gf_function_exists ? 'true' : 'false') . ", Available: " . ($gf_available ? 'true' : 'false') . ", Currently enabled: " . ($gf_currently_enabled ? 'true' : 'false'), 'debug');
         }
         
-        // Only require GFAPI class, not the gravity_form function
-        if (!$gf_class_exists && $gf_currently_enabled) {
+        // Only auto-disable if not available and currently enabled
+        if (!$gf_available && $gf_currently_enabled) {
             update_option('ctm_api_gf_enabled', false);
             $this->loggingSystem->logActivity('Gravity Forms integration auto-disabled - plugin not available', 'config');
             $changes_made = true;
