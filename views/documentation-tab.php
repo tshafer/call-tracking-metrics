@@ -18,12 +18,6 @@
                     </svg>
                     <?php _e('General', 'call-tracking-metrics'); ?>
                 </button>
-                <button class="main-doc-tab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300 flex items-center gap-2" data-tab="debug">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"></path>
-                    </svg>
-                    <?php _e('Debug', 'call-tracking-metrics'); ?>
-                </button>
             </nav>
         </div>
         <div id="main-doc-tab-content">
@@ -214,61 +208,6 @@
                                 <?php _e('Enable the Debug tab in settings for detailed troubleshooting information.', 'call-tracking-metrics'); ?>
                             </li>
                         </ul>
-                    </div>
-                </div>
-            </div>
-            <div class="main-doc-tab-panel hidden" data-tab="debug">
-                <!-- Debug subtabs -->
-                <div id="debug-subtabs" class="mb-6">
-                    <nav class="flex flex-wrap border-b border-gray-200">
-                        <button class="debug-subtab px-4 py-2 -mb-px text-blue-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300 flex items-center gap-2" data-subtab="system-info">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                            <?php _e('System Info', 'call-tracking-metrics'); ?>
-                        </button>
-                        <button class="debug-subtab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300 flex items-center gap-2" data-subtab="health-check">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-                            </svg>
-                            <?php _e('Health Check', 'call-tracking-metrics'); ?>
-                        </button>
-                        <button class="debug-subtab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300 flex items-center gap-2" data-subtab="performance-monitor">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                            </svg>
-                            <?php _e('Performance', 'call-tracking-metrics'); ?>
-                        </button>
-                        <button class="debug-subtab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300 flex items-center gap-2" data-subtab="log-settings">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                            </svg>
-                            <?php _e('Log Settings', 'call-tracking-metrics'); ?>
-                        </button>
-                        <button class="debug-subtab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300 flex items-center gap-2" data-subtab="daily-logs">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                            <?php _e('Daily Logs', 'call-tracking-metrics'); ?>
-                        </button>
-                    </nav>
-                </div>
-                <div id="debug-subtab-content">
-                    <div class="debug-subtab-panel" data-subtab="system-info">
-                        <?php include(plugin_dir_path(__FILE__) . 'debug-includes/system-info-panel.php'); ?>
-                    </div>
-                    <div class="debug-subtab-panel hidden" data-subtab="health-check">
-                        <?php include(plugin_dir_path(__FILE__) . 'debug-includes/health-check.php'); ?>
-                    </div>
-                    <div class="debug-subtab-panel hidden" data-subtab="performance-monitor">
-                        <?php include(plugin_dir_path(__FILE__) . 'debug-includes/performance-monitor.php'); ?>
-                    </div>
-                    <div class="debug-subtab-panel hidden" data-subtab="log-settings">
-                        <?php include(plugin_dir_path(__FILE__) . 'debug-includes/log-settings.php'); ?>
-                    </div>
-                    <div class="debug-subtab-panel hidden" data-subtab="daily-logs">
-                        <?php include(plugin_dir_path(__FILE__) . 'debug-includes/daily-logs.php'); ?>
                     </div>
                 </div>
             </div>
