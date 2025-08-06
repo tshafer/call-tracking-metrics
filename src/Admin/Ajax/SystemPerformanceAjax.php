@@ -65,7 +65,10 @@ class SystemPerformanceAjax {
             $styles_loaded = 'N/A (Client-side)';
             $images_loaded = 'N/A (Client-side)';
             if ($client_metrics && is_array($client_metrics)) {
-                error_log('CTM Performance: Received client metrics: ' . json_encode($client_metrics));
+                // Use internal logging instead of error_log
+                if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                    $this->loggingSystem->logActivity('Performance: Received client metrics: ' . json_encode($client_metrics), 'debug');
+                }
                 if (isset($client_metrics['domContentLoaded'])) {
                     $dom_value = floatval($client_metrics['domContentLoaded']);
                     if ($dom_value > 0 && $dom_value < 60000) {
@@ -105,7 +108,10 @@ class SystemPerformanceAjax {
                     }
                 }
             } else {
-                error_log('CTM Performance: No client metrics received or invalid format');
+                // Use internal logging instead of error_log
+                if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                    $this->loggingSystem->logActivity('Performance: No client metrics received or invalid format', 'debug');
+                }
             }
             // Call helpers before array construction
             error_log('DEBUG: About to call getCacheHits');

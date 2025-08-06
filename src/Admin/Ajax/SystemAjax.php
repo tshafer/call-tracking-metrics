@@ -1468,8 +1468,10 @@ class SystemAjax {
         $images_loaded = 'N/A (Client-side)';
         
         if ($client_metrics && is_array($client_metrics)) {
-            // Debug log the received metrics
-            error_log('CTM Performance: Received client metrics: ' . json_encode($client_metrics));
+            // Use internal logging instead of error_log
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('Performance: Received client metrics: ' . json_encode($client_metrics), 'debug');
+            }
             
             // DOM Content Loaded - more flexible validation
             if (isset($client_metrics['domContentLoaded'])) {
@@ -1519,8 +1521,10 @@ class SystemAjax {
                 }
             }
         } else {
-            // Log when no client metrics are received
-            error_log('CTM Performance: No client metrics received or invalid format');
+            // Use internal logging instead of error_log
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('Performance: No client metrics received or invalid format', 'debug');
+            }
         }
 
         $metrics = [

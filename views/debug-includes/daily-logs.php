@@ -209,27 +209,29 @@ $log_stats = $log_stats ?? [];
 
 <!-- Email Log Modal -->
 <div id="email-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative">
-        <button onclick="hideEmailForm()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-8 relative">
+        <button onclick="hideEmailForm()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
         </button>
-        <h3 class="text-lg font-semibold text-gray-900 mb-4"><?php _e('Email Debug Log', 'call-tracking-metrics'); ?></h3>
-        <form id="email-log-form" onsubmit="submitEmailLog(event)">
+        <h3 class="text-xl font-semibold text-gray-900 mb-6"><?php _e('Email Debug Log', 'call-tracking-metrics'); ?></h3>
+        <form id="email-log-form" onsubmit="submitEmailLog(event)" class="space-y-6">
             <input type="hidden" id="email-log-date" name="log_date" value="">
-            <label for="email-log-to" class="block text-sm font-medium text-gray-700 mb-1"><?php _e('Send to', 'call-tracking-metrics'); ?></label>
-            <input type="email" id="email-log-to" name="to" class="w-full border border-gray-300 rounded px-3 py-2 mb-4" required>
-            <div class="flex justify-end space-x-2">
-                <button type="button" onclick="hideEmailForm()" class="bg-gray-600 hover:bg-gray-700 !text-white px-4 py-2 rounded flex items-center gap-2">
+            <div class="space-y-2">
+                <label for="email-log-to" class="block text-sm font-medium text-gray-700"><?php _e('Send to', 'call-tracking-metrics'); ?></label>
+                <input type="email" id="email-log-to" name="to" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" required>
+            </div>
+            <div class="flex justify-end space-x-3 pt-4">
+                <button type="button" onclick="hideEmailForm()" class="bg-gray-600 hover:bg-gray-700 !text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                     <?php _e('Cancel', 'call-tracking-metrics'); ?>
                 </button>
-                <button type="submit" id="email-log-send-btn" class="bg-blue-600 hover:bg-blue-700 !text-white px-4 py-2 rounded flex items-center gap-2">
+                <button type="submit" id="email-log-send-btn" class="bg-blue-600 hover:bg-blue-700 !text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                     </svg>
                     <?php _e('Send', 'call-tracking-metrics'); ?>
                 </button>
