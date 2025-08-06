@@ -537,7 +537,6 @@ function runHealthCheckSilent() {
                     'Account Access': 'check-account-access',
                     'Contact Form 7': 'check-cf7',
                     'Gravity Forms': 'check-gf',
-                    'Field Mappings': 'check-field-mappings',
                     'PHP Version': 'check-php-version',
                     'cURL Extension': 'check-curl',
                     'SSL Support': 'check-ssl',
@@ -730,10 +729,6 @@ function showHealthScoreInfo() {
                                     <span class="text-gray-700">Gravity Forms</span>
                                     <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ⚠️ Warning</span>
                                 </div>
-                                <div class="flex justify-between items-center py-2">
-                                    <span class="text-gray-700">Field Mappings</span>
-                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ⚠️ Warning</span>
-                                </div>
                             </div>
                         </div>
 
@@ -822,7 +817,7 @@ function showHealthScoreInfo() {
                                 <div class="w-4 h-4 bg-yellow-500 rounded-full"></div>
                                 <span class="font-bold text-yellow-700">Medium Impact (⚠️ Warning)</span>
                             </div>
-                            <p class="text-yellow-600 text-xs">Form Integrations, Field Mappings, PHP Version, Memory Limit, File Permissions, Debug Mode</p>
+                            <p class="text-yellow-600 text-xs">Form Integrations, PHP Version, Memory Limit, File Permissions, Debug Mode</p>
                         </div>
                         <div class="bg-white border border-green-200 rounded-lg p-4">
                             <div class="flex items-center gap-2 mb-2">
@@ -853,10 +848,6 @@ function showHealthScoreInfo() {
                             <li class="flex items-start gap-2">
                                 <div class="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
                                 <span>Install optional form plugins (CF7, Gravity Forms)</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <div class="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                                <span>Configure field mappings for forms</span>
                             </li>
                         </ul>
                         <ul class="space-y-2 text-sm text-green-700">

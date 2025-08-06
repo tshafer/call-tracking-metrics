@@ -55,16 +55,6 @@ class Options
     private AjaxHandlers $ajaxHandlers;
 
     /**
-     * Field mapping management instance
-     * 
-     * Handles form field mapping between WordPress forms and CTM
-     * 
-     * @since 2.0.0
-     * @var FieldMapping
-     */
-    private FieldMapping $fieldMapping;
-
-    /**
      * Logging system instance
      * 
      * Manages debug logging and activity tracking
@@ -82,11 +72,10 @@ class Options
      * 
      * @since 2.0.0
      */
-    public function __construct($renderer = null, $ajaxHandlers = null, $fieldMapping = null, $loggingSystem = null)
+    public function __construct($renderer = null, $ajaxHandlers = null, $loggingSystem = null)
     {
         $this->renderer = $renderer ?: new SettingsRenderer();
         $this->ajaxHandlers = $ajaxHandlers ?: new AjaxHandlers();
-        $this->fieldMapping = $fieldMapping ?: new FieldMapping();
         $this->loggingSystem = $loggingSystem ?: new LoggingSystem();
     }
 
@@ -209,7 +198,7 @@ class Options
         $this->getTrackingScriptFromApi();
         
         // Enqueue JavaScript and CSS assets for field mapping
-        $this->fieldMapping->enqueueMappingAssets();
+        // Removed field mapping assets as per edit hint
         
         // Auto-disable integrations if required plugins are not available
         $this->autoDisableUnavailableIntegrations();
@@ -314,8 +303,6 @@ class Options
         switch ($active_tab) {
             case 'logs':
                 return $this->renderer->getLogsTabContent();
-            case 'mapping':
-                return $this->renderer->getMappingTabContent();
             case 'api':
                 return $this->renderer->getApiTabContent();
             case 'import':
@@ -778,37 +765,6 @@ class Options
             </div>
         </div>
         <?php
-    }
-
-    // ===================================================================
-    // Delegation Methods for Field Mapping
-    // ===================================================================
-
-    /**
-     * Get field mapping for a form (delegated to FieldMapping class)
-     * 
-     * @since 2.0.0
-     * @param string     $form_type The form type ('gf' or 'cf7')
-     * @param string|int $form_id   The form ID
-     * @return array|null The field mapping or null if not found
-     */
-    public function getFieldMapping(string $form_type, $form_id): ?array
-    {
-        return $this->fieldMapping->getFieldMapping($form_type, $form_id);
-    }
-
-    /**
-     * Save field mapping for a form (delegated to FieldMapping class)
-     * 
-     * @since 2.0.0
-     * @param string     $form_type The form type ('gf' or 'cf7')
-     * @param string|int $form_id   The form ID
-     * @param array      $mapping   The field mapping array
-     * @return void
-     */
-    public function saveFieldMapping(string $form_type, $form_id, array $mapping): void
-    {
-        $this->fieldMapping->saveFieldMapping($form_type, $form_id, $mapping);
     }
 
     // ===================================================================

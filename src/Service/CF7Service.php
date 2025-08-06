@@ -57,9 +57,6 @@ class CF7Service
             // Extract basic form information
             $formId = $form->id();
             $formTitle = $form->title();
-            
-            // Get field mapping configuration for this form
-            $fieldMapping = get_option("ctm_mapping_cf7_{$formId}", []);
 
             // Build a field type map from getFormFields
             $fieldTypeMap = [];
@@ -76,7 +73,7 @@ class CF7Service
                 'timestamp' => current_time('mysql'),
                 'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
                 'ip_address' => $this->getClientIpAddress(),
-                'fields' => $this->mapFormFields($data, $fieldMapping, $fieldTypeMap),
+                'fields' => $this->mapFormFieldsDirect($data, $fieldTypeMap),
                 'raw_data' => $data, // Keep original data for debugging
                 'callback_number' => '',
                 'delay_calling_by' => '',
@@ -225,7 +222,7 @@ class CF7Service
      * @param array $fieldMapping The configured field mapping
      * @return array Mapped field data for CTM API
      */
-    private function mapFormFields(array $formData, array $fieldMapping, array $fieldTypeMap = []): array
+    private function mapFormFieldsDirect(array $formData, array $fieldTypeMap = []): array
     {
         $mappedFields = [];
         $addressFields = ['address_street', 'address_city', 'address_state', 'address_zip', 'address_country'];
@@ -234,7 +231,6 @@ class CF7Service
             if (strpos($fieldName, '_wpcf7') === 0) {
                 continue;
             }
-            $ctmFieldName = $fieldMapping[$fieldName] ?? $fieldName;
             $type = $fieldTypeMap[$fieldName] ?? $this->normalizeFieldType($fieldName);
             // Group address fields
             if (in_array($fieldName, $addressFields)) {
@@ -243,14 +239,14 @@ class CF7Service
             }
             // File fields: pass as URL if present
             if ($type === 'file' && !empty($fieldValue) && filter_var($fieldValue, FILTER_VALIDATE_URL)) {
-                $mappedFields[$ctmFieldName] = $fieldValue;
+                $mappedFields[$fieldName] = $fieldValue;
                 continue;
             }
             // Checkboxes: send as arrays if possible
             if ($type === 'checkbox') {
                 $arrayValue = is_array($fieldValue) ? $fieldValue : explode(',', $fieldValue);
                 $arrayValue = array_filter((array)$arrayValue);
-                $mappedFields[$ctmFieldName] = $arrayValue;
+                $mappedFields[$fieldName] = $arrayValue;
                 continue;
             }
             // Unsupported field types: skip and log
@@ -262,7 +258,7 @@ class CF7Service
             // Clean and format the field value
             $cleanValue = $this->sanitizeFieldValue($fieldValue);
             if (!empty($cleanValue)) {
-                $mappedFields[$ctmFieldName] = $cleanValue;
+                $mappedFields[$fieldName] = $cleanValue;
             }
         }
         if (!empty($address)) {

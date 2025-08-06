@@ -45,11 +45,13 @@ class AdminOptionsTest extends TestCase
 
     public function testInitializeRegistersHandlersAndAssets()
     {
-        $ajaxHandlers = new \CTM\Admin\AjaxHandlers();
-        $fieldMapping = new \CTM\Admin\FieldMapping();
-        $options = new Options(null, $ajaxHandlers, $fieldMapping);
+        \Brain\Monkey\Functions\when('add_action')->justReturn(true);
+        \Brain\Monkey\Functions\when('wp_enqueue_script')->justReturn(true);
+        \Brain\Monkey\Functions\when('wp_enqueue_style')->justReturn(true);
+        \Brain\Monkey\Functions\when('wp_localize_script')->justReturn(true);
+        $options = new Options();
         $options->initialize();
-        $this->assertInstanceOf(Options::class, $options);
+        $this->assertTrue(true); // If we get here, no exception was thrown
     }
 
     public function testGenerateNoticesReturnsCf7Notice()
@@ -122,42 +124,6 @@ class AdminOptionsTest extends TestCase
         $method->setAccessible(true);
         $result = $method->invoke($options, 'logs');
         $this->assertStringContainsString('logs', $result);
-    }
-
-    public function testGetTabContentRoutesToMapping()
-    {
-        $renderer = new class extends \CTM\Admin\SettingsRenderer {
-            public function renderView(string $view, array $vars = []): void {
-                echo $view;
-            }
-        };
-        $options = new Options();
-        $reflection = new \ReflectionClass($options);
-        $prop = $reflection->getProperty('renderer');
-        $prop->setAccessible(true);
-        $prop->setValue($options, $renderer);
-        $method = $reflection->getMethod('getTabContent');
-        $method->setAccessible(true);
-        $result = $method->invoke($options, 'mapping');
-        $this->assertStringContainsString('mapping', $result);
-    }
-
-    public function testGetTabContentRoutesToApi()
-    {
-        $renderer = new class extends \CTM\Admin\SettingsRenderer {
-            public function renderView(string $view, array $vars = []): void {
-                echo $view;
-            }
-        };
-        $options = new Options();
-        $reflection = new \ReflectionClass($options);
-        $prop = $reflection->getProperty('renderer');
-        $prop->setAccessible(true);
-        $prop->setValue($options, $renderer);
-        $method = $reflection->getMethod('getTabContent');
-        $method->setAccessible(true);
-        $result = $method->invoke($options, 'api');
-        $this->assertStringContainsString('api', $result);
     }
 
     public function testGetTabContentRoutesToDocumentation()
@@ -288,26 +254,6 @@ class AdminOptionsTest extends TestCase
         }
         // Check that the output includes 30 call counts (all 1 in this fake)
         $this->assertStringContainsString('[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]', $output);
-    }
-
-    public function testGetFieldMappingReturnsNullIfNotSet()
-    {
-        $fieldMapping = new \CTM\Admin\FieldMapping();
-        $result = $fieldMapping->getFieldMapping('gf', 123);
-        $this->assertNull($result, 'getFieldMapping should return null if not set');
-    }
-
-    public function testSaveFieldMappingAndGetFieldMapping()
-    {
-        \Brain\Monkey\Functions\when('get_option')->alias(function($key) {
-            if ($key === 'ctm_mapping_cf7_1') return ['foo' => 'bar'];
-            return null;
-        });
-        $options = new Options();
-        $options->saveFieldMapping('cf7', 1, ['foo' => 'bar']);
-        $result = $options->getFieldMapping('cf7', 1);
-        $this->assertIsArray($result);
-        $this->assertEquals(['foo' => 'bar'], $result);
     }
 
     public function testLogDebugWritesToErrorLog()

@@ -45,7 +45,7 @@ class GFService
      * 
      * Takes raw GF form submission data and converts it into the format
      * expected by the CallTrackingMetrics API. Handles complex field types,
-     * field mapping, data validation, and metadata extraction.
+     * data validation, and metadata extraction.
      * 
      * @since 1.0.0
      * @param array $entry The GF entry data containing submitted values

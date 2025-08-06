@@ -37,7 +37,7 @@ class AdminAjaxFormAjaxTest extends TestCase
     }
     public function testCanBeConstructed()
     {
-        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
+        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm');
         $this->assertInstanceOf(FormAjax::class, $formAjax);
     }
 
@@ -45,9 +45,9 @@ class AdminAjaxFormAjaxTest extends TestCase
     {
         $calls = 0;
         \Brain\Monkey\Functions\when('add_action')->alias(function() use (&$calls) { $calls++; });
-        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
+        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm');
         $formAjax->registerHandlers();
-        $this->assertEquals(4, $calls);
+        $this->assertEquals(3, $calls);
     }
 
     public function testAjaxGetFormsReturnsEmptyForUnknownType()
@@ -56,7 +56,7 @@ class AdminAjaxFormAjaxTest extends TestCase
         $_POST['nonce'] = 'dummy';
         $called = null;
         \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arg) use (&$called) { $called = $arg; });
-        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
+        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm');
         $formAjax->ajaxGetForms();
         $this->assertEquals([], $called);
     }
@@ -85,7 +85,7 @@ class AdminAjaxFormAjaxTest extends TestCase
         \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arg) use (&$called) { $called = $arg; });
         
         try {
-            $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
+            $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm');
             $formAjax->ajaxGetForms();
             $this->assertNotNull($called, 'Should call wp_send_json_success');
         } catch (\Throwable $e) {
@@ -122,7 +122,7 @@ class AdminAjaxFormAjaxTest extends TestCase
         \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arg) use (&$called) { $called = $arg; });
         
         try {
-            $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
+            $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm');
             $formAjax->ajaxGetForms();
             $this->assertNotNull($called, 'Should call wp_send_json_success');
         } catch (\Throwable $e) {
@@ -141,7 +141,7 @@ class AdminAjaxFormAjaxTest extends TestCase
         $_POST['nonce'] = 'dummy';
         $called = null;
         \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arg) use (&$called) { $called = $arg; });
-        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
+        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm');
         $formAjax->ajaxGetFields();
         $this->assertEquals([], $called);
     }
@@ -173,7 +173,7 @@ class AdminAjaxFormAjaxTest extends TestCase
         \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arg) use (&$called) { $called = $arg; });
         
         try {
-            $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
+            $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm');
             $formAjax->ajaxGetFields();
             $this->assertNotNull($called, 'Should call wp_send_json_success');
         } catch (\Throwable $e) {
@@ -209,7 +209,7 @@ class AdminAjaxFormAjaxTest extends TestCase
         \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arg) use (&$called) { $called = $arg; });
         
         try {
-            $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
+            $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm');
             $formAjax->ajaxGetFields();
             $this->assertNotNull($called, 'Should call wp_send_json_success');
         } catch (\Throwable $e) {
@@ -219,32 +219,6 @@ class AdminAjaxFormAjaxTest extends TestCase
             }
             $this->fail('Exception thrown: ' . $e->getMessage());
         }
-    }
-
-    public function testAjaxSaveMappingSuccess()
-    {
-        $_POST['form_type'] = 'gf';
-        $_POST['form_id'] = '1';
-        $_POST['mapping'] = ['field1' => 'value1'];
-        $_POST['nonce'] = 'dummy';
-        $called = null;
-        \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arg) use (&$called) { $called = $arg; });
-        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
-        $formAjax->ajaxSaveMapping();
-        $this->assertEquals(['message' => 'Mapping saved.'], $called);
-    }
-
-    public function testAjaxSaveMappingErrorOnInvalidData()
-    {
-        $_POST['form_type'] = '';
-        $_POST['form_id'] = '';
-        $_POST['mapping'] = 'not_array';
-        $_POST['nonce'] = 'dummy';
-        $called = null;
-        \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arg) use (&$called) { $called = $arg; });
-        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
-        $formAjax->ajaxSaveMapping();
-        $this->assertEquals(['message' => 'Invalid mapping data.'], $called);
     }
 
     public function testAjaxDismissNoticeCF7()
@@ -260,7 +234,7 @@ class AdminAjaxFormAjaxTest extends TestCase
             return true;
         });
         \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arg) use (&$called) { $called = $arg; });
-        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
+        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm');
         $formAjax->ajaxDismissNotice();
         $this->assertTrue($updateOptionCalled, 'update_option should be called for cf7');
         $this->assertEquals(['message' => 'CF7 notice dismissed.'], $called);
@@ -279,7 +253,7 @@ class AdminAjaxFormAjaxTest extends TestCase
             return true;
         });
         \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arg) use (&$called) { $called = $arg; });
-        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
+        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm');
         $formAjax->ajaxDismissNotice();
         $this->assertTrue($updateOptionCalled, 'update_option should be called for gf');
         $this->assertEquals(['message' => 'GF notice dismissed.'], $called);
@@ -291,7 +265,7 @@ class AdminAjaxFormAjaxTest extends TestCase
         $_POST['nonce'] = 'dummy';
         $called = null;
         \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arg) use (&$called) { $called = $arg; });
-        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
+        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm');
         $formAjax->ajaxDismissNotice();
         $this->assertEquals(['message' => 'Invalid notice type.'], $called);
     }
@@ -302,7 +276,7 @@ class AdminAjaxFormAjaxTest extends TestCase
         $_POST['nonce'] = 'dummy';
         $called = null;
         \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arg) use (&$called) { $called = $arg; });
-        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
+        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm');
         $formAjax->ajaxGetForms();
         $this->assertEquals([], $called);
     }
@@ -314,36 +288,9 @@ class AdminAjaxFormAjaxTest extends TestCase
         $_POST['nonce'] = 'dummy';
         $called = null;
         \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arg) use (&$called) { $called = $arg; });
-        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
+        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm');
         $formAjax->ajaxGetFields();
         $this->assertEquals([], $called);
-    }
-
-    public function testAjaxSaveMappingMissingMapping()
-    {
-        $_POST['form_type'] = 'gf';
-        $_POST['form_id'] = 1;
-        $_POST['nonce'] = 'dummy';
-        $called = null;
-        \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arg) use (&$called) { $called = $arg; });
-        \Brain\Monkey\Functions\when('update_option')->justReturn(true);
-        \Brain\Monkey\Functions\when('wp_send_json_success')->justReturn(true);
-        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
-        $formAjax->ajaxSaveMapping();
-        $this->assertEquals(['message' => 'Invalid mapping data.'], $called);
-    }
-
-    public function testAjaxSaveMappingMappingNotArray()
-    {
-        $_POST['form_type'] = 'gf';
-        $_POST['form_id'] = 1;
-        $_POST['mapping'] = 'string';
-        $_POST['nonce'] = 'dummy';
-        $called = null;
-        \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arg) use (&$called) { $called = $arg; });
-        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
-        $formAjax->ajaxSaveMapping();
-        $this->assertEquals(['message' => 'Invalid mapping data.'], $called);
     }
 
     public function testAjaxDismissNoticeNoType()
@@ -352,7 +299,7 @@ class AdminAjaxFormAjaxTest extends TestCase
         $_POST['nonce'] = 'dummy';
         $called = null;
         \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arg) use (&$called) { $called = $arg; });
-        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
+        $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm');
         $formAjax->ajaxDismissNotice();
         $this->assertEquals(['message' => 'Invalid notice type.'], $called);
     }
@@ -373,7 +320,7 @@ class AdminAjaxFormAjaxTest extends TestCase
         \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arg) use (&$called) { $called = $arg; });
         
         try {
-            $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
+            $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm');
             $formAjax->ajaxGetFields();
             $this->assertNotNull($called, 'Should call wp_send_json_success');
         } catch (\Throwable $e) {
@@ -404,7 +351,7 @@ class AdminAjaxFormAjaxTest extends TestCase
         \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arg) use (&$called) { $called = $arg; });
         
         try {
-            $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
+            $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm');
             $formAjax->ajaxGetFields();
             $this->assertNotNull($called, 'Should call wp_send_json_success');
         } catch (\Throwable $e) {
@@ -432,7 +379,7 @@ class AdminAjaxFormAjaxTest extends TestCase
         \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arg) use (&$called) { $called = $arg; });
         
         try {
-            $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
+            $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm');
             $formAjax->ajaxGetFields();
             $this->assertNotNull($called, 'Should call wp_send_json_success');
         } catch (\Throwable $e) {
@@ -460,7 +407,7 @@ class AdminAjaxFormAjaxTest extends TestCase
         \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arg) use (&$called) { $called = $arg; });
         
         try {
-            $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm', new \CTM\Admin\FieldMapping());
+            $formAjax = new FormAjax('GFAPI', 'WPCF7_ContactForm');
             $formAjax->ajaxGetFields();
             $this->assertNotNull($called, 'Should call wp_send_json_success');
         } catch (\Throwable $e) {

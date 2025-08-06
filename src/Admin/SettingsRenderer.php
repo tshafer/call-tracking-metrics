@@ -199,65 +199,6 @@ class SettingsRenderer
     }
 
     /**
-     * Get mapping tab content
-     * 
-     * Generates the content for the field mapping tab including
-     * form selection, field mapping interface, and mapping preview.
-     * 
-     * @since 2.0.0
-     * @return string The rendered mapping tab content HTML
-     */
-    public function getMappingTabContent(): string
-    {
-        // Check if required plugins are available
-        $cf7_available = class_exists('WPCF7_ContactForm');
-        $gf_available = class_exists('GFAPI');
-        
-        // Get available forms
-        $cf7_forms = [];
-        $gf_forms = [];
-        
-        if ($cf7_available) {
-            if ($this->cf7FormsProvider && is_callable($this->cf7FormsProvider)) {
-                try {
-                    $cf7_forms = call_user_func($this->cf7FormsProvider);
-                } catch (\Exception $e) {
-                    $cf7_forms = [];
-                }
-            } else {
-                $cf7_forms = $this->getCF7Forms();
-            }
-        }
-        
-        if ($gf_available) {
-            if ($this->gfFormsProvider && is_callable($this->gfFormsProvider)) {
-                try {
-                    $gf_forms = call_user_func($this->gfFormsProvider);
-                } catch (\Exception $e) {
-                    $gf_forms = [];
-                }
-            } else {
-                $gf_forms = $this->getGFForms();
-            }
-        }
-        
-        // Get CTM field options for mapping
-        if ($this->ctmFieldsProvider && is_callable($this->ctmFieldsProvider)) {
-            $ctm_fields = call_user_func($this->ctmFieldsProvider);
-        } else {
-            $ctm_fields = $this->getCTMFields();
-        }
-        
-        ob_start();
-        
-        $this->renderView('mapping-tab', compact(
-            'cf7_available', 'gf_available', 'cf7_forms', 'gf_forms', 'ctm_fields'
-        ));
-        
-        return ob_get_clean();
-    }
-
-    /**
      * Get API tab content
      * 
      * Generates the content for the API testing and diagnostics tab

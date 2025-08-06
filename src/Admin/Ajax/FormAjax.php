@@ -4,18 +4,18 @@ namespace CTM\Admin\Ajax;
 class FormAjax {
     private $gfapi;
     private $wpcf7_contact_form;
-    private $fieldMapping;
-    public function __construct($gfapi = null, $wpcf7_contact_form = null, $fieldMapping = null) {
+    
+    public function __construct($gfapi = null, $wpcf7_contact_form = null) {
         $this->gfapi = $gfapi ?: (class_exists('GFAPI') ? 'GFAPI' : null);
         $this->wpcf7_contact_form = $wpcf7_contact_form ?: (class_exists('WPCF7_ContactForm') ? 'WPCF7_ContactForm' : null);
-        $this->fieldMapping = $fieldMapping ?: (class_exists('CTM\\Admin\\FieldMapping') ? new \CTM\Admin\FieldMapping() : null);
     }
+    
     public function registerHandlers() {
         \add_action('wp_ajax_ctm_get_forms', [$this, 'ajaxGetForms']);
         \add_action('wp_ajax_ctm_get_fields', [$this, 'ajaxGetFields']);
-        \add_action('wp_ajax_ctm_save_mapping', [$this, 'ajaxSaveMapping']);
         \add_action('wp_ajax_ctm_dismiss_notice', [$this, 'ajaxDismissNotice']);
     }
+    
     public function ajaxGetForms(): void
     {
         check_ajax_referer('ctm_mapping_nonce', 'nonce');
@@ -34,6 +34,7 @@ class FormAjax {
         }
         wp_send_json_success($forms);
     }
+    
     public function ajaxGetFields(): void
     {
         check_ajax_referer('ctm_mapping_nonce', 'nonce');
@@ -61,18 +62,7 @@ class FormAjax {
         }
         wp_send_json_success($fields);
     }
-    public function ajaxSaveMapping(): void
-    {
-        check_ajax_referer('ctm_mapping_nonce', 'nonce');
-        $type = sanitize_text_field($_POST['form_type'] ?? '');
-        $form_id = sanitize_text_field($_POST['form_id'] ?? '');
-        $mapping = $_POST['mapping'] ?? [];
-        if ($type && $form_id && is_array($mapping) && $this->fieldMapping) {
-            $this->fieldMapping->saveFieldMapping($type, $form_id, $mapping);
-            wp_send_json_success(['message' => 'Mapping saved.']);
-        }
-        wp_send_json_error(['message' => 'Invalid mapping data.']);
-    }
+    
     public function ajaxDismissNotice(): void
     {
         check_ajax_referer('ctm_dismiss_notice', 'nonce');

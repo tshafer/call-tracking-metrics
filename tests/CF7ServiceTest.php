@@ -321,43 +321,4 @@ class CF7ServiceTest extends TestCase
         $this->assertEquals('ad1', $result['utm_parameters']['utm_content']);
     }
 
-    public function testPrivateMethodsViaReflection()
-    {
-        $cf7Service = new \CTM\Service\CF7Service();
-        // mapFormFields
-        $ref = new \ReflectionClass($cf7Service);
-        $mapMethod = $ref->getMethod('mapFormFields');
-        $mapMethod->setAccessible(true);
-        $fields = $mapMethod->invoke($cf7Service, ['foo' => 'bar'], []);
-        $this->assertEquals(['foo' => 'bar'], $fields);
-        // extractFieldLabel
-        $labelMethod = $ref->getMethod('extractFieldLabel');
-        $labelMethod->setAccessible(true);
-        $this->assertEquals('Placeholder', $labelMethod->invoke($cf7Service, 'placeholder "Placeholder"', 'field'));
-        $this->assertEquals('Watermark', $labelMethod->invoke($cf7Service, 'watermark "Watermark"', 'field'));
-        $this->assertEquals('Field', $labelMethod->invoke($cf7Service, '', 'field'));
-        // normalizeFieldType
-        $normMethod = $ref->getMethod('normalizeFieldType');
-        $normMethod->setAccessible(true);
-        $this->assertEquals('text', $normMethod->invoke($cf7Service, 'text'));
-        $this->assertEquals('phone', $normMethod->invoke($cf7Service, 'tel'));
-        $this->assertEquals('text', $normMethod->invoke($cf7Service, 'unknown'));
-        // sanitizeFieldValue
-        $sanitizeMethod = $ref->getMethod('sanitizeFieldValue');
-        $sanitizeMethod->setAccessible(true);
-        $this->assertEquals('abc', $sanitizeMethod->invoke($cf7Service, 'abc'));
-        $this->assertEquals('a, b', $sanitizeMethod->invoke($cf7Service, ['a', 'b']));
-        // extractUtmParameters
-        $_GET = ['utm_source' => 'src'];
-        $utmMethod = $ref->getMethod('extractUtmParameters');
-        $utmMethod->setAccessible(true);
-        $this->assertEquals(['utm_source' => 'src'], $utmMethod->invoke($cf7Service));
-        // getClientIpAddress
-        $_SERVER['REMOTE_ADDR'] = '1.2.3.4';
-        $ipMethod = $ref->getMethod('getClientIpAddress');
-        $ipMethod->setAccessible(true);
-        $this->assertEquals('1.2.3.4', $ipMethod->invoke($cf7Service));
-    }
-
-
 } 

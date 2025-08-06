@@ -1269,22 +1269,6 @@ class SystemAjax {
                 $issues[] = 'Gravity Forms is installed but CTM integration is disabled';
                 $solutions[] = 'Enable Gravity Forms integration in General settings';
             }
-            
-            // Check for field mappings
-            if ($cf7_enabled && $cf7_active) {
-                $cf7_forms = \WPCF7_ContactForm::find();
-                $mapped_forms = 0;
-                foreach ($cf7_forms as $form) {
-                    $mapping = \get_option("ctm_mapping_cf7_{$form->id()}", []);
-                    if (!empty($mapping)) {
-                        $mapped_forms++;
-                    }
-                }
-                if (count($cf7_forms) > 0 && $mapped_forms === 0) {
-                    $issues[] = 'Contact Form 7 forms have no field mappings configured';
-                    $solutions[] = 'Configure field mappings in the Field Mapping tab';
-                }
-            }
         }
         $status = empty($issues) ? 'healthy' : (count($issues) === 1 ? 'warning' : 'issues_found');
         $score = $status === 'healthy' ? 100 : ($status === 'warning' ? 70 : 0);
@@ -1387,12 +1371,6 @@ class SystemAjax {
         
         $checks[] = ['name' => 'Contact Form 7', 'status' => $cf7_active ? 'pass' : 'warning', 'message' => $cf7_active ? 'Installed' : 'Not installed'];
         $checks[] = ['name' => 'Gravity Forms', 'status' => $gf_active ? 'pass' : 'warning', 'message' => $gf_active ? 'Installed' : 'Not installed'];
-        
-        // Field Mappings Check
-        $cf7_mappings = \get_option('ctm_cf7_field_mappings', []);
-        $gf_mappings = \get_option('ctm_gf_field_mappings', []);
-        $has_mappings = !empty($cf7_mappings) || !empty($gf_mappings);
-        $checks[] = ['name' => 'Field Mappings', 'status' => $has_mappings ? 'pass' : 'warning', 'message' => $has_mappings ? 'Configured' : 'Not configured'];
         
         // Server Environment Checks
         $checks[] = ['name' => 'PHP Version', 'status' => version_compare(PHP_VERSION, '7.4', '>=') ? 'pass' : 'warning', 'message' => PHP_VERSION];
