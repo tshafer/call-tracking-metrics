@@ -511,6 +511,10 @@ class Options
         if (!$cf7_plugin_active && !class_exists('WPCF7_ContactForm') && !function_exists('wpcf7_contact_form')) {
             $cf7Enabled = false;
             $this->loggingSystem->logActivity('Contact Form 7 integration auto-disabled - plugin not available', 'config');
+            // Add admin notice for CF7 auto-disable
+            add_action('admin_notices', function() {
+                echo '<div class="notice notice-warning is-dismissible"><p><strong>CallTrackingMetrics:</strong> Contact Form 7 integration was automatically disabled because the Contact Form 7 plugin is not installed or activated. <a href="' . admin_url('plugin-install.php?s=contact+form+7&tab=search&type=term') . '" target="_blank">Install Contact Form 7</a> to enable this integration.</p></div>';
+            });
         } else {
             // Debug: Log what we found for CF7
             if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
@@ -520,15 +524,21 @@ class Options
             }
         }
         
-        if (!class_exists('GFAPI') && !function_exists('gravity_form')) {
+        // Only auto-disable GF if the user didn't explicitly try to enable it
+        $user_tried_to_enable_gf = isset($_POST['ctm_api_gf_enabled']);
+        if (!class_exists('GFAPI') && !function_exists('gravity_form') && !$user_tried_to_enable_gf) {
             $gfEnabled = false;
             $this->loggingSystem->logActivity('Gravity Forms integration auto-disabled - plugin not available', 'config');
+            // Add admin notice for GF auto-disable
+            add_action('admin_notices', function() {
+                echo '<div class="notice notice-warning is-dismissible"><p><strong>CallTrackingMetrics:</strong> Gravity Forms integration was automatically disabled because the Gravity Forms plugin is not installed or activated. <a href="' . admin_url('plugin-install.php?s=gravity+forms&tab=search&type=term') . '" target="_blank">Install Gravity Forms</a> to enable this integration.</p></div>';
+            });
         } else {
             // Debug: Log what we found for GF
             if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
                 $gf_class_exists = class_exists('GFAPI');
                 $gf_function_exists = function_exists('gravity_form');
-                $this->loggingSystem->logActivity("GF detection - Class exists: " . ($gf_class_exists ? 'true' : 'false') . ", Function exists: " . ($gf_function_exists ? 'true' : 'false'), 'debug');
+                $this->loggingSystem->logActivity("GF detection - Class exists: " . ($gf_class_exists ? 'true' : 'false') . ", Function exists: " . ($gf_function_exists ? 'true' : 'false') . ", User tried to enable: " . ($user_tried_to_enable_gf ? 'true' : 'false'), 'debug');
             }
         }
         
@@ -554,7 +564,7 @@ class Options
         
         // Debug: Log what was saved
         if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
-            $this->loggingSystem->logActivity('Settings saved - CF7 enabled: ' . ($cf7Enabled ? 'true' : 'false'), 'debug');
+            $this->loggingSystem->logActivity('Settings saved - CF7 enabled: ' . ($cf7Enabled ? 'true' : 'false') . ', GF enabled: ' . ($gfEnabled ? 'true' : 'false'), 'debug');
         }
         
         // Save tracking script if provided
@@ -603,6 +613,10 @@ class Options
             update_option('ctm_api_cf7_enabled', false);
             $this->loggingSystem->logActivity('Contact Form 7 integration auto-disabled - plugin not available', 'config');
             $changes_made = true;
+            // Add admin notice for CF7 auto-disable on page load
+            add_action('admin_notices', function() {
+                echo '<div class="notice notice-warning is-dismissible"><p><strong>CallTrackingMetrics:</strong> Contact Form 7 integration was automatically disabled because the Contact Form 7 plugin is not installed or activated. <a href="' . admin_url('plugin-install.php?s=contact+form+7&tab=search&type=term') . '" target="_blank">Install Contact Form 7</a> to enable this integration.</p></div>';
+            });
         } else {
             // Debug: Log what we found for CF7 in auto-disable check
             if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
@@ -613,18 +627,22 @@ class Options
             }
         }
         
-        // Check Gravity Forms integration
-        if (!class_exists('GFAPI') && !function_exists('gravity_form') && get_option('ctm_api_gf_enabled', false)) {
+        // Check Gravity Forms integration - only auto-disable if currently enabled but plugin not available
+        $gf_currently_enabled = get_option('ctm_api_gf_enabled', false);
+        if (!class_exists('GFAPI') && !function_exists('gravity_form') && $gf_currently_enabled) {
             update_option('ctm_api_gf_enabled', false);
             $this->loggingSystem->logActivity('Gravity Forms integration auto-disabled - plugin not available', 'config');
             $changes_made = true;
+            // Add admin notice for GF auto-disable on page load
+            add_action('admin_notices', function() {
+                echo '<div class="notice notice-warning is-dismissible"><p><strong>CallTrackingMetrics:</strong> Gravity Forms integration was automatically disabled because the Gravity Forms plugin is not installed or activated. <a href="' . admin_url('plugin-install.php?s=gravity+forms&tab=search&type=term') . '" target="_blank">Install Gravity Forms</a> to enable this integration.</p></div>';
+            });
         } else {
             // Debug: Log what we found for GF in auto-disable check
             if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
                 $gf_class_exists = class_exists('GFAPI');
                 $gf_function_exists = function_exists('gravity_form');
-                $gf_enabled = get_option('ctm_api_gf_enabled', false);
-                $this->loggingSystem->logActivity("GF auto-disable check - Class exists: " . ($gf_class_exists ? 'true' : 'false') . ", Function exists: " . ($gf_function_exists ? 'true' : 'false') . ", Currently enabled: " . ($gf_enabled ? 'true' : 'false'), 'debug');
+                $this->loggingSystem->logActivity("GF auto-disable check - Class exists: " . ($gf_class_exists ? 'true' : 'false') . ", Function exists: " . ($gf_function_exists ? 'true' : 'false') . ", Currently enabled: " . ($gf_currently_enabled ? 'true' : 'false'), 'debug');
             }
         }
         
