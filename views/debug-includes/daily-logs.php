@@ -2,10 +2,12 @@
 /**
  * Daily Logs Component
  * Displays daily debug logs with filtering, viewing, and management options
+ * OPTIMIZED for performance with lazy loading and pagination
  */
 
 // Ensure variables are available from parent context
 $available_dates = $available_dates ?? [];
+$log_stats = $log_stats ?? [];
 ?>
 
 <div class="space-y-8">
@@ -42,6 +44,16 @@ $available_dates = $available_dates ?? [];
                 <?php _e('Clear logs for specific days', 'call-tracking-metrics'); ?>
             </li>
         </ul>
+        
+        <!-- Performance Stats -->
+        <?php if (!empty($log_stats) && isset($log_stats['total_available_days'])): ?>
+            <div class="bg-white bg-opacity-50 rounded-lg p-3 mt-4">
+                <p class="text-sm text-teal-700">
+                    <strong><?php _e('Performance Note:', 'call-tracking-metrics'); ?></strong> 
+                    <?php printf(__('Showing latest 5 days of %d total available days. Use "Load More" to view older logs.', 'call-tracking-metrics'), $log_stats['total_available_days']); ?>
+                </p>
+            </div>
+        <?php endif; ?>
     </div>
 
     <!-- Daily Logs Content Section -->
@@ -62,18 +74,20 @@ $available_dates = $available_dates ?? [];
                 <p class="mt-2 text-gray-500"><?php _e('Enable debug mode to start logging plugin activity.', 'call-tracking-metrics'); ?></p>
             </div>
         <?php else: ?>
-            <div class="space-y-4">
-                <?php foreach (array_slice($available_dates, 0, 10) as $date): ?>
+            <div class="space-y-4" id="logs-container">
+                <?php foreach ($available_dates as $date): ?>
                     <?php
                     $logs = get_option("ctm_daily_log_{$date}", []);
                     if (empty($logs)) continue;
                     
+                    // OPTIMIZATION: Only count first 50 entries for performance
+                    $sample_logs = array_slice($logs, 0, 50);
                     $error_count = 0;
                     $warning_count = 0;
                     $info_count = 0;
                     $debug_count = 0;
                     
-                    foreach ($logs as $entry) {
+                    foreach ($sample_logs as $entry) {
                         switch ($entry['type']) {
                             case 'error':
                                 $error_count++;
@@ -89,6 +103,11 @@ $available_dates = $available_dates ?? [];
                                 break;
                         }
                     }
+                    
+                    // Show total count if we sampled
+                    $total_count = count($logs);
+                    $sampled_count = count($sample_logs);
+                    $count_display = $sampled_count < $total_count ? "{$sampled_count}+ of {$total_count}" : $total_count;
                     ?>
                     <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                         <div class="flex items-center justify-between mb-3">
@@ -107,6 +126,7 @@ $available_dates = $available_dates ?? [];
                                     <?php if ($debug_count > 0): ?>
                                         <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded"><?= $debug_count ?> debug</span>
                                     <?php endif; ?>
+                                    <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded"><?= $count_display ?> total</span>
                                 </div>
                             </div>
                             
@@ -121,7 +141,12 @@ $available_dates = $available_dates ?? [];
                         
                         <div id="log-<?= $date ?>" class="hidden px-6 py-4 max-h-96 overflow-y-auto">
                             <div class="space-y-3">
-                                <?php foreach (array_reverse($logs) as $entry): ?>
+                                <?php 
+                                // OPTIMIZATION: Only show first 20 entries initially, with "Load More" button
+                                $display_logs = array_slice(array_reverse($logs), 0, 20);
+                                $has_more = count($logs) > 20;
+                                ?>
+                                <?php foreach ($display_logs as $entry): ?>
                                     <?php
                                     $type_colors = [
                                         'error' => 'text-red-800 bg-red-100',
@@ -152,17 +177,32 @@ $available_dates = $available_dates ?? [];
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
+                                
+                                <?php if ($has_more): ?>
+                                    <div class="text-center pt-4">
+                                        <button onclick="loadMoreLogs('<?= $date ?>', <?= count($display_logs) ?>)" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                                            <?php _e('Load More Entries', 'call-tracking-metrics'); ?>
+                                        </button>
+                                        <p class="text-xs text-gray-500 mt-1"><?php printf(__('Showing %d of %d entries', 'call-tracking-metrics'), count($display_logs), count($logs)); ?></p>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
                 <?php endforeach; ?>
-                
-                <?php if (count($available_dates) > 10): ?>
-                    <div class="text-center py-4">
-                        <p class="text-gray-500"><?php printf(__('Showing latest 10 days. %d more days available.', 'call-tracking-metrics'), count($available_dates) - 10); ?></p>
-                    </div>
-                <?php endif; ?>
             </div>
+            
+            <!-- Load More Days Button -->
+            <?php if (isset($log_stats['total_available_days']) && $log_stats['total_available_days'] > count($available_dates)): ?>
+                <div class="text-center py-6">
+                    <button onclick="loadMoreDays()" id="load-more-days-btn" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium">
+                        <?php _e('Load More Days', 'call-tracking-metrics'); ?>
+                    </button>
+                    <p class="text-sm text-gray-500 mt-2">
+                        <?php printf(__('Showing %d of %d available days', 'call-tracking-metrics'), count($available_dates), $log_stats['total_available_days']); ?>
+                    </p>
+                </div>
+            <?php endif; ?>
         <?php endif; ?>
     </div>
 </div>
@@ -199,6 +239,9 @@ $available_dates = $available_dates ?? [];
 </div>
 
 <script>
+    let currentLoadedDays = <?= count($available_dates) ?>;
+    let totalAvailableDays = <?= isset($log_stats['total_available_days']) ? $log_stats['total_available_days'] : 0 ?>;
+    
     function toggleLogView(date) {
         const logDiv = document.getElementById('log-' + date);
         if (logDiv.classList.contains('hidden')) {
@@ -206,6 +249,136 @@ $available_dates = $available_dates ?? [];
         } else {
             logDiv.classList.add('hidden');
         }
+    }
+
+    function loadMoreLogs(date, currentCount) {
+        // AJAX call to load more log entries for a specific date
+        const formData = new FormData();
+        formData.append('action', 'ctm_load_more_logs');
+        formData.append('nonce', '<?= wp_create_nonce('ctm_load_more_logs') ?>');
+        formData.append('date', date);
+        formData.append('offset', currentCount);
+        formData.append('limit', 20);
+
+        fetch('<?= admin_url('admin-ajax.php') ?>', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const logContainer = document.querySelector(`#log-${date} .space-y-3`);
+                const loadMoreBtn = logContainer.querySelector('button[onclick*="loadMoreLogs"]');
+                
+                // Add new entries
+                data.data.entries.forEach(entry => {
+                    const entryHtml = createLogEntryHtml(entry);
+                    logContainer.insertBefore(entryHtml, loadMoreBtn);
+                });
+                
+                // Update or remove load more button
+                if (data.data.has_more) {
+                    loadMoreBtn.onclick = () => loadMoreLogs(date, currentCount + data.data.entries.length);
+                    loadMoreBtn.nextElementSibling.textContent = `Showing ${currentCount + data.data.entries.length} of ${data.data.total} entries`;
+                } else {
+                    loadMoreBtn.remove();
+                    loadMoreBtn.nextElementSibling.remove();
+                }
+            } else {
+                ctmShowToast('Failed to load more entries', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading more logs:', error);
+            ctmShowToast('Network error while loading logs', 'error');
+        });
+    }
+
+    function loadMoreDays() {
+        const formData = new FormData();
+        formData.append('action', 'ctm_load_more_days');
+        formData.append('nonce', '<?= wp_create_nonce('ctm_load_more_days') ?>');
+        formData.append('offset', currentLoadedDays);
+        formData.append('limit', 5);
+
+        const btn = document.getElementById('load-more-days-btn');
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Loading...';
+
+        fetch('<?= admin_url('admin-ajax.php') ?>', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const container = document.getElementById('logs-container');
+                
+                // Add new day logs
+                data.data.days.forEach(dayHtml => {
+                    container.insertAdjacentHTML('beforeend', dayHtml);
+                });
+                
+                currentLoadedDays += data.data.days.length;
+                
+                // Update or remove load more button
+                if (currentLoadedDays >= totalAvailableDays) {
+                    btn.remove();
+                    btn.nextElementSibling.remove();
+                } else {
+                    btn.nextElementSibling.textContent = `Showing ${currentLoadedDays} of ${totalAvailableDays} available days`;
+                }
+            } else {
+                ctmShowToast('Failed to load more days', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading more days:', error);
+            ctmShowToast('Network error while loading days', 'error');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        });
+    }
+
+    function createLogEntryHtml(entry) {
+        const typeColors = {
+            'error': 'text-red-800 bg-red-100',
+            'warning': 'text-yellow-800 bg-yellow-100',
+            'info': 'text-blue-800 bg-blue-100',
+            'debug': 'text-gray-800 bg-gray-100',
+            'api': 'text-purple-800 bg-purple-100',
+            'config': 'text-indigo-800 bg-indigo-100',
+            'system': 'text-green-800 bg-green-100'
+        };
+        const colorClass = typeColors[entry.type] || 'text-gray-800 bg-gray-100';
+        
+        let contextHtml = '';
+        if (entry.context && Object.keys(entry.context).length > 0) {
+            contextHtml = `
+                <details class="mt-2">
+                    <summary class="text-xs text-gray-500 cursor-pointer hover:text-gray-700">Context Details</summary>
+                    <pre class="mt-1 text-xs text-gray-600 bg-gray-50 p-2 rounded overflow-x-auto">${JSON.stringify(entry.context, null, 2)}</pre>
+                </details>
+            `;
+        }
+        
+        return `
+            <div class="border-l-4 border-gray-200 pl-4 py-2">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-2 mb-1">
+                            <span class="${colorClass} px-2 py-1 text-xs font-medium rounded">${entry.type.toUpperCase()}</span>
+                            <span class="text-sm text-gray-500">${entry.timestamp}</span>
+                        </div>
+                        <p class="text-gray-900 text-sm">${entry.message}</p>
+                        ${contextHtml}
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     function showEmailForm(date) {

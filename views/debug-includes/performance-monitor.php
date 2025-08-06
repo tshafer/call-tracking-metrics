@@ -2,6 +2,7 @@
 /**
  * Performance Monitor Component
  * Real-time performance metrics and monitoring
+ * OPTIMIZED for reduced resource usage
  */
 ?>
 
@@ -30,7 +31,7 @@
     </div>
     
     <div class="space-y-6">
-        <!-- Real-time Metrics Grid -->
+        <!-- Core Metrics Grid - OPTIMIZED to show only essential metrics -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-3 text-center min-h-[100px] flex flex-col justify-center">
                 <div id="memory-usage" class="text-xl font-bold text-blue-600 mb-1">--</div>
@@ -57,13 +58,14 @@
             </div>
         </div>
 
-        <!-- Detailed Performance Metrics -->
-        <div class="max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
+        <!-- Essential Performance Metrics - OPTIMIZED to show only critical metrics -->
+        <div class="max-h-64 overflow-y-auto border border-gray-200 rounded-lg">
             <div class="bg-gray-50 px-4 py-3 border-b border-gray-200 sticky top-0">
-                <h4 class="font-semibold text-gray-800"><?php _e('Detailed Metrics', 'call-tracking-metrics'); ?></h4>
+                <h4 class="font-semibold text-gray-800"><?php _e('Essential Metrics', 'call-tracking-metrics'); ?></h4>
+                <p class="text-xs text-gray-600 mt-1"><?php _e('Key performance indicators only', 'call-tracking-metrics'); ?></p>
             </div>
             <div id="detailed-metrics" class="p-4 space-y-4">
-                <!-- Memory & Processing -->
+                <!-- Memory & Processing - OPTIMIZED -->
                 <div class="border-b border-gray-100 pb-4">
                     <div class="flex items-center gap-1 mb-2">
                         <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -77,16 +79,8 @@
                             <span id="current-memory" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs"><?php _e('Peak Memory:', 'call-tracking-metrics'); ?></span>
-                            <span id="peak-memory" class="font-medium text-right break-words">--</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
                             <span class="text-gray-600 text-xs"><?php _e('Memory Limit:', 'call-tracking-metrics'); ?></span>
                             <span id="memory-limit" class="font-medium text-right break-words">--</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs"><?php _e('CPU Usage:', 'call-tracking-metrics'); ?></span>
-                            <span id="cpu-usage" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
                             <span class="text-gray-600 text-xs"><?php _e('Execution Time:', 'call-tracking-metrics'); ?></span>
@@ -99,11 +93,11 @@
                     </div>
                 </div>
 
-                <!-- Database Performance -->
+                <!-- Database Performance - OPTIMIZED -->
                 <div class="border-b border-gray-100 pb-4">
                     <div class="flex items-center gap-1 mb-2">
                         <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
                         </svg>
                         <h5 class="text-lg font-bold text-gray-900"><?php _e('Database Performance', 'call-tracking-metrics'); ?></h5>
                     </div>
@@ -121,100 +115,19 @@
                             <span id="slow-queries" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs"><?php _e('Cache Hits:', 'call-tracking-metrics'); ?></span>
-                            <span id="cache-hits" class="font-medium text-right break-words">--</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs"><?php _e('Cache Misses:', 'call-tracking-metrics'); ?></span>
-                            <span id="cache-misses" class="font-medium text-right break-words">--</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
                             <span class="text-gray-600 text-xs"><?php _e('DB Version:', 'call-tracking-metrics'); ?></span>
                             <span id="db-version" class="font-medium text-right break-words">--</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Page Load Performance -->
-                <div class="border-b border-gray-100 pb-4">
-                    <div class="flex items-center gap-1 mb-2">
-                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <h5 class="text-lg font-bold text-gray-900"><?php _e('Page Load Performance', 'call-tracking-metrics'); ?></h5>
-                    </div>
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-sm">
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs"><?php _e('TTFB:', 'call-tracking-metrics'); ?></span>
-                            <span id="ttfb" class="font-medium text-right break-words">--</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs"><?php _e('DOM Ready:', 'call-tracking-metrics'); ?></span>
-                            <span id="dom-ready" class="font-medium text-right break-words">--</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs"><?php _e('Load Complete:', 'call-tracking-metrics'); ?></span>
-                            <span id="load-complete" class="font-medium text-right break-words">--</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs"><?php _e('Scripts Loaded:', 'call-tracking-metrics'); ?></span>
-                            <span id="scripts-loaded" class="font-medium text-right break-words">--</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs"><?php _e('Styles Loaded:', 'call-tracking-metrics'); ?></span>
-                            <span id="styles-loaded" class="font-medium text-right break-words">--</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs"><?php _e('Images Loaded:', 'call-tracking-metrics'); ?></span>
-                            <span id="images-loaded" class="font-medium text-right break-words">--</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- WordPress Performance -->
-                <div class="border-b border-gray-100 pb-4">
-                    <div class="flex items-center gap-1 mb-2">
-                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path>
-                        </svg>
-                        <h5 class="text-lg font-bold text-gray-900"><?php _e('WordPress Performance', 'call-tracking-metrics'); ?></h5>
-                    </div>
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-sm">
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs"><?php _e('Active Plugins:', 'call-tracking-metrics'); ?></span>
-                            <span id="active-plugins" class="font-medium text-right break-words">--</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs"><?php _e('Theme Load Time:', 'call-tracking-metrics'); ?></span>
-                            <span id="theme-load-time" class="font-medium text-right break-words">--</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs"><?php _e('Plugin Load Time:', 'call-tracking-metrics'); ?></span>
-                            <span id="plugin-load-time" class="font-medium text-right break-words">--</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs"><?php _e('Admin Queries:', 'call-tracking-metrics'); ?></span>
-                            <span id="admin-queries" class="font-medium text-right break-words">--</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs"><?php _e('Frontend Queries:', 'call-tracking-metrics'); ?></span>
-                            <span id="frontend-queries" class="font-medium text-right break-words">--</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs"><?php _e('Cron Jobs:', 'call-tracking-metrics'); ?></span>
-                            <span id="cron-jobs" class="font-medium text-right break-words">--</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Real-time Metrics -->
+                <!-- System Health - OPTIMIZED -->
                 <div>
                     <div class="flex items-center gap-1 mb-2">
-                        <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        <h5 class="text-lg font-bold text-gray-900"><?php _e('Real-time Metrics', 'call-tracking-metrics'); ?></h5>
+                        <h5 class="text-lg font-bold text-gray-900"><?php _e('System Health', 'call-tracking-metrics'); ?></h5>
                     </div>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-sm">
                         <div class="flex justify-between items-center py-1">
@@ -222,24 +135,16 @@
                             <span id="server-load" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs"><?php _e('Disk Usage:', 'call-tracking-metrics'); ?></span>
-                            <span id="disk-usage" class="font-medium text-right break-words">--</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs"><?php _e('Network I/O:', 'call-tracking-metrics'); ?></span>
-                            <span id="network-io" class="font-medium text-right break-words">--</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs"><?php _e('Active Sessions:', 'call-tracking-metrics'); ?></span>
-                            <span id="active-sessions" class="font-medium text-right break-words">--</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
                             <span class="text-gray-600 text-xs"><?php _e('Error Rate:', 'call-tracking-metrics'); ?></span>
                             <span id="error-rate" class="font-medium text-right break-words">--</span>
                         </div>
                         <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-600 text-xs"><?php _e('Last Updated:', 'call-tracking-metrics'); ?></span>
-                            <span id="last-updated" class="font-medium text-right break-words">--</span>
+                            <span class="text-gray-600 text-xs"><?php _e('PHP Version:', 'call-tracking-metrics'); ?></span>
+                            <span id="php-version" class="font-medium text-right break-words">--</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1">
+                            <span class="text-gray-600 text-xs"><?php _e('WordPress Version:', 'call-tracking-metrics'); ?></span>
+                            <span id="wp-version" class="font-medium text-right break-words">--</span>
                         </div>
                     </div>
                 </div>
@@ -247,383 +152,210 @@
         </div>
 
         <!-- Performance Alerts -->
-        <div id="performance-alerts" class="hidden">
-            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <h5 class="font-semibold text-yellow-800 mb-2 flex items-center"><?php _e('Performance Alerts', 'call-tracking-metrics'); ?></h5>
-                <ul id="alerts-list" class="text-sm text-yellow-700 space-y-1"></ul>
-            </div>
+        <div id="performance-alerts" class="space-y-2">
+            <!-- Alerts will be populated by JavaScript -->
         </div>
     </div>
 </div>
 
- <script>
-
-// Performance Monitor
-let pageLoadStart = performance.now();
-let autoRefreshInterval = null;
-let autoRefreshEnabled = false;
+<script>
+    let autoRefreshInterval = null;
+    let autoRefreshEnabled = false;
+    let refreshCount = 0;
+    const MAX_REFRESH_COUNT = 10; // Limit auto-refresh to prevent excessive resource usage
 
     function toggleAutoRefresh() {
-        const button = document.getElementById('auto-refresh-btn');
-        
-        if (!button) return;
+        const btn = document.getElementById('auto-refresh-btn');
         
         if (autoRefreshEnabled) {
             // Disable auto-refresh
-            clearInterval(autoRefreshInterval);
-            autoRefreshInterval = null;
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
             autoRefreshEnabled = false;
-            
-            // Update button text and icon for OFF state
-            button.innerHTML = `
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                Auto: OFF
-            `;
-            button.classList.remove('bg-green-600', 'hover:bg-green-700', '!text-white');
-            button.classList.add('bg-gray-200', 'hover:bg-gray-300', 'text-gray-800');
-            ctmShowToast('Auto-refresh disabled', 'info');
+            btn.textContent = '<?php _e('Auto-refresh: OFF', 'call-tracking-metrics'); ?>';
+            btn.classList.remove('bg-green-200', 'hover:bg-green-300');
+            btn.classList.add('bg-gray-200', 'hover:bg-gray-300');
         } else {
-            // Enable auto-refresh
-            autoRefreshInterval = setInterval(refreshPerformance, 30000); // Refresh every 30 seconds
+            // Enable auto-refresh with longer interval (30 seconds instead of 10)
             autoRefreshEnabled = true;
+            refreshCount = 0;
+            btn.textContent = '<?php _e('Auto-refresh: ON', 'call-tracking-metrics'); ?>';
+            btn.classList.remove('bg-gray-200', 'hover:bg-gray-300');
+            btn.classList.add('bg-green-200', 'hover:bg-green-300');
             
-            // Update button text and icon for ON state
-            button.innerHTML = `
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                Auto: ON
-            `;
-            button.classList.remove('bg-gray-200', 'hover:bg-gray-300', 'text-gray-800');
-            button.classList.add('bg-green-600', 'hover:bg-green-700', '!text-white');
-            ctmShowToast('Auto-refresh enabled (30s intervals)', 'success');
+            // Start auto-refresh with 30-second interval (OPTIMIZED)
+            autoRefreshInterval = setInterval(() => {
+                refreshCount++;
+                if (refreshCount >= MAX_REFRESH_COUNT) {
+                    // Stop auto-refresh after 10 cycles to prevent resource abuse
+                    toggleAutoRefresh();
+                    ctmShowToast('Auto-refresh stopped after 10 cycles to conserve resources', 'info');
+                    return;
+                }
+                refreshPerformance();
+            }, 30000); // 30 seconds instead of 10
+            
+            // Initial refresh
+            refreshPerformance();
         }
     }
 
-
-    // Enhanced refresh performance function
     function refreshPerformance() {
-        const button = document.getElementById('refresh-performance-btn');
-        if (button) {
-            button.disabled = true;
-            button.textContent = 'Refreshing...';
-        }
+        const btn = document.getElementById('refresh-performance-btn');
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '<?php _e('Refreshing...', 'call-tracking-metrics'); ?>';
 
-        // Get stored client-side metrics
-        const clientMetrics = getStoredPerformanceMetrics();
+        // Get client-side metrics
+        const clientMetrics = {
+            pageLoadTime: performance.now(),
+            memoryUsage: performance.memory ? performance.memory.usedJSHeapSize : null,
+            timestamp: Date.now()
+        };
 
         const formData = new FormData();
         formData.append('action', 'ctm_get_performance_metrics');
         formData.append('nonce', '<?= wp_create_nonce('ctm_get_performance_metrics') ?>');
-        if (clientMetrics) {
-            formData.append('client_metrics', JSON.stringify(clientMetrics));
-        }
+        formData.append('client_metrics', JSON.stringify(clientMetrics));
 
         fetch('<?= admin_url('admin-ajax.php') ?>', {
             method: 'POST',
             body: formData
         })
         .then(response => response.json())
-        .then(response => {
-            if (response.success) {
-                const data = response.data;
-                
-                // Update top metrics cards
-                updateElement('memory-usage', data.memory_usage || '--');
-                updateElement('memory-percentage', data.memory_percentage || '--');
-                updateElement('page-load-time', data.page_load_time || '--');
-                updateElement('load-time-status', data.server_response || '--');
-                updateElement('db-queries', data.db_queries || '--');
-                updateElement('query-time', data.query_time || '--');
-                updateElement('api-calls', data.api_calls || '--');
-                updateElement('api-response-time', data.api_response_time || '--');
-                
-                // Memory & Processing
-                updateElement('current-memory', data.current_memory || '--');
-                updateElement('peak-memory', data.peak_memory || '--');
-                updateElement('memory-limit', data.memory_limit || '--');
-                updateElement('cpu-usage', data.cpu_usage || '--');
-                updateElement('execution-time', data.execution_time || '--');
-                updateElement('time-limit', data.time_limit || '--');
-                
-                // Database Performance
-                updateElement('total-queries', data.total_queries || '--');
-                updateElement('total-query-time', data.total_query_time || '--');
-                updateElement('slow-queries', data.slow_queries || '--');
-                updateElement('cache-hits', data.cache_hits || '--');
-                updateElement('cache-misses', data.cache_misses || '--');
-                updateElement('db-version', data.db_version || '--');
-                
-                // Page Load Performance (enhanced with client-side data)
-                updateElement('ttfb', data.ttfb || '--');
-                updateElement('dom-ready', data.dom_ready || '--');
-                updateElement('load-complete', data.load_complete || '--');
-                updateElement('scripts-loaded', data.scripts_loaded || '--');
-                updateElement('styles-loaded', data.styles_loaded || '--');
-                updateElement('images-loaded', data.images_loaded || '--');
-                
-                // WordPress Performance
-                updateElement('active-plugins', data.active_plugins || '--');
-                updateElement('theme-load-time', data.theme_load_time || '--');
-                updateElement('plugin-load-time', data.plugin_load_time || '--');
-                updateElement('admin-queries', data.admin_queries || '--');
-                updateElement('frontend-queries', data.frontend_queries || '--');
-                updateElement('cron-jobs', data.cron_jobs || '--');
-                
-                // API Performance
-                updateElement('api-response-time', data.api_response_time || '--');
-                updateElement('api-calls-24h', data.api_calls_24h || '--');
-                updateElement('api-success-rate', data.api_success_rate || '--');
-                updateElement('api-error-rate', data.api_error_rate || '--');
-                
-                // Security & Health
-                updateElement('ssl-status', data.ssl_status || '--');
-                updateElement('firewall-status', data.firewall_status || '--');
-                updateElement('backup-status', data.backup_status || '--');
-                updateElement('update-status', data.update_status || '--');
-                
-                // System Resources
-                updateElement('disk-usage', data.disk_usage || '--');
-                updateElement('disk-free', data.disk_free || '--');
-                updateElement('cpu-load', data.cpu_load || '--');
-                updateElement('memory-available', data.memory_available || '--');
-                
-                // Network & Connectivity
-                updateElement('server-response', data.server_response || '--');
-                updateElement('cdn-status', data.cdn_status || '--');
-                updateElement('dns-resolution', data.dns_resolution || '--');
-                updateElement('connection-speed', data.connection_speed || '--');
-                
-                // User Activity
-                updateElement('active-users', data.active_users || '--');
-                updateElement('sessions-today', data.sessions_today || '--');
-                updateElement('page-views', data.page_views || '--');
-                updateElement('bounce-rate', data.bounce_rate || '--');
-                
-                // Error Tracking
-                updateElement('error-count', data.error_count || '--');
-                updateElement('error-rate', data.error_rate || '--');
-                updateElement('last-error', data.last_error || '--');
-                updateElement('error-trend', data.error_trend || '--');
-                
-                // Performance Trends
-                updateElement('load-trend', data.load_trend || '--');
-                updateElement('memory-trend', data.memory_trend || '--');
-                updateElement('query-trend', data.query_trend || '--');
-                updateElement('performance-score', data.performance_score || '--');
-                
-                // Last Updated
-                updateElement('last-updated', data.last_updated || '--');
-                
-                ctmShowToast('Performance metrics updated successfully!', 'success');
+        .then(data => {
+            if (data.success) {
+                updatePerformanceMetrics(data.data);
+                updatePerformanceAlerts(data.data);
             } else {
-                ctmShowToast('Failed to refresh performance metrics: ' + (response.data?.message || 'Unknown error'), 'error');
+                console.error('Failed to get performance metrics:', data.data);
             }
         })
         .catch(error => {
-            console.error('Performance refresh error:', error);
-            ctmShowToast('Failed to refresh performance metrics. Please try again.', 'error');
+            console.error('Error refreshing performance:', error);
         })
         .finally(() => {
-            if (button) {
-                button.disabled = false;
-                button.textContent = 'Refresh';
-            }
+            btn.disabled = false;
+            btn.textContent = originalText;
         });
     }
 
-    // Silent refresh function for auto-loading (no toast)
-    function refreshPerformanceSilent() {
-        // Get stored client-side metrics
-        const clientMetrics = getStoredPerformanceMetrics();
+    function updatePerformanceMetrics(data) {
+        // Update core metrics
+        updateElement('memory-usage', data.memory_usage || '--');
+        updateElement('memory-percentage', data.memory_percentage || '--');
+        updateElement('page-load-time', data.page_load_time || '--');
+        updateElement('load-time-status', data.server_response || '--');
+        updateElement('db-queries', data.db_queries || '--');
+        updateElement('query-time', data.query_time || '--');
+        updateElement('api-calls', data.api_calls || '--');
+        updateElement('api-response-time', data.api_response_time || '--');
+        
+        // Update detailed metrics
+        updateElement('current-memory', data.current_memory || '--');
+        updateElement('memory-limit', data.memory_limit || '--');
+        updateElement('execution-time', data.execution_time || '--');
+        updateElement('time-limit', data.time_limit || '--');
+        updateElement('total-queries', data.total_queries || '--');
+        updateElement('total-query-time', data.total_query_time || '--');
+        updateElement('slow-queries', data.slow_queries || '--');
+        updateElement('db-version', data.db_version || '--');
+        updateElement('server-load', data.server_load || '--');
+        updateElement('error-rate', data.error_rate || '--');
+        updateElement('php-version', data.php_version || '--');
+        updateElement('wp-version', data.wp_version || '--');
+    }
 
-        const formData = new FormData();
-        formData.append('action', 'ctm_get_performance_metrics');
-        formData.append('nonce', '<?= wp_create_nonce('ctm_get_performance_metrics') ?>');
-        if (clientMetrics) {
-            formData.append('client_metrics', JSON.stringify(clientMetrics));
+    function updatePerformanceAlerts(data) {
+        const alertsContainer = document.getElementById('performance-alerts');
+        alertsContainer.innerHTML = '';
+
+        const alerts = [];
+
+        // Memory alerts
+        if (data.memory_percentage && parseFloat(data.memory_percentage) > 80) {
+            alerts.push({
+                type: 'warning',
+                message: 'High memory usage detected',
+                icon: '⚠️'
+            });
         }
 
-        fetch('<?= admin_url('admin-ajax.php') ?>', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(response => {
-            if (response.success) {
-                const data = response.data;
-                
-                // Update all performance metrics silently (same as refreshPerformance but without toasts)
-                updateElement('memory-usage', data.memory_usage || '--');
-                updateElement('memory-percentage', data.memory_percentage || '--');
-                updateElement('page-load-time', data.page_load_time || '--');
-                updateElement('load-time-status', data.server_response || '--');
-                updateElement('db-queries', data.db_queries || '--');
-                updateElement('query-time', data.query_time || '--');
-                updateElement('api-calls', data.api_calls || '--');
-                updateElement('api-response-time', data.api_response_time || '--');
-                
-                // Memory & Processing
-                updateElement('current-memory', data.current_memory || '--');
-                updateElement('peak-memory', data.peak_memory || '--');
-                updateElement('memory-limit', data.memory_limit || '--');
-                updateElement('cpu-usage', data.cpu_usage || '--');
-                updateElement('execution-time', data.execution_time || '--');
-                updateElement('time-limit', data.time_limit || '--');
-                
-                // Database Performance
-                updateElement('total-queries', data.total_queries || '--');
-                updateElement('total-query-time', data.total_query_time || '--');
-                updateElement('slow-queries', data.slow_queries || '--');
-                updateElement('cache-hits', data.cache_hits || '--');
-                updateElement('cache-misses', data.cache_misses || '--');
-                updateElement('db-version', data.db_version || '--');
-                
-                // Page Load Performance
-                updateElement('ttfb', data.ttfb || '--');
-                updateElement('dom-ready', data.dom_ready || '--');
-                updateElement('load-complete', data.load_complete || '--');
-                updateElement('scripts-loaded', data.scripts_loaded || '--');
-                updateElement('styles-loaded', data.styles_loaded || '--');
-                updateElement('images-loaded', data.images_loaded || '--');
-                
-                // WordPress Performance
-                updateElement('active-plugins', data.active_plugins || '--');
-                updateElement('theme-load-time', data.theme_load_time || '--');
-                updateElement('plugin-load-time', data.plugin_load_time || '--');
-                updateElement('admin-queries', data.admin_queries || '--');
-                updateElement('frontend-queries', data.frontend_queries || '--');
-                updateElement('cron-jobs', data.cron_jobs || '--');
-                
-                // API Performance
-                updateElement('api-response-time', data.api_response_time || '--');
-                updateElement('api-calls-24h', data.api_calls_24h || '--');
-                updateElement('api-success-rate', data.api_success_rate || '--');
-                updateElement('api-error-rate', data.api_error_rate || '--');
-                
-                // Security & Health
-                updateElement('ssl-status', data.ssl_status || '--');
-                updateElement('firewall-status', data.firewall_status || '--');
-                updateElement('backup-status', data.backup_status || '--');
-                updateElement('update-status', data.update_status || '--');
-                
-                // System Resources
-                updateElement('disk-usage', data.disk_usage || '--');
-                updateElement('disk-free', data.disk_free || '--');
-                updateElement('cpu-load', data.cpu_load || '--');
-                updateElement('memory-available', data.memory_available || '--');
-                
-                // Network & Connectivity
-                updateElement('server-response', data.server_response || '--');
-                updateElement('cdn-status', data.cdn_status || '--');
-                updateElement('dns-resolution', data.dns_resolution || '--');
-                updateElement('connection-speed', data.connection_speed || '--');
-                
-                // User Activity
-                updateElement('active-users', data.active_users || '--');
-                updateElement('sessions-today', data.sessions_today || '--');
-                updateElement('page-views', data.page_views || '--');
-                updateElement('bounce-rate', data.bounce_rate || '--');
-                
-                // Error Tracking
-                updateElement('error-count', data.error_count || '--');
-                updateElement('error-rate', data.error_rate || '--');
-                updateElement('last-error', data.last_error || '--');
-                updateElement('error-trend', data.error_trend || '--');
-                
-                // Performance Trends
-                updateElement('load-trend', data.load_trend || '--');
-                updateElement('memory-trend', data.memory_trend || '--');
-                updateElement('query-trend', data.query_trend || '--');
-                updateElement('performance-score', data.performance_score || '--');
-                
-                // Last Updated
-                updateElement('last-updated', data.last_updated || '--');
+        // Query time alerts
+        if (data.query_time && data.query_time !== 'N/A') {
+            const queryTime = parseFloat(data.query_time);
+            if (queryTime > 1000) { // More than 1 second
+                alerts.push({
+                    type: 'error',
+                    message: 'Slow database queries detected',
+                    icon: '🐌'
+                });
             }
-        })
-        .catch(error => {
-            console.error('Performance silent refresh error:', error);
+        }
+
+        // Page load time alerts
+        if (data.page_load_time && data.page_load_time !== 'N/A') {
+            const loadTime = parseFloat(data.page_load_time);
+            if (loadTime > 3000) { // More than 3 seconds
+                alerts.push({
+                    type: 'error',
+                    message: 'Slow page load time detected',
+                    icon: '⏱️'
+                });
+            }
+        }
+
+        // Error rate alerts
+        if (data.error_rate && data.error_rate.includes('High')) {
+            alerts.push({
+                type: 'error',
+                message: 'High error rate detected',
+                icon: '❌'
+            });
+        }
+
+        // Display alerts
+        alerts.forEach(alert => {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `p-3 rounded-lg border-l-4 ${
+                alert.type === 'error' ? 'bg-red-50 border-red-400 text-red-700' :
+                alert.type === 'warning' ? 'bg-yellow-50 border-yellow-400 text-yellow-700' :
+                'bg-blue-50 border-blue-400 text-blue-700'
+            }`;
+            alertDiv.innerHTML = `
+                <div class="flex items-center">
+                    <span class="text-lg mr-2">${alert.icon}</span>
+                    <span class="font-medium">${alert.message}</span>
+                </div>
+            `;
+            alertsContainer.appendChild(alertDiv);
         });
-    }
 
-    // Get stored performance metrics
-    function getStoredPerformanceMetrics() {
-        try {
-            const stored = localStorage.getItem('ctm_performance_metrics');
-            return stored ? JSON.parse(stored) : null;
-        } catch (e) {
-            console.log('Could not retrieve performance metrics:', e);
-            return null;
+        // Show "all good" message if no alerts
+        if (alerts.length === 0) {
+            const goodDiv = document.createElement('div');
+            goodDiv.className = 'p-3 rounded-lg border-l-4 bg-green-50 border-green-400 text-green-700';
+            goodDiv.innerHTML = `
+                <div class="flex items-center">
+                    <span class="text-lg mr-2">✅</span>
+                    <span class="font-medium">All performance metrics are within normal ranges</span>
+                </div>
+            `;
+            alertsContainer.appendChild(goodDiv);
         }
     }
 
-
-// Performance measurement functionality
-let performanceData = {
-    navigationStart: 0,
-    domContentLoaded: 0,
-    loadComplete: 0,
-    scriptsLoaded: 0,
-    stylesLoaded: 0,
-    imagesLoaded: 0
-};
-
-// Capture navigation start time with modern API support
-if (window.performance) {
-    if (window.performance.timeOrigin) {
-        // Modern browsers - use timeOrigin
-        performanceData.navigationStart = window.performance.timeOrigin;
-    } else if (window.performance.timing) {
-        // Legacy browsers - use timing.navigationStart
-        performanceData.navigationStart = window.performance.timing.navigationStart;
-    } else {
-        // Ultimate fallback
-        performanceData.navigationStart = Date.now();
-    }
-} else {
-    // Fallback for browsers without Performance API
-    performanceData.navigationStart = Date.now();
-}
-
-// Measure DOM Content Loaded with multiple fallback methods
-// Auto-load performance metrics on page load
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('[CTM] DOM Content Loaded - measuring performance');
-    performanceData.domContentLoaded = performance.now() - performanceData.navigationStart;
-    storePerformanceMetrics();
-});
-
-window.addEventListener('load', function() {
-    console.log('[CTM] Page Load Complete - measuring final performance');
-    performanceData.loadComplete = performance.now() - performanceData.navigationStart;
-    
-    // Measure additional load times
-    if (window.performance && window.performance.getEntriesByType) {
-        const navigationEntries = window.performance.getEntriesByType('navigation');
-        if (navigationEntries.length > 0) {
-            const nav = navigationEntries[0];
-            performanceData.domContentLoaded = nav.domContentLoadedEventEnd - nav.navigationStart;
-            performanceData.loadComplete = nav.loadEventEnd - nav.navigationStart;
+    function updateElement(id, value) {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = value;
         }
     }
-    
-    storePerformanceMetrics();
-    
-    // Auto-load performance metrics on page load (without toast)
-    console.log('[CTM] Auto-loading performance metrics');
-    refreshPerformanceSilent();
-});
 
-// Store performance metrics in localStorage
-function storePerformanceMetrics() {
-    try {
-        localStorage.setItem('ctm_performance_metrics', JSON.stringify(performanceData));
-    } catch (e) {
-        console.log('Could not store performance metrics:', e);
-    }
-}
-
-
- </script>
+    // Initial load
+    document.addEventListener('DOMContentLoaded', function() {
+        refreshPerformance();
+    });
+</script>

@@ -74,6 +74,23 @@ class ApiService
     }
 
     /**
+     * Internal logging helper to prevent server log pollution
+     * 
+     * @since 2.0.0
+     * @param string $message The message to log
+     * @param string $type The log type (error, debug, api, etc.)
+     */
+    private function logInternal(string $message, string $type = 'debug'): void
+    {
+        if (class_exists('\CTM\Admin\LoggingSystem')) {
+            $loggingSystem = new \CTM\Admin\LoggingSystem();
+            if ($loggingSystem->isDebugEnabled()) {
+                $loggingSystem->logActivity($message, $type);
+            }
+        }
+    }
+
+    /**
      * Get account information from the CTM API
      * 
      * Retrieves basic account information using the provided API credentials.
@@ -103,7 +120,7 @@ class ApiService
             }
             return null;
         } catch (\Exception $e) {
-            error_log('CTM API Error (getAccountInfo): ' . $e->getMessage());
+            $this->logInternal('API Error (getAccountInfo): ' . $e->getMessage(), 'error');
             return null;
         }
     }
@@ -497,13 +514,17 @@ class ApiService
     {
         $url = $this->baseUrl . $endpoint;
         
-        // Check if we're in production environment (no debug logging)
-        $is_production = !defined('WP_DEBUG') || !WP_DEBUG || !defined('WP_DEBUG_LOG') || !WP_DEBUG_LOG;
+        // Use internal logging system instead of error_log to prevent server log pollution
+        $loggingSystem = null;
+        if (class_exists('\CTM\Admin\LoggingSystem')) {
+            $loggingSystem = new \CTM\Admin\LoggingSystem();
+        }
         
-        // Only log in debug mode to prevent excessive logging in production
-        if (!$is_production) {
-            error_log('CTM Debug: makeRequest - URL: ' . $url);
-            error_log('CTM Debug: makeRequest - Method: ' . $method);
+        // Only log if debug mode is enabled and logging system is available
+        $should_log = $loggingSystem && $loggingSystem->isDebugEnabled();
+        
+        if ($should_log) {
+            $loggingSystem->logActivity("API Request - URL: {$url}, Method: {$method}", 'api');
         }
         
         $args = [
@@ -518,6 +539,9 @@ class ApiService
         
         if (!empty($apiKey) && !empty($apiSecret)) {
             $args['headers']['Authorization'] = 'Basic ' . base64_encode($apiKey . ':' . $apiSecret);
+            if ($should_log) {
+                $loggingSystem->logActivity('API Request - Authorization header set', 'api');
+            }
         }
         
         // Handle body encoding
@@ -535,8 +559,8 @@ class ApiService
         
         if (is_wp_error($response)) {
             $errorMessage = 'HTTP request failed: ' . $response->get_error_message();
-            if (!$is_production) {
-                error_log('CTM Debug: makeRequest - WP Error: ' . $errorMessage);
+            if ($should_log) {
+                $loggingSystem->logActivity("API Error - {$errorMessage}", 'error');
             }
             throw new \Exception($errorMessage);
         }
@@ -544,10 +568,14 @@ class ApiService
         $statusCode = \wp_remote_retrieve_response_code($response);
         $body = \wp_remote_retrieve_body($response);
         
+        if ($should_log) {
+            $loggingSystem->logActivity("API Response - Status: {$statusCode}, Body length: " . strlen($body), 'api');
+        }
+        
         if ($statusCode >= 400) {
             $errorMessage = 'HTTP ' . $statusCode . ' error: ' . $body;
-            if (!$is_production) {
-                error_log('CTM Debug: makeRequest - HTTP Error: ' . $errorMessage);
+            if ($should_log) {
+                $loggingSystem->logActivity("API Error - {$errorMessage}", 'error');
             }
             throw new \Exception($errorMessage);
         }
@@ -555,11 +583,15 @@ class ApiService
         $result = json_decode($body, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             $errorMessage = 'Invalid JSON response: ' . json_last_error_msg();
-            if (!$is_production) {
-                error_log('CTM Debug: makeRequest - JSON Error: ' . $errorMessage);
-                error_log('CTM Debug: makeRequest - Raw response: ' . substr($body, 0, 500));
+            if ($should_log) {
+                $loggingSystem->logActivity("API Error - {$errorMessage}", 'error');
+                $loggingSystem->logActivity("API Error - Raw response: " . substr($body, 0, 500), 'error');
             }
             throw new \Exception($errorMessage);
+        }
+        
+        if ($should_log) {
+            $loggingSystem->logActivity('API Success - Successfully decoded JSON response', 'api');
         }
         
         return $result;
