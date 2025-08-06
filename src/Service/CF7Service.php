@@ -177,6 +177,11 @@ class CF7Service
             // Get the form template (mail template)
             $form_template = $form->prop('form');
             
+            // Check if form template is null or empty
+            if (empty($form_template)) {
+                return $fields;
+            }
+            
             // Parse CF7 shortcodes to extract field information
             $pattern = '/\[([a-zA-Z_-]+)(\*?)\s+([a-zA-Z0-9_-]+)([^\]]*)\]/';
             preg_match_all($pattern, $form_template, $matches, PREG_SET_ORDER);

@@ -1,19 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit bootstrap="vendor/autoload.php"
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         bootstrap="tests/bootstrap.php"
          colors="true"
-         verbose="true"
-         stopOnFailure="false">
-    <testsuites>
-        <testsuite name="CallTrackingMetrics Plugin Test Suite">
-            <directory>tests/</directory>
-        </testsuite>
-    </testsuites>
-    <coverage processUncoveredFiles="true">
-        <include>
-            <directory suffix=".php">../src/</directory>
-        </include>
-    </coverage>
-    <php>
-        <env name="WP_ENV" value="testing"/>
-    </php>
-</phpunit> 
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+         displayDetailsOnTestsThatTriggerWarnings="true"
+         cacheDirectory=".phpunit.cache">
+  <coverage>
+    <include>
+      <directory suffix=".php">src/</directory>
+    </include>
+    <report>
+      <html outputDirectory="coverage-report"/>
+    </report>
+  </coverage>
+  <testsuites>
+    <testsuite name="Plugin Test Suite">
+      <directory suffix="Test.php">tests/</directory>
+    </testsuite>
+  </testsuites>
+</phpunit>
