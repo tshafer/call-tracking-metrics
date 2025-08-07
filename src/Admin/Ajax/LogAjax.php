@@ -17,6 +17,7 @@ class LogAjax {
         add_action('wp_ajax_ctm_get_form_logs', [$this, 'ajaxGetFormLogs']);
         add_action('wp_ajax_ctm_clear_form_logs', [$this, 'ajaxClearFormLogs']);
         add_action('wp_ajax_ctm_get_form_log_stats', [$this, 'ajaxGetFormLogStats']);
+        add_action('wp_ajax_ctm_clear_all_logs', [$this, 'ajaxClearAllLogs']);
     }
 
     /**
@@ -84,6 +85,36 @@ class LogAjax {
             wp_send_json_success($stats);
         } catch (\Exception $e) {
             wp_send_json_error(['message' => 'Failed to get form log statistics: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Clear all logs (daily logs, form logs, and log history)
+     * 
+     * @since 2.0.0
+     */
+    public function ajaxClearAllLogs(): void
+    {
+        check_ajax_referer('ctm_clear_all_logs', 'nonce');
+        
+        // Check user capabilities
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Insufficient permissions to clear all logs']);
+        }
+        
+        try {
+            // Log the action before clearing (so it gets recorded)
+            $this->loggingSystem->logActivity('All logs cleared via AJAX request', 'system');
+            
+            // Clear all logs
+            $this->loggingSystem->clearAllLogs();
+            
+            wp_send_json_success([
+                'message' => 'All logs cleared successfully',
+                'timestamp' => current_time('mysql')
+            ]);
+        } catch (\Exception $e) {
+            wp_send_json_error(['message' => 'Failed to clear all logs: ' . $e->getMessage()]);
         }
     }
 } 

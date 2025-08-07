@@ -135,7 +135,7 @@
     function createFormLogsModal(modalId) {
         return $(`
             <div id="${modalId}" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-                <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+                <div class="relative top-10 mx-auto p-5 border w-11/12 max-w-5xl shadow-lg rounded-md bg-white" style="max-height: 90vh;">
                     <div class="mt-3">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-medium text-gray-900" id="modal-title">Form Logs</h3>
@@ -159,7 +159,7 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="max-h-96 overflow-y-auto">
+                        <div class="overflow-y-auto" style="max-height: calc(90vh - 200px);">
                             <div id="modal-logs-content" class="space-y-3">
                                 <!-- Logs will be inserted here -->
                             </div>

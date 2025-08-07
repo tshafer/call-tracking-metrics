@@ -55,15 +55,192 @@ class LoggingSystem
         
         $daily_logs[] = $log_entry;
         
-        // Keep only last 500 entries per day to prevent memory issues
-        if (count($daily_logs) > 500) {
-            $daily_logs = array_slice($daily_logs, -500);
-        }
+        // Check log size limits and cleanup if needed
+        $this->enforceLogSizeLimits($log_date, $daily_logs);
         
         \update_option("ctm_daily_log_{$log_date}", $daily_logs);
         
         // Update log index
         $this->updateLogIndex($log_date);
+    }
+
+    /**
+     * Enforce log size limits to prevent database bloat
+     * 
+     * @since 2.0.0
+     * @param string $log_date The log date
+     * @param array $daily_logs The daily logs array (passed by reference)
+     */
+    private function enforceLogSizeLimits(string $log_date, array &$daily_logs): void
+    {
+        // Get size limits from options
+        $max_entries = (int) \get_option('ctm_max_log_entries_per_day', 300);
+        $max_size_mb = (float) \get_option('ctm_max_log_size_mb', 5.0);
+        $max_total_size_mb = (float) \get_option('ctm_max_total_log_size_mb', 50.0);
+        
+        // Limit entries per day
+        if (count($daily_logs) > $max_entries) {
+            $daily_logs = array_slice($daily_logs, -$max_entries);
+            // Don't log this to prevent recursion
+        }
+        
+        // Check individual day size
+        $day_size_mb = strlen(serialize($daily_logs)) / 1024 / 1024;
+        if ($day_size_mb > $max_size_mb) {
+            // Remove oldest entries until under limit
+            while (count($daily_logs) > 50 && $day_size_mb > $max_size_mb) {
+                array_shift($daily_logs);
+                $day_size_mb = strlen(serialize($daily_logs)) / 1024 / 1024;
+            }
+            // Don't log this to prevent recursion
+        }
+        
+        // Check total log size across all days
+        $this->enforceTotalLogSizeLimit($max_total_size_mb);
+    }
+
+    /**
+     * Enforce total log size limit across all days
+     * 
+     * @since 2.0.0
+     * @param float $max_total_size_mb Maximum total log size in MB
+     */
+    private function enforceTotalLogSizeLimit(float $max_total_size_mb): void
+    {
+        // Check memory limit first
+        $memory_limit = ini_get('memory_limit');
+        $current_memory = memory_get_usage(true);
+        $memory_limit_bytes = $this->parseMemoryLimit($memory_limit);
+        
+        // If we're using more than 80% of available memory, skip this operation
+        if ($memory_limit_bytes && ($current_memory / $memory_limit_bytes) > 0.8) {
+            // Don't log this to prevent recursion
+            return;
+        }
+        
+        $log_index = \get_option('ctm_log_index', []);
+        if (!is_array($log_index) || empty($log_index)) {
+            return;
+        }
+        
+        $total_size = 0;
+        $day_sizes = [];
+        
+        // Calculate size of each day's logs more efficiently
+        foreach ($log_index as $date) {
+            // Check memory usage before processing each day
+            if (memory_get_usage(true) > ($memory_limit_bytes * 0.9)) {
+                // Don't log this to prevent recursion
+                break;
+            }
+            
+            $logs = \get_option("ctm_daily_log_{$date}", []);
+            if (is_array($logs)) {
+                // Use a more memory-efficient size calculation
+                $size = $this->calculateArraySize($logs) / 1024 / 1024; // Size in MB
+                $day_sizes[$date] = $size;
+                $total_size += $size;
+            }
+        }
+        
+        // If total size exceeds limit, remove oldest days
+        if ($total_size > $max_total_size_mb) {
+            // Sort by date (oldest first)
+            ksort($day_sizes);
+            
+            $cleaned_count = 0;
+            $cleaned_size = 0;
+            
+            foreach ($day_sizes as $date => $size) {
+                if ($total_size <= $max_total_size_mb) {
+                    break;
+                }
+                
+                // Delete this day's logs
+                \delete_option("ctm_daily_log_{$date}");
+                $total_size -= $size;
+                $cleaned_count++;
+                $cleaned_size += $size;
+                
+                // Remove from index
+                $log_index = array_filter($log_index, function($d) use ($date) {
+                    return $d !== $date;
+                });
+            }
+            
+            // Update log index
+            \update_option('ctm_log_index', array_values($log_index));
+            
+            if ($cleaned_count > 0) {
+                // Don't log this to prevent recursion
+            }
+        }
+    }
+
+    /**
+     * Parse memory limit string to bytes
+     * 
+     * @param string $memory_limit Memory limit string (e.g., "256M", "1G")
+     * @return int|null Memory limit in bytes or null if invalid
+     */
+    private function parseMemoryLimit(string $memory_limit): ?int
+    {
+        $memory_limit = trim($memory_limit);
+        $last = strtolower($memory_limit[strlen($memory_limit) - 1]);
+        $value = (int) $memory_limit;
+        
+        switch ($last) {
+            case 'g':
+                $value *= 1024;
+            case 'm':
+                $value *= 1024;
+            case 'k':
+                $value *= 1024;
+        }
+        
+        return $value;
+    }
+    
+    /**
+     * Calculate array size more efficiently without full serialization
+     * 
+     * @param array $array The array to calculate size for
+     * @return int Approximate size in bytes
+     */
+    private function calculateArraySize(array $array): int
+    {
+        $size = 0;
+        $count = 0;
+        $max_count = 1000; // Limit to prevent memory issues
+        
+        foreach ($array as $key => $value) {
+            $count++;
+            if ($count > $max_count) {
+                // Estimate remaining size based on average
+                $avg_size = $size / $count;
+                $remaining = count($array) - $count;
+                $size += $avg_size * $remaining;
+                break;
+            }
+            
+            // Calculate key size
+            $size += strlen($key);
+            
+            // Calculate value size
+            if (is_string($value)) {
+                $size += strlen($value);
+            } elseif (is_array($value)) {
+                $size += $this->calculateArraySize($value);
+            } elseif (is_numeric($value)) {
+                $size += 8; // Approximate size for numbers
+            } elseif (is_bool($value)) {
+                $size += 1;
+            } else {
+                $size += strlen((string) $value);
+            }
+        }
+        
+        return $size;
     }
 
     /**
@@ -124,15 +301,97 @@ class LoggingSystem
      */
     public function clearAllLogs(): void
     {
+        // Check memory usage before clearing
+        $memory_limit = ini_get('memory_limit');
+        $current_memory = memory_get_usage(true);
+        $memory_limit_bytes = $this->parseMemoryLimit($memory_limit);
+        
+        // If we're using more than 90% of available memory, use a more aggressive approach
+        if ($memory_limit_bytes && ($current_memory / $memory_limit_bytes) > 0.9) {
+            $this->clearAllLogsAggressive();
+            return;
+        }
+        
         $log_index = \get_option('ctm_log_index', []);
         if (is_array($log_index)) {
+            $count = 0;
+            $max_per_batch = 10; // Process in batches
+            
             foreach ($log_index as $date) {
+                $count++;
                 \delete_option("ctm_daily_log_{$date}");
+                
+                // Check memory usage every batch
+                if ($count % $max_per_batch === 0) {
+                    if ($memory_limit_bytes && memory_get_usage(true) > ($memory_limit_bytes * 0.95)) {
+                        // Don't log this to prevent recursion
+                        break;
+                    }
+                }
             }
         }
         
         \delete_option('ctm_log_index');
         \delete_option('ctm_debug_log'); // Clear old format logs too
+        
+        // Clear form logs in batches
+        $this->clearAllFormLogs();
+    }
+    
+    /**
+     * Clear all logs using a more aggressive approach when memory is limited
+     */
+    private function clearAllLogsAggressive(): void
+    {
+        global $wpdb;
+        
+        // Clear daily logs using direct SQL
+        $wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE 'ctm_daily_log_%'");
+        
+        // Clear form logs using direct SQL
+        $wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE 'ctm_form_log_%'");
+        
+        // Clear other log-related options
+        \delete_option('ctm_log_index');
+        \delete_option('ctm_debug_log');
+        
+        // Don't log this to prevent recursion
+    }
+    
+    /**
+     * Clear all form logs in batches
+     */
+    private function clearAllFormLogs(): void
+    {
+        global $wpdb;
+        
+        $memory_limit = ini_get('memory_limit');
+        $memory_limit_bytes = $this->parseMemoryLimit($memory_limit);
+        
+        // Get all form log option names
+        $form_log_options = $wpdb->get_col(
+            "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE 'ctm_form_log_%'"
+        );
+        
+        if (empty($form_log_options)) {
+            return;
+        }
+        
+        $count = 0;
+        $max_per_batch = 20;
+        
+        foreach ($form_log_options as $option_name) {
+            $count++;
+            \delete_option($option_name);
+            
+            // Check memory usage every batch
+            if ($count % $max_per_batch === 0) {
+                if ($memory_limit_bytes && memory_get_usage(true) > ($memory_limit_bytes * 0.95)) {
+                    // Don't log this to prevent recursion
+                    break;
+                }
+            }
+        }
     }
 
     /**
@@ -577,12 +836,39 @@ class LoggingSystem
         
         $form_logs[] = $log_entry;
         
-        // Keep only last 100 entries per form to prevent memory issues
-        if (count($form_logs) > 100) {
-            $form_logs = array_slice($form_logs, -100);
-        }
+        // Enforce form log size limits
+        $this->enforceFormLogSizeLimits($form_log_key, $form_logs);
         
         \update_option($form_log_key, $form_logs);
+    }
+
+    /**
+     * Enforce form log size limits
+     * 
+     * @since 2.0.0
+     * @param string $form_log_key The option key for the form logs
+     * @param array $form_logs The form logs array (passed by reference)
+     */
+    private function enforceFormLogSizeLimits(string $form_log_key, array &$form_logs): void
+    {
+        // Get form log limits from options
+        $max_form_entries = (int) \get_option('ctm_max_form_log_entries', 150);
+        $max_form_size_mb = (float) \get_option('ctm_max_form_log_size_mb', 2.0);
+        
+        // Limit entries per form
+        if (count($form_logs) > $max_form_entries) {
+            $form_logs = array_slice($form_logs, -$max_form_entries);
+        }
+        
+        // Check form log size
+        $form_size_mb = strlen(serialize($form_logs)) / 1024 / 1024;
+        if ($form_size_mb > $max_form_size_mb) {
+            // Remove oldest entries until under limit
+            while (count($form_logs) > 25 && $form_size_mb > $max_form_size_mb) {
+                array_shift($form_logs);
+                $form_size_mb = strlen(serialize($form_logs)) / 1024 / 1024;
+            }
+        }
     }
 
     /**
@@ -627,6 +913,17 @@ class LoggingSystem
     {
         global $wpdb;
         
+        // Check memory usage before processing
+        $memory_limit = ini_get('memory_limit');
+        $current_memory = memory_get_usage(true);
+        $memory_limit_bytes = $this->parseMemoryLimit($memory_limit);
+        
+        // If we're using more than 80% of available memory, return empty array
+        if ($memory_limit_bytes && ($current_memory / $memory_limit_bytes) > 0.8) {
+            // Don't log this to prevent recursion
+            return [];
+        }
+        
         $form_logs = [];
         $pattern = "ctm_form_log_{$form_type}_%";
         
@@ -637,7 +934,22 @@ class LoggingSystem
             )
         );
         
+        $count = 0;
+        $max_forms = 50; // Limit number of forms to process
+        
         foreach ($options as $option) {
+            $count++;
+            if ($count > $max_forms) {
+                // Don't log this to prevent recursion
+                break;
+            }
+            
+            // Check memory usage before processing each form
+            if ($memory_limit_bytes && memory_get_usage(true) > ($memory_limit_bytes * 0.9)) {
+                // Don't log this to prevent recursion
+                break;
+            }
+            
             $form_id = str_replace("ctm_form_log_{$form_type}_", '', $option->option_name);
             $logs = maybe_unserialize($option->option_value);
             if (is_array($logs)) {

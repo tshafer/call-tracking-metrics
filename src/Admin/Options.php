@@ -118,6 +118,33 @@ class Options
         register_setting("call-tracking-metrics", "ctm_api_cf7_logs");
         register_setting("call-tracking-metrics", "ctm_api_gf_logs");
         
+        // Log Size Limit Settings
+        register_setting("call-tracking-metrics", "ctm_max_log_entries_per_day", [
+            'type' => 'integer',
+            'default' => 300,
+            'sanitize_callback' => 'intval'
+        ]);
+        register_setting("call-tracking-metrics", "ctm_max_log_size_mb", [
+            'type' => 'number',
+            'default' => 5.0,
+            'sanitize_callback' => 'floatval'
+        ]);
+        register_setting("call-tracking-metrics", "ctm_max_total_log_size_mb", [
+            'type' => 'number',
+            'default' => 50.0,
+            'sanitize_callback' => 'floatval'
+        ]);
+        register_setting("call-tracking-metrics", "ctm_max_form_log_entries", [
+            'type' => 'integer',
+            'default' => 150,
+            'sanitize_callback' => 'intval'
+        ]);
+        register_setting("call-tracking-metrics", "ctm_max_form_log_size_mb", [
+            'type' => 'number',
+            'default' => 2.0,
+            'sanitize_callback' => 'floatval'
+        ]);
+        
 
     }
 

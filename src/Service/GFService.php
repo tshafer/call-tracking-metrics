@@ -274,7 +274,7 @@ class GFService
             $payload['domain'] = $_SERVER['HTTP_HOST'] ?? '';
             $payload['raw_data'] = $entry;
 
-            $this->logInternal('GF Payload: ' . print_r($payload, true), 'debug');
+            $this->logInternal('GF Payload processed successfully', 'debug');
             return $payload;
         } catch (\Exception $e) {
             // Log error but don't break the form submission

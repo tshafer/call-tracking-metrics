@@ -97,26 +97,80 @@ class CF7Service
                 $fieldTypeMap[$fieldDef['name']] = $fieldDef['type'];
             }
             
-            // Build the payload for CTM API
+            // Map form fields and extract required CTM fields
+            $mappedFields = $this->mapFormFieldsDirect($data, $fieldTypeMap);
+            
+            // Extract required CTM fields
+            $phoneNumber = '';
+            $callerName = '';
+            $email = '';
+            $countryCode = '';
+            
+            // Find phone number field
+            foreach ($data as $fieldName => $fieldValue) {
+                $fieldType = $fieldTypeMap[$fieldName] ?? $this->normalizeFieldType($fieldName);
+                $fieldNameLower = strtolower($fieldName);
+                
+                // Map phone number to required field
+                if ($fieldType === 'phone' || $fieldType === 'tel' || 
+                    strpos($fieldNameLower, 'phone') !== false || 
+                    strpos($fieldNameLower, 'tel') !== false) {
+                    $phoneNumber = $this->sanitizeFieldValue($fieldValue);
+                }
+                
+                // Map name field
+                if (strpos($fieldNameLower, 'name') !== false && 
+                    (strpos($fieldNameLower, 'first') !== false || 
+                     strpos($fieldNameLower, 'last') !== false || 
+                     strpos($fieldNameLower, 'full') !== false)) {
+                    $callerName = $this->sanitizeFieldValue($fieldValue);
+                }
+                
+                // Map email field
+                if ($fieldType === 'email' || strpos($fieldNameLower, 'email') !== false) {
+                    $email = $this->sanitizeFieldValue($fieldValue);
+                }
+                
+                // Map country code field
+                if (strpos($fieldNameLower, 'country') !== false) {
+                    $countryCode = $this->sanitizeFieldValue($fieldValue);
+                }
+            }
+            
+            // Build the payload for CTM API with required fields
             $payload = [
-                'form_type' => 'contact_form_7',
-                'form_id' => $formId,
-                'form_title' => $formTitle,
-                'form_url' => $this->getCurrentPageUrl(),
-                'timestamp' => current_time('mysql'),
-                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
-                'ip_address' => $this->getClientIpAddress(),
-                'fields' => $this->mapFormFieldsDirect($data, $fieldTypeMap),
-                'raw_data' => $data, // Keep original data for debugging
-                'callback_number' => '',
-                'delay_calling_by' => '',
+                'phone_number'      => $phoneNumber,
+                'country_code'      => $countryCode,
+                'type'              => 'API',
+                'caller_name'       => $callerName,
+                'email'             => $email,
+                'callback_number'   => '',
+                'delay_calling_by'  => '',
+                'form_reactor'      => [
+                    'form_id' => $formId
+                ],
+                'id'                => $formId,
+                'name'              => $formTitle,
+                '__ctm_api_authorized__' => '1',
+                'visitor_sid'       => $_COOKIE['__ctmid'] ?? '',
+                'domain'            => $_SERVER['HTTP_HOST'] ?? '',
+                'raw_data'          => $data,
             ];
+            
+            // Add callback_number and delay_calling_by if present
             foreach ($data as $key => $value) {
                 if (strtolower($key) === 'callback_number' || strtolower($key) === 'callback number') {
                     $payload['callback_number'] = $value;
                 }
                 if (strtolower($key) === 'delay_calling_by' || strtolower($key) === 'delay calling by') {
                     $payload['delay_calling_by'] = $value;
+                }
+            }
+            
+            // Add custom fields (all other fields)
+            foreach ($mappedFields as $fieldName => $fieldValue) {
+                if (!in_array($fieldName, ['phone', 'name', 'email', 'country'])) {
+                    $payload['custom_' . $fieldName] = $fieldValue;
                 }
             }
             
@@ -387,21 +441,6 @@ class CF7Service
         return $value;
     }
 
-    /**
-     * Get the current page URL where the form was submitted
-     * 
-     * @since 1.0.0
-     * @return string The current page URL
-     */
-    private function getCurrentPageUrl(): string
-    {
-        if (isset($_SERVER['HTTP_HOST']) && isset($_SERVER['REQUEST_URI'])) {
-            $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
-            return $protocol . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-        }
-        
-        return home_url();
-    }
 
     /**
      * Get the client's IP address

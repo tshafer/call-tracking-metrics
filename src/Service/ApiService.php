@@ -171,8 +171,14 @@ class ApiService
      */
     public function submitFormReactor(array $formData, string $apiKey, string $apiSecret, $formId = null): ?array
     {
+        // Format phone number before sending
+        if (isset($formData['phone_number'])) {
+            $formData['phone_number'] = $this->formatPhoneNumber($formData['phone_number']);
+        }
+        
         $endpoint = '/api/v1/formreactor/'.$formId;
         $start = microtime(true);
+        
         try {
             $data = $this->makeRequest(
                 method: 'POST', 
@@ -185,14 +191,35 @@ class ApiService
             $elapsed = (microtime(true) - $start) * 1000;
             $this->trackApiCall();
             $this->trackApiResponseTime($elapsed);
+            
             // Return null on non-2xx response
             if (isset($data['error']) || (isset($data['status']) && $data['status'] === 'error')) {
                 return null;
             }
             return $data;
         } catch (\Exception $e) {
-            $this->logInternal('API Error (submitFormReactor): ' . $e->getMessage(), 'error');
-            return null;
+            $errorMessage = $e->getMessage();
+            $this->logInternal('API Error (submitFormReactor): ' . $errorMessage, 'error');
+            
+            // Check for specific HTTP 406 error with phone number formatting issue
+            if (strpos($errorMessage, 'HTTP 406') !== false && strpos($errorMessage, 'E.164') !== false) {
+                $this->logInternal('Phone number formatting error detected: ' . $errorMessage, 'error');
+                // Return a structured error response for phone number issues
+                return [
+                    'status' => 'error',
+                    'reason' => 'Phone number must be in E.164 format (e.g., +1234567890)',
+                    'error_type' => 'phone_format',
+                    'original_error' => $errorMessage
+                ];
+            }
+            
+            // Return a generic error response instead of null to prevent white screens
+            return [
+                'status' => 'error',
+                'reason' => 'API communication failed: ' . substr($errorMessage, 0, 100),
+                'error_type' => 'api_error',
+                'original_error' => $errorMessage
+            ];
         }
     }
 
@@ -230,6 +257,52 @@ class ApiService
             $this->logInternal('API Error (getFormReactors): ' . $e->getMessage(), 'error');
             return null;
         }
+    }
+
+    /**
+     * Format phone number to E.164 format
+     * 
+     * Converts various phone number formats to E.164 format required by CTM API.
+     * 
+     * @since 2.0.0
+     * @param string $phoneNumber The phone number to format
+     * @return string The formatted phone number in E.164 format
+     */
+    private function formatPhoneNumber(string $phoneNumber): string
+    {
+        // Remove all non-numeric characters except + and spaces
+        $cleaned = preg_replace('/[^0-9+\s\-\(\)]/', '', $phoneNumber);
+        
+        // Remove spaces and parentheses
+        $cleaned = preg_replace('/[\s\(\)]/', '', $cleaned);
+        
+        // If it already starts with +, return as is
+        if (strpos($cleaned, '+') === 0) {
+            return $cleaned;
+        }
+        
+        // If it starts with 1 and is 11 digits, add +
+        if (strlen($cleaned) === 11 && substr($cleaned, 0, 1) === '1') {
+            return '+' . $cleaned;
+        }
+        
+        // If it's 10 digits (US number), add +1
+        if (strlen($cleaned) === 10) {
+            return '+1' . $cleaned;
+        }
+        
+        // If it's 7 digits (local number), assume US and add +1
+        if (strlen($cleaned) === 7) {
+            return '+1' . $cleaned;
+        }
+        
+        // If it doesn't start with + and is longer than 10 digits, add +
+        if (strlen($cleaned) > 10 && substr($cleaned, 0, 1) !== '+') {
+            return '+' . $cleaned;
+        }
+        
+        // Return as is if we can't determine format
+        return $cleaned;
     }
 
     /**
@@ -328,27 +401,20 @@ class ApiService
      */
     public function getFormsDirect(string $apiKey, string $apiSecret, int $page = 1, int $perPage = 50): ?array
     {
-        $this->logInternal('Debug: ApiService::getFormsDirect - Starting');
-        
         // First get account information to get the account ID
         $accountInfo = $this->getAccountInfo($apiKey, $apiSecret);
         if (!$accountInfo || !isset($accountInfo['account']['id'])) {
             $this->logInternal('API Error: Could not retrieve account information for forms', 'error');
-            $this->logInternal('Debug: Account info response: ' . json_encode($accountInfo), 'debug');
             return null;
         }
         
         $accountId = $accountInfo['account']['id'];
-        $this->logInternal('Debug: Using account ID: ' . $accountId);
         
         $endpoint = "/api/v1/accounts/{$accountId}/form_reactors";
         $params = [
             'page' => max(1, $page),
             'per_page' => min(100, max(1, $perPage))
         ];
-        
-        $this->logInternal('Debug: Making request to endpoint: ' . $endpoint);
-        $this->logInternal('Debug: Request params: ' . json_encode($params));
         
         $start = microtime(true);
         try {
@@ -357,19 +423,14 @@ class ApiService
             $this->trackApiCall();
             $this->trackApiResponseTime($elapsed);
             
-            $this->logInternal('Debug: API response received in ' . round($elapsed, 2) . 'ms');
-            $this->logInternal('Debug: Response keys: ' . implode(', ', array_keys($data)));
-            
             if (isset($data['error']) || (isset($data['status']) && $data['status'] === 'error')) {
-                $this->logInternal('API Error: API returned error response: ' . json_encode($data), 'error');
+                $this->logInternal('API Error: API returned error response', 'error');
                 return null;
             }
             
-            $this->logInternal('Debug: Successfully retrieved forms data');
             return $data;
         } catch (\Exception $e) {
             $this->logInternal('API Error (getFormsDirect): ' . $e->getMessage(), 'error');
-            $this->logInternal('Debug: Exception stack trace: ' . $e->getTraceAsString(), 'debug');
             return null;
         }
     }

@@ -673,6 +673,9 @@ class FormImportService
             $this->logInternal('convertToCF7Format - Available keys: ' . implode(', ', array_keys($ctmForm)));
         }
         
+        // Add required fields based on CTM options
+        $fields = $this->addRequiredFields($fields);
+        
         if (!empty($fields)) {
             $this->logInternal('convertToCF7Format - Processing ' . count($fields) . ' fields');
             foreach ($fields as $index => $field) {
@@ -761,7 +764,6 @@ class FormImportService
                     case 'file':
                     case 'upload':
                     case 'document':
-                        $fileType = $field['file_type'] ?? '';
                         $formContent .= "[file{$required} {$fieldName}]";
                         $this->logInternal("convertToCF7Format - Added file field: [file{$required} {$fieldName}]");
                         break;
@@ -807,6 +809,115 @@ class FormImportService
         $this->logInternal("convertToCF7Format - Final form content:\n" . $formContent);
         
         return $formContent;
+    }
+
+    /**
+     * Add required fields based on CTM options
+     * 
+     * @since 2.0.0
+     * @param array $fields Existing fields array
+     * @return array Updated fields array with required fields
+     */
+    private function addRequiredFields(array $fields): array
+    {
+        $this->logInternal('addRequiredFields - Starting to add required fields');
+        
+        // Get CTM options
+        $includeEmail = get_option('ctm_include_email', false);
+        $includeName = get_option('ctm_include_name', false);
+        
+        $this->logInternal('addRequiredFields - CTM options - Email: ' . ($includeEmail ? 'true' : 'false') . ', Name: ' . ($includeName ? 'true' : 'false'));
+        
+        // Check if phone field already exists
+        $hasPhoneField = false;
+        foreach ($fields as $field) {
+            $fieldType = $field['type'] ?? '';
+            $fieldName = strtolower($field['name'] ?? '');
+            $fieldLabel = strtolower($field['label'] ?? '');
+            
+            if ($fieldType === 'phone' || 
+                strpos($fieldName, 'phone') !== false || 
+                strpos($fieldLabel, 'phone') !== false ||
+                strpos($fieldName, 'tel') !== false || 
+                strpos($fieldLabel, 'tel') !== false) {
+                $hasPhoneField = true;
+                $this->logInternal('addRequiredFields - Phone field already exists: ' . $field['name']);
+                break;
+            }
+        }
+        
+        // Always add phone field if it doesn't exist (required for CTM)
+        if (!$hasPhoneField) {
+            $fields[] = [
+                'type' => 'phone',
+                'name' => 'phone',
+                'label' => 'Phone Number',
+                'required' => true
+            ];
+            $this->logInternal('addRequiredFields - Added required phone field');
+        }
+        
+        // Check if email field already exists
+        $hasEmailField = false;
+        foreach ($fields as $field) {
+            $fieldType = $field['type'] ?? '';
+            $fieldName = strtolower($field['name'] ?? '');
+            $fieldLabel = strtolower($field['label'] ?? '');
+            
+            if ($fieldType === 'email' || 
+                strpos($fieldName, 'email') !== false || 
+                strpos($fieldLabel, 'email') !== false) {
+                $hasEmailField = true;
+                $this->logInternal('addRequiredFields - Email field already exists: ' . $field['name']);
+                break;
+            }
+        }
+        
+        // Add email field if required and doesn't exist
+        if ($includeEmail && !$hasEmailField) {
+            $fields[] = [
+                'type' => 'email',
+                'name' => 'email',
+                'label' => 'Email Address',
+                'required' => true
+            ];
+            $this->logInternal('addRequiredFields - Added required email field');
+        }
+        
+        // Check if name field already exists
+        $hasNameField = false;
+        foreach ($fields as $field) {
+            $fieldType = $field['type'] ?? '';
+            $fieldName = strtolower($field['name'] ?? '');
+            $fieldLabel = strtolower($field['label'] ?? '');
+            
+            if (strpos($fieldName, 'name') !== false || 
+                strpos($fieldLabel, 'name') !== false ||
+                strpos($fieldName, 'first') !== false || 
+                strpos($fieldLabel, 'first') !== false ||
+                strpos($fieldName, 'last') !== false || 
+                strpos($fieldLabel, 'last') !== false) {
+                $hasNameField = true;
+                $this->logInternal('addRequiredFields - Name field already exists: ' . $field['name']);
+                break;
+            }
+        }
+        
+        // Add name field if required and doesn't exist
+        if ($includeName && !$hasNameField) {
+            $fields[] = [
+                'type' => 'text',
+                'name' => 'name',
+                'label' => 'Full Name',
+                'required' => true
+            ];
+            $this->logInternal('addRequiredFields - Added required name field');
+        }
+        
+
+        
+        $this->logInternal('addRequiredFields - Final field count: ' . count($fields));
+        return $fields;
     }
 
     /**
@@ -948,6 +1059,9 @@ class FormImportService
         } elseif (isset($ctmForm['custom_fields']) && is_array($ctmForm['custom_fields'])) {
             $fields = $ctmForm['custom_fields'];
         }
+        
+        // Add required fields based on CTM options
+        $fields = $this->addRequiredFields($fields);
         
         if (!empty($fields)) {
             foreach ($fields as $field) {

@@ -246,12 +246,8 @@ class FormImportAjax
     public function previewForm(): void
     {
         // Debug: Log that the method is being called
-        $this->logInternal('Preview Debug - previewForm() method called');
-        $this->logInternal('Preview Debug - POST data: ' . print_r($_POST, true));
-        
         // Verify nonce
         if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ctm_form_import_nonce')) {
-            $this->logInternal('Preview Debug - Nonce verification failed');
             wp_send_json_error(['message' => 'Security check failed']);
             return;
         }
@@ -265,10 +261,7 @@ class FormImportAjax
             $ctmFormId = sanitize_text_field($_POST['ctm_form_id'] ?? '');
             $targetType = sanitize_text_field($_POST['target_type'] ?? '');
 
-            $this->logInternal('Preview Debug - Form ID: ' . $ctmFormId . ', Target Type: ' . $targetType);
-
             if (empty($ctmFormId) || empty($targetType)) {
-                $this->logInternal('Preview Debug - Missing required parameters');
                 wp_send_json_error(['message' => 'Form ID and target type are required']);
                 return;
             }
@@ -277,25 +270,18 @@ class FormImportAjax
             $apiKey = get_option('ctm_api_key');
             $apiSecret = get_option('ctm_api_secret');
 
-            $this->logInternal('Preview Debug - API Key exists: ' . (!empty($apiKey) ? 'Yes' : 'No'));
-
             if (!$apiKey || !$apiSecret) {
-                $this->logInternal('Preview Debug - API credentials not configured');
                 wp_send_json_error(['message' => 'API credentials not configured']);
                 return;
             }
 
             // Get the specific form data
-            $this->logInternal('Preview Debug - Fetching forms from API...');
             $forms = $this->formImportService->getAvailableForms($apiKey, $apiSecret);
             
             if ($forms === false) {
-                $this->logInternal('Preview Debug - Failed to load forms from API');
                 wp_send_json_error(['message' => 'Failed to load forms from CallTrackingMetrics']);
                 return;
             }
-            
-            $this->logInternal('Preview Debug - Found ' . count($forms) . ' forms from API');
             
             $ctmForm = null;
             if ($forms) {
@@ -308,12 +294,9 @@ class FormImportAjax
             }
 
             if (!$ctmForm) {
-                $this->logInternal('Preview Debug - Form not found with ID: ' . $ctmFormId);
                 wp_send_json_error(['message' => 'Form not found']);
                 return;
             }
-            
-            $this->logInternal('Preview Debug - Found form: ' . ($ctmForm['name'] ?? 'Unnamed'));
 
             // Generate preview based on target type
             $preview = '';
@@ -326,17 +309,10 @@ class FormImportAjax
                 return;
             }
 
-            // Debug: Log the preview result
-            $this->logInternal('Preview Debug - Generated preview length: ' . strlen($preview));
-            $this->logInternal('Preview Debug - Preview content: ' . substr($preview, 0, 200) . '...');
-
             if (empty($preview)) {
-                $this->logInternal('Preview Debug - Preview is empty, sending error');
                 wp_send_json_error(['message' => 'No preview content was generated']);
                 return;
             }
-
-            $this->logInternal('Preview Debug - About to send successful response with preview length: ' . strlen($preview));
             
             wp_send_json_success([
                 'preview' => $preview,
@@ -344,12 +320,8 @@ class FormImportAjax
             ]);
 
         } catch (\Exception $e) {
-            $this->logInternal('Preview Debug - Exception caught: ' . $e->getMessage(), 'error');
-            $this->logInternal('Preview Debug - Exception trace: ' . $e->getTraceAsString(), 'error');
             wp_send_json_error(['message' => 'Preview failed: ' . $e->getMessage()]);
         } catch (\Error $e) {
-            $this->logInternal('Preview Debug - Fatal error caught: ' . $e->getMessage(), 'error');
-            $this->logInternal('Preview Debug - Error trace: ' . $e->getTraceAsString(), 'error');
             wp_send_json_error(['message' => 'Preview failed due to fatal error: ' . $e->getMessage()]);
         }
     }
@@ -368,14 +340,8 @@ class FormImportAjax
         }
 
         try {
-            // Debug: Log the CTM form data
-            $this->logInternal('Preview Debug - CTM Form Data: ' . json_encode($ctmForm, JSON_PRETTY_PRINT));
-            
             // Convert CTM form to CF7 format using FormImportService
             $cf7Content = $this->formImportService->convertToCF7Format($ctmForm);
-            
-            // Debug: Log the converted CF7 content
-            $this->logInternal('Preview Debug - CF7 Content: ' . $cf7Content);
             
             // If no content, return a debug message
             if (empty($cf7Content)) {
@@ -383,13 +349,10 @@ class FormImportAjax
             }
             
             // Since CF7 doesn't allow easy temporary form creation, use a direct rendering approach
-            $this->logInternal('Preview Debug - Using direct CF7 shortcode rendering approach...');
-            
             // Use CF7's shortcode processing to render the form content
             if (function_exists('wpcf7_do_tag')) {
                 return $this->generateCF7DirectPreview($cf7Content, $ctmForm);
             } else {
-                $this->logInternal('Preview Debug - CF7 shortcode functions not available, using fallback...');
                 return $this->generateCF7FallbackPreview($cf7Content, $ctmForm);
             }
 
@@ -415,24 +378,31 @@ class FormImportAjax
         }
 
         try {
-            // Debug: Log the CTM form data
-            $this->logInternal('GF Preview Debug - CTM Form Data: ' . json_encode($ctmForm, JSON_PRETTY_PRINT));
-            
             // Convert CTM form to GF format using FormImportService
             $gfFormArray = $this->formImportService->convertToGFFormat($ctmForm, 'Preview: ' . ($ctmForm['name'] ?? 'CTM Form'));
             
-            // Debug: Log the converted GF data
-            $this->logInternal('GF Preview Debug - GF Form Array: ' . json_encode($gfFormArray, JSON_PRETTY_PRINT));
-            
             // If no form data, return a debug message
             if (empty($gfFormArray) || empty($gfFormArray['fields'])) {
-                $this->logInternal('GF Preview Debug - No form fields generated');
                 return '<div class="notice notice-warning"><p>No form fields could be generated for Gravity Forms. Check the form data structure.</p></div>';
             }
 
-            // Use custom GF preview rendering instead of GF's internal APIs
-            $this->logInternal('GF Preview Debug - Using custom GF rendering');
-            return $this->generateGFDirectPreview($gfFormArray, $ctmForm);
+            // Use GF's actual plugin rendering for preview
+            // Create a temporary form in GF to get proper rendering
+            try {
+                // Convert to GF format and create a temporary form
+                $tempFormId = $this->createTemporaryGFForm($gfFormArray);
+                if ($tempFormId) {
+                    $preview = $this->generateGFWPPreview($tempFormId);
+                    // Clean up temporary form
+                    $this->cleanupTemporaryGFForm($tempFormId);
+                    return $preview;
+                }
+            } catch (\Exception $e) {
+                // Fallback to basic preview if temporary form creation fails
+            }
+            
+            // Fallback to basic preview if temporary form creation fails
+            return $this->generateBasicGFPreview($gfFormArray);
 
             
         } catch (\Exception $e) {
@@ -441,84 +411,53 @@ class FormImportAjax
     }
 
     /**
-     * Generate GF preview using custom field rendering
+     * Create a temporary GF form for preview purposes
      * 
      * @since 2.0.0
      * @param array $gfFormArray The GF form array
-     * @param array $ctmForm The CTM form data
-     * @return string The preview HTML
+     * @return int|null The temporary form ID or null on failure
      */
-    private function generateGFDirectPreview(array $gfFormArray, array $ctmForm): string
+    private function createTemporaryGFForm(array $gfFormArray): ?int
     {
-                    $this->logInternal('GF Preview Debug - Using custom GF field rendering');
-        
-        ob_start();
-        echo '<div class="ctm-gf-preview">';
-        echo '<div class="preview-header" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid #00a32a; border-radius: 4px;">';
-        echo '<h4 style="margin: 0; color: #00a32a;">Gravity Forms Preview</h4>';
-        echo '<p style="margin: 5px 0 0; color: #666; font-size: 14px;">This is how your form will appear when imported to Gravity Forms</p>';
-        echo '</div>';
-        
-        // Render form using custom GF-style HTML
-        echo '<div class="gf-form-preview" style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 4px;">';
-        echo '<form class="gform_wrapper" style="max-width: none;">';
-        echo '<div class="gform_body">';
-        echo '<ul class="gform_fields" style="list-style: none; padding: 0; margin: 0;">';
-        
-        foreach ($gfFormArray['fields'] as $field) {
-            echo '<li class="gfield" style="margin-bottom: 20px; clear: both;">';
-            echo '<label class="gfield_label" style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">' . esc_html($field['label']) . '</label>';
-            echo '<div class="ginput_container">';
-            
-            // Render field based on type
-            switch ($field['type']) {
-                case 'text':
-                    echo '<input type="text" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;" placeholder="' . esc_attr($field['label']) . '">';
-                    break;
-                case 'email':
-                    echo '<input type="email" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;" placeholder="Email address">';
-                    break;
-                case 'phone':
-                    echo '<input type="tel" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;" placeholder="Phone number">';
-                    break;
-                case 'textarea':
-                    echo '<textarea rows="4" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; resize: vertical;" placeholder="' . esc_attr($field['label']) . '"></textarea>';
-                    break;
-                case 'select':
-                    echo '<select style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">';
-                    echo '<option value="">Choose...</option>';
-                    if (isset($field['choices']) && is_array($field['choices'])) {
-                        foreach ($field['choices'] as $choice) {
-                            echo '<option value="' . esc_attr($choice['value']) . '">' . esc_html($choice['text']) . '</option>';
-                        }
-                    }
-                    echo '</select>';
-                    break;
-                case 'fileupload':
-                    echo '<input type="file" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">';
-                    break;
-                case 'date':
-                    echo '<input type="date" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">';
-                    break;
-                default:
-                    echo '<input type="text" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;" placeholder="' . esc_attr($field['label']) . '">';
-                    break;
-            }
-            
-            echo '</div>';
-            echo '</li>';
+        if (!class_exists('GFAPI')) {
+            return null;
         }
         
-        echo '</ul>';
-        echo '</div>';
-        echo '<div class="gform_footer" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">';
-        echo '<input type="submit" value="Submit" style="background: #00a32a; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 600;">';
-        echo '</div>';
-        echo '</form>';
-        echo '</div>';
-        echo '</div>';
+        try {
+            // Add a temporary flag to the form title
+            $gfFormArray['title'] = 'CTM Preview - ' . $gfFormArray['title'] . ' (Temporary)';
+            
+            // Create the form using GF API
+            $formId = \GFAPI::add_form($gfFormArray);
+            
+            if ($formId && !is_wp_error($formId)) {
+                return $formId;
+            }
+        } catch (\Exception $e) {
+            // Form creation failed
+        }
         
-        return ob_get_clean();
+        return null;
+    }
+    
+    /**
+     * Clean up a temporary GF form
+     * 
+     * @since 2.0.0
+     * @param int $formId The form ID to delete
+     * @return void
+     */
+    private function cleanupTemporaryGFForm(int $formId): void
+    {
+        if (!class_exists('GFAPI')) {
+            return;
+        }
+        
+        try {
+            \GFAPI::delete_form($formId);
+        } catch (\Exception $e) {
+            // Form cleanup failed
+        }
     }
 
     /**
@@ -794,6 +733,7 @@ class FormImportAjax
 
             // Get CTM form data
             $forms = $this->formImportService->getAvailableForms($apiKey, $apiSecret);
+            
             if ($forms === false) {
                 wp_send_json_error(['message' => 'Failed to load forms from CallTrackingMetrics']);
                 return;

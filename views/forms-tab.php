@@ -537,6 +537,74 @@ function truncate_ctm_id($id, $max_length = 20) {
     </div>
 </div>
 
+<!-- CTM Update Confirmation Modal -->
+<div id="ctm-update-modal" class="fixed inset-0 bg-black bg-opacity-60 overflow-y-auto h-full w-full hidden flex items-center justify-center" style="z-index: 999999;">
+    <div class="relative mx-auto p-6 border w-[500px] shadow-lg rounded-lg bg-white">
+        <div class="text-left">
+            <!-- Header with Icon -->
+            <div class="flex items-center mb-6">
+                <div class="flex items-center justify-center h-12 w-12 rounded-full bg-orange-100 mr-4">
+                    <svg class="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-900"><?php _e('⚠️ Warning: Form Update', 'call-tracking-metrics'); ?></h3>
+                    <p class="text-sm text-gray-600 mt-1"><?php _e('This action cannot be undone', 'call-tracking-metrics'); ?></p>
+                </div>
+            </div>
+            
+            <!-- Warning Alert -->
+            <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-orange-800">
+                            <?php _e('This action will overwrite your local form changes!', 'call-tracking-metrics'); ?>
+                        </p>
+                        <p class="text-sm text-orange-700 mt-1">
+                            <?php _e('Any modifications you made to this form will be lost.', 'call-tracking-metrics'); ?>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Form Details -->
+            <div class="mb-6">
+                <p class="text-sm text-gray-600 mb-3">
+                    <?php _e('You are about to update this form with the latest content from CallTrackingMetrics:', 'call-tracking-metrics'); ?>
+                </p>
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-700"><?php _e('Form Name', 'call-tracking-metrics'); ?></p>
+                            <p class="text-sm text-gray-900 font-semibold" id="ctm-update-form-title"></p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm font-medium text-gray-700"><?php _e('Form Type', 'call-tracking-metrics'); ?></p>
+                            <span id="ctm-update-form-type" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex space-x-3">
+                <button id="ctm-update-cancel" class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors">
+                    <?php _e('Cancel', 'call-tracking-metrics'); ?>
+                </button>
+                <button id="ctm-update-confirm" class="flex-1 px-4 py-2.5 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-300 transition-colors">
+                    <?php _e('Yes, Update Form', 'call-tracking-metrics'); ?>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Form Preview Modal -->
 <div id="ctm-preview-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center" style="z-index: 999999;">
     <div class="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col">
@@ -798,41 +866,78 @@ jQuery(document).ready(function($) {
         const formTitle = $(this).data('form-title');
         const ctmFormId = $(this).data('ctm-form-id');
         
-        if (confirm('<?php _e('This will update your WordPress form with the latest content from CallTrackingMetrics. Any local changes may be overwritten. Continue?', 'call-tracking-metrics'); ?>')) {
-            // Show loading state
-            $(this).prop('disabled', true).html('<svg class="w-4 h-4 mr-1 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg><?php _e('Updating...', 'call-tracking-metrics'); ?>');
-            
-            // AJAX call to update the form
-            $.ajax({
-                url: ajaxurl,
-                type: 'POST',
-                data: {
-                    action: 'ctm_update_form',
-                    nonce: '<?php echo wp_create_nonce('ctm_form_import_nonce'); ?>',
-                    wp_form_id: formId,
-                    wp_form_type: formType,
-                    ctm_form_id: ctmFormId
-                },
-                success: function(response) {
-                    if (response.success) {
-                        // Show success message and reload page
-                        $('body').append('<div class="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded" style="z-index: 999999;" id="ctm-update-success-toast">' +
-                            '<span class="block sm:inline"><?php _e('Form updated successfully! Reloading page...', 'call-tracking-metrics'); ?></span>' +
-                            '</div>');
-                        
-                        setTimeout(function() {
-                            location.reload();
-                        }, 2000);
-                    } else {
-                        alert('<?php _e('Update failed: ', 'call-tracking-metrics'); ?>' + (response.data ? response.data.message : '<?php _e('Unknown error', 'call-tracking-metrics'); ?>'));
-                        $(this).prop('disabled', false).html('<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg><?php _e('Update from CTM', 'call-tracking-metrics'); ?>');
-                    }
-                }.bind(this),
-                error: function() {
-                    alert('<?php _e('Update failed. Please try again.', 'call-tracking-metrics'); ?>');
-                    $(this).prop('disabled', false).html('<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg><?php _e('Update from CTM', 'call-tracking-metrics'); ?>');
-                }.bind(this)
-            });
+        // Show update confirmation modal
+        $('#ctm-update-form-title').text(formTitle);
+        $('#ctm-update-form-type').text(formType.toUpperCase());
+        $('#ctm-update-modal').removeClass('hidden').addClass('flex');
+        $('body').addClass('overflow-hidden');
+        
+        // Store form data for the update action
+        $('#ctm-update-confirm').data('form-id', formId).data('form-type', formType).data('form-title', formTitle).data('ctm-form-id', ctmFormId);
+    });
+    
+    // Handle update confirmation
+    $('#ctm-update-confirm').on('click', function() {
+        const formId = $(this).data('form-id');
+        const formType = $(this).data('form-type');
+        const formTitle = $(this).data('form-title');
+        const ctmFormId = $(this).data('ctm-form-id');
+        const originalButton = $('.ctm-update-form[data-form-id="' + formId + '"]');
+        
+        // Show loading state
+        $(this).prop('disabled', true).html('<svg class="w-4 h-4 mr-1 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg><?php _e('Updating...', 'call-tracking-metrics'); ?>');
+        originalButton.prop('disabled', true).html('<svg class="w-4 h-4 mr-1 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg><?php _e('Updating...', 'call-tracking-metrics'); ?>');
+        
+        // AJAX call to update the form
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'ctm_update_form',
+                nonce: '<?php echo wp_create_nonce('ctm_form_import_nonce'); ?>',
+                wp_form_id: formId,
+                wp_form_type: formType,
+                ctm_form_id: ctmFormId
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Show success message and reload page
+                    $('body').append('<div class="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded" style="z-index: 999999;" id="ctm-update-success-toast">' +
+                        '<span class="block sm:inline"><?php _e('Form updated successfully! Reloading page...', 'call-tracking-metrics'); ?></span>' +
+                        '</div>');
+                    
+                    setTimeout(function() {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    alert('<?php _e('Update failed: ', 'call-tracking-metrics'); ?>' + (response.data ? response.data.message : '<?php _e('Unknown error', 'call-tracking-metrics'); ?>'));
+                    $(this).prop('disabled', false).html('<?php _e('Update from CTM', 'call-tracking-metrics'); ?>');
+                    originalButton.prop('disabled', false).html('<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg><?php _e('Update from CTM', 'call-tracking-metrics'); ?>');
+                }
+            }.bind(this),
+            error: function() {
+                alert('<?php _e('Update failed. Please try again.', 'call-tracking-metrics'); ?>');
+                $(this).prop('disabled', false).html('<?php _e('Update from CTM', 'call-tracking-metrics'); ?>');
+                originalButton.prop('disabled', false).html('<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg><?php _e('Update from CTM', 'call-tracking-metrics'); ?>');
+            }.bind(this)
+        });
+        
+        // Close modal
+        $('#ctm-update-modal').addClass('hidden').removeClass('flex');
+        $('body').removeClass('overflow-hidden');
+    });
+    
+    // Handle update cancel
+    $('#ctm-update-cancel').on('click', function() {
+        $('#ctm-update-modal').addClass('hidden').removeClass('flex');
+        $('body').removeClass('overflow-hidden');
+    });
+    
+    // Close update modal when clicking outside
+    $('#ctm-update-modal').on('click', function(e) {
+        if (e.target === this) {
+            $(this).addClass('hidden').removeClass('flex');
+            $('body').removeClass('overflow-hidden');
         }
     });
     

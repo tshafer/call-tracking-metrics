@@ -519,54 +519,83 @@ class CallTrackingMetrics
             return;
         }
         
-        // Get form submission data
-        $dataObject = \WPCF7_Submission::get_instance();
-        $data = $dataObject->get_posted_data();
-        
-        // Process the submission through CF7 service
-        $result = $this->cf7Service->processSubmission($form, $data);
-        
-        // Send processed data to CTM API if credentials are available
-        $apiKey = get_option('ctm_api_key');
-        $apiSecret = get_option('ctm_api_secret');
-        
-        if ($result && $apiKey && $apiSecret) {
-            $response = $this->apiService->submitFormReactor($result, $apiKey, $apiSecret, $form->id());
+        try {
+            // Get form submission data
+            $dataObject = \WPCF7_Submission::get_instance();
+            $data = $dataObject->get_posted_data();
             
-            // Log the submission for debugging and monitoring
-            $this->loggingSystem->logFormSubmission(
-                'cf7',
-                $form->id(),
-                $form->title(),
-                $result,
-                $response,
-                ['entry_id' => null] // CF7 doesn't have entry IDs like GF
-            );
+            // Process the submission through CF7 service
+            $result = $this->cf7Service->processSubmission($form, $data);
+            
+            // Send processed data to CTM API if credentials are available
+            $apiKey = get_option('ctm_api_key');
+            $apiSecret = get_option('ctm_api_secret');
+            
+            if ($result && $apiKey && $apiSecret) {
+                try {
+                    $response = $this->apiService->submitFormReactor($result, $apiKey, $apiSecret, $form->id());
+                    
+                    // Log the submission for debugging and monitoring
+                    $this->loggingSystem->logFormSubmission(
+                        'cf7',
+                        $form->id(),
+                        $form->title(),
+                        $result,
+                        $response,
+                        ['entry_id' => null] // CF7 doesn't have entry IDs like GF
+                    );
 
-            // Check for API errors and surface to user
-            if (!$response || (isset($response['status']) && $response['status'] !== 'success')) {
-                $reason = $response['reason'] ?? 'Unknown error';
-                $userMessage = '';
-                if (stripos($reason, 'throttle') !== false || stripos($reason, 'rate limit') !== false) {
-                    $userMessage = 'You are submitting too quickly. Please wait a moment and try again.';
-                } elseif (stripos($reason, 'phone') !== false) {
-                    $userMessage = 'A valid phone number is required.';
-                } elseif (stripos($reason, 'email') !== false) {
-                    $userMessage = 'A valid email address is required.';
-                } elseif (stripos($reason, 'required') !== false) {
-                    $userMessage = 'Please fill out all required fields.';
-                } else {
-                    $userMessage = 'Submission failed: ' . esc_html($reason);
+                    // Check for API errors and surface to user
+                    if (!$response || (isset($response['status']) && $response['status'] !== 'success')) {
+                        $reason = $response['reason'] ?? 'Unknown error';
+                        $errorType = $response['error_type'] ?? '';
+                        $userMessage = '';
+                        
+                        // Handle specific error types
+                        if ($errorType === 'phone_format') {
+                            $userMessage = 'Please enter a valid phone number in international format (e.g., +1234567890).';
+                        } elseif (stripos($reason, 'throttle') !== false || stripos($reason, 'rate limit') !== false) {
+                            $userMessage = 'You are submitting too quickly. Please wait a moment and try again.';
+                        } elseif (stripos($reason, 'phone') !== false) {
+                            $userMessage = 'A valid phone number is required.';
+                        } elseif (stripos($reason, 'email') !== false) {
+                            $userMessage = 'A valid email address is required.';
+                        } elseif (stripos($reason, 'required') !== false) {
+                            $userMessage = 'Please fill out all required fields.';
+                        } else {
+                            $userMessage = 'Submission failed: ' . esc_html($reason);
+                        }
+                        $abort = true;
+                        // Show error to user using CF7 API
+                        if (method_exists($form, 'set_invalid_fields')) {
+                            $form->set_invalid_fields([['name' => '', 'reason' => $userMessage]]);
+                        } elseif (method_exists($form, 'set_invalid_field')) {
+                            $form->set_invalid_field('', $userMessage);
+                        }
+                        // No fallback: $abort = true will prevent mail send and CF7 will show a generic error
+                    }
+                } catch (\Exception $e) {
+                    // Log the API error
+                    $this->logInternal('CF7 API Error: ' . $e->getMessage(), 'error');
+                    
+                    // Don't abort the form submission - just log the error
+                    // This prevents white screens while still tracking the issue
+                    $this->loggingSystem->logFormSubmission(
+                        'cf7',
+                        $form->id(),
+                        $form->title(),
+                        $result,
+                        ['error' => $e->getMessage()],
+                        ['entry_id' => null]
+                    );
                 }
-                $abort = true;
-                // Show error to user using CF7 API
-                if (method_exists($form, 'set_invalid_fields')) {
-                    $form->set_invalid_fields([['name' => '', 'reason' => $userMessage]]);
-                } elseif (method_exists($form, 'set_invalid_field')) {
-                    $form->set_invalid_field('', $userMessage);
-                }
-                // No fallback: $abort = true will prevent mail send and CF7 will show a generic error
             }
+        } catch (\Exception $e) {
+            // Log any unexpected errors but don't break the form submission
+            $this->logInternal('CF7 Submission Error: ' . $e->getMessage(), 'error');
+            
+            // Don't set $abort = true to prevent white screens
+            // Just log the error and let the form submission continue
         }
     }
 
@@ -583,30 +612,66 @@ class CallTrackingMetrics
      */
     public function submitGF($entry, $form): void
     {
-        
-        // Process the submission through GF service
-        $result = $this->gfService->processSubmission($entry, $form);
-   
-        // Skip if processing failed
-        if ($result === null) {
-            return;
-        }
-        // Send processed data to CTM API if credentials are available
-        $apiKey = get_option('ctm_api_key');
-        $apiSecret = get_option('ctm_api_secret');
-        
-        if ($result && $apiKey && $apiSecret) {
-            $response = $this->apiService->submitFormReactor($result, $apiKey, $apiSecret, $form['id']);
+        try {
+            // Process the submission through GF service
+            $result = $this->gfService->processSubmission($entry, $form);
+       
+            // Skip if processing failed
+            if ($result === null) {
+                return;
+            }
+            
+            // Send processed data to CTM API if credentials are available
+            $apiKey = get_option('ctm_api_key');
+            $apiSecret = get_option('ctm_api_secret');
+            
+            if ($result && $apiKey && $apiSecret) {
+                try {
+                    $response = $this->apiService->submitFormReactor($result, $apiKey, $apiSecret, $form['id']);
 
-            // Log the submission for debugging and monitoring
-            $this->loggingSystem->logFormSubmission(
-                'gf',
-                $form['id'],
-                $form['title'],
-                $result,
-                $response,
-                ['entry_id' => $entry['id']]
-            );
+                    // Log the submission for debugging and monitoring
+                    $this->loggingSystem->logFormSubmission(
+                        'gf',
+                        $form['id'],
+                        $form['title'],
+                        $result,
+                        $response,
+                        ['entry_id' => $entry['id']]
+                    );
+                    
+                    // Check for API errors and log them
+                    if (!$response || (isset($response['status']) && $response['status'] !== 'success')) {
+                        $reason = $response['reason'] ?? 'Unknown error';
+                        $errorType = $response['error_type'] ?? '';
+                        
+                        if ($errorType === 'phone_format') {
+                            $this->logInternal('GF Submission Error: Phone number format error - ' . $reason, 'error');
+                        } else {
+                            $this->logInternal('GF Submission Error: ' . $reason, 'error');
+                        }
+                    }
+                } catch (\Exception $e) {
+                    // Log the API error
+                    $this->logInternal('GF API Error: ' . $e->getMessage(), 'error');
+                    
+                    // Don't break the form submission - just log the error
+                    // This prevents white screens while still tracking the issue
+                    $this->loggingSystem->logFormSubmission(
+                        'gf',
+                        $form['id'],
+                        $form['title'],
+                        $result,
+                        ['error' => $e->getMessage()],
+                        ['entry_id' => $entry['id']]
+                    );
+                }
+            }
+        } catch (\Exception $e) {
+            // Log any unexpected errors but don't break the form submission
+            $this->logInternal('GF Submission Error: ' . $e->getMessage(), 'error');
+            
+            // Don't throw the exception to prevent white screens
+            // Just log the error and let the form submission continue
         }
     }
 

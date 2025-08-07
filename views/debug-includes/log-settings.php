@@ -87,6 +87,42 @@ $notification_email = $notification_email ?? get_option('ctm_log_notification_em
         
         </form>
     </div>
+
+    <!-- Clear All Logs Section -->
+    <div class="bg-white rounded-xl shadow-lg border border-red-200 p-8 mt-8">
+        <div class="text-center">
+            <div class="bg-red-100 p-3 rounded-full inline-flex items-center justify-center mb-4">
+                <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+            </div>
+            <h3 class="text-xl font-semibold text-red-700 mb-2"><?php _e('Clear All Logs', 'call-tracking-metrics'); ?></h3>
+            <p class="text-gray-600 mb-6"><?php _e('This will permanently delete all debug logs, form logs, and log history. This action cannot be undone.', 'call-tracking-metrics'); ?></p>
+            
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h4 class="text-sm font-medium text-red-800"><?php _e('Warning', 'call-tracking-metrics'); ?></h4>
+                        <p class="text-sm text-red-700 mt-1"><?php _e('This action will remove all logs including daily logs, form-specific logs, and log history. This is irreversible.', 'call-tracking-metrics'); ?></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-center space-x-4">
+                <button type="button" onclick="showClearAllLogsModal()" id="clear-all-logs-btn" class="bg-red-600 hover:bg-red-700 text-white font-medium px-6 py-3 rounded-lg shadow transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                    <?php _e('Clear All Logs', 'call-tracking-metrics'); ?>
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -242,6 +278,127 @@ $notification_email = $notification_email ?? get_option('ctm_log_notification_em
             if (emailLabel) {
                 emailLabel.innerHTML = emailLabel.innerHTML.replace('<?php _e('Notification Email', 'call-tracking-metrics'); ?> *', '<?php _e('Notification Email', 'call-tracking-metrics'); ?>');
             }
+        }
+    });
+
+    // Clear All Logs functionality
+    function showClearAllLogsModal() {
+        // Create modal HTML
+        const modalHTML = `
+            <div id="clear-all-logs-modal" class="fixed inset-0 bg-black bg-opacity-60 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+                <div class="relative mx-auto p-6 border w-96 shadow-lg rounded-lg bg-white">
+                    <div class="text-center">
+                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                            <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4"><?php _e('Clear All Logs', 'call-tracking-metrics'); ?></h3>
+                        <div class="mt-2 px-7 py-3">
+                            <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm text-red-700 font-medium">
+                                            <?php _e('This action cannot be undone!', 'call-tracking-metrics'); ?>
+                                        </p>
+                                        <p class="text-sm text-red-600 mt-1">
+                                            <?php _e('All debug logs, form logs, and log history will be permanently deleted.', 'call-tracking-metrics'); ?>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-500">
+                                <?php _e('Are you sure you want to clear all logs? This will remove all debugging information and cannot be recovered.', 'call-tracking-metrics'); ?>
+                            </p>
+                        </div>
+                        <div class="flex space-x-3 mt-6">
+                            <button type="button" onclick="closeClearAllLogsModal()" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors">
+                                <?php _e('Cancel', 'call-tracking-metrics'); ?>
+                            </button>
+                            <button type="button" onclick="clearAllLogs()" class="flex-1 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300 transition-colors">
+                                <?php _e('Clear All Logs', 'call-tracking-metrics'); ?>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add modal to body
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Prevent body scroll
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeClearAllLogsModal() {
+        const modal = document.getElementById('clear-all-logs-modal');
+        if (modal) {
+            modal.remove();
+            document.body.style.overflow = '';
+        }
+    }
+
+    function clearAllLogs() {
+        const button = document.getElementById('clear-all-logs-btn');
+        const originalText = button.textContent;
+        
+        // Disable button and show loading state
+        button.disabled = true;
+        button.innerHTML = `
+            <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <?php _e('Clearing...', 'call-tracking-metrics'); ?>
+        `;
+        
+        // Close modal
+        closeClearAllLogsModal();
+        
+        // Get form data
+        const formData = new FormData();
+        formData.append('action', 'ctm_clear_all_logs');
+        formData.append('nonce', '<?= wp_create_nonce('ctm_clear_all_logs') ?>');
+        
+        // Send AJAX request
+        fetch('<?= admin_url('admin-ajax.php') ?>', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                ctmShowToast(data.data.message, 'success');
+                
+                // Reload page after a short delay to reflect changes
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                ctmShowToast(data.data.message || '<?php _e('Failed to clear all logs', 'call-tracking-metrics'); ?>', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error clearing all logs:', error);
+            ctmShowToast('<?php _e('Network error occurred while clearing logs', 'call-tracking-metrics'); ?>', 'error');
+        })
+        .finally(() => {
+            // Re-enable button
+            button.disabled = false;
+            button.innerHTML = originalText;
+        });
+    }
+
+    // Close modal on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeClearAllLogsModal();
         }
     });
 </script>
