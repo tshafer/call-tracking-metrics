@@ -47,13 +47,36 @@ set_error_handler(function($severity, $message, $file, $line) {
     if (!(error_reporting() & $severity)) {
         return;
     }
-    error_log("CTM Plugin Error: $message in $file on line $line");
+    
+    // Try to use internal logging if available
+    if (class_exists('CTM\Admin\LoggingSystem')) {
+        try {
+            $loggingSystem = new CTM\Admin\LoggingSystem();
+            if ($loggingSystem->isDebugEnabled()) {
+                $loggingSystem->logActivity("Plugin Error: $message in $file on line $line", 'error');
+            }
+        } catch (Exception $e) {
+            // Silently fail to avoid server log pollution
+        }
+    }
+    
     return true;
 });
 
 // Set up exception handler
 set_exception_handler(function($exception) {
-    error_log("CTM Plugin Exception: " . $exception->getMessage() . " in " . $exception->getFile() . " on line " . $exception->getLine());
+    // Try to use internal logging if available
+    if (class_exists('CTM\Admin\LoggingSystem')) {
+        try {
+            $loggingSystem = new CTM\Admin\LoggingSystem();
+            if ($loggingSystem->isDebugEnabled()) {
+                $loggingSystem->logActivity("Plugin Exception: " . $exception->getMessage() . " in " . $exception->getFile() . " on line " . $exception->getLine(), 'error');
+            }
+        } catch (Exception $e) {
+            // Silently fail to avoid server log pollution
+        }
+    }
+    
     if (is_admin()) {
         echo '<div class="wrap"><div class="notice notice-error"><p>Plugin Error: Call Tracking Metrics encountered an error. Please check the error logs or contact support.</p></div></div>';
     }
@@ -193,6 +216,9 @@ class CallTrackingMetrics
 
         // Initialize admin components (AJAX handlers, mapping assets, etc.)
         $this->adminOptions->initialize();
+        
+        // Initialize form logs AJAX handlers
+        $this->initializeFormLogsAjax();
 
         // Register core WordPress hooks
         $this->registerCoreHooks();
@@ -202,6 +228,9 @@ class CallTrackingMetrics
         
         // Register conditional hooks (dashboard widgets)
         $this->registerConditionalHooks();
+        
+        // Check forms for phone numbers and show warnings
+        add_action('admin_notices', [$this, 'showPhoneNumberWarnings']);
 
         // Register activation/deactivation hooks
         $this->registerLifecycleHooks();
@@ -324,12 +353,46 @@ class CallTrackingMetrics
                 true
             );
             
+            // Enqueue Form Logs JS
+            wp_enqueue_script(
+                'ctm-form-logs-js',
+                plugins_url('assets/js/form-logs.js', __FILE__),
+                ['jquery'],
+                '2.0.0',
+                true
+            );
+            
             // Localize general tab data
             wp_localize_script('ctm-general-tab-js', 'ctmGeneralData', [
                 'ajaxurl' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('ctm_dismiss_notice'),
                 'testNonce' => wp_create_nonce('ctm_test_api_connection'),
             ]);
+            
+            // Localize form logs data
+            wp_localize_script('ctm-form-logs-js', 'ctmFormLogsData', [
+                'ajaxurl' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('ctm_form_logs'),
+                'debug_enabled' => get_option('ctm_debug_enabled', false),
+            ]);
+            
+            // Add modal styles
+            wp_add_inline_style('ctm-tailwind', '
+                body.ctm-modal-open #adminmenumain,
+                body.ctm-modal-open #adminmenuwrap,
+                body.ctm-modal-open #adminmenu {
+                    display: none !important;
+                }
+                body.ctm-modal-open #wpcontent {
+                    margin-left: 0 !important;
+                }
+                body.ctm-modal-open #wpfooter {
+                    margin-left: 0 !important;
+                }
+                body.ctm-modal-open #ctm-form-logs-modal {
+                    z-index: 999999 !important;
+                }
+            ');
         });
 
     }
@@ -471,14 +534,14 @@ class CallTrackingMetrics
             $response = $this->apiService->submitFormReactor($result, $apiKey, $apiSecret, $form->id());
             
             // Log the submission for debugging and monitoring
-            $this->loggingSystem->logDebug([
-                'type' => 'cf7',
-                'form_id' => $form->id(),
-                'form_title' => $form->title(),
-                'payload' => $result,
-                'response' => $response,
-                'timestamp' => current_time('mysql')
-            ]);
+            $this->loggingSystem->logFormSubmission(
+                'cf7',
+                $form->id(),
+                $form->title(),
+                $result,
+                $response,
+                ['entry_id' => null] // CF7 doesn't have entry IDs like GF
+            );
 
             // Check for API errors and surface to user
             if (!$response || (isset($response['status']) && $response['status'] !== 'success')) {
@@ -528,24 +591,107 @@ class CallTrackingMetrics
         if ($result === null) {
             return;
         }
-        
         // Send processed data to CTM API if credentials are available
         $apiKey = get_option('ctm_api_key');
         $apiSecret = get_option('ctm_api_secret');
         
         if ($result && $apiKey && $apiSecret) {
             $response = $this->apiService->submitFormReactor($result, $apiKey, $apiSecret, $form['id']);
-            
+
             // Log the submission for debugging and monitoring
-            $this->loggingSystem->logDebug([
-                'type' => 'gf',
-                'form_id' => $form['id'],
-                'form_title' => $form['title'],
-                'entry_id' => $entry['id'],
-                'payload' => $result,
-                'response' => $response,
-                'timestamp' => current_time('mysql')
+            $this->loggingSystem->logFormSubmission(
+                'gf',
+                $form['id'],
+                $form['title'],
+                $result,
+                $response,
+                ['entry_id' => $entry['id']]
+            );
+        }
+    }
+
+    /**
+     * Initialize form logs AJAX handlers
+     * 
+     * @since 2.0.0
+     * @return void
+     */
+    private function initializeFormLogsAjax(): void
+    {
+        // Register AJAX handlers for form logs
+        add_action('wp_ajax_ctm_get_form_logs', [$this, 'ajaxGetFormLogs']);
+        add_action('wp_ajax_ctm_clear_form_logs', [$this, 'ajaxClearFormLogs']);
+        add_action('wp_ajax_ctm_get_form_log_stats', [$this, 'ajaxGetFormLogStats']);
+    }
+
+    /**
+     * AJAX handler for getting form-specific logs
+     * 
+     * @since 2.0.0
+     * @return void
+     */
+    public function ajaxGetFormLogs(): void
+    {
+        check_ajax_referer('ctm_form_logs', 'nonce');
+        
+        $form_type = sanitize_text_field($_POST['form_type'] ?? '');
+        $form_id = (int) ($_POST['form_id'] ?? 0);
+        
+        if (empty($form_type) || empty($form_id)) {
+            wp_send_json_error(['message' => 'Form type and form ID are required']);
+        }
+        
+        try {
+            $logs = $this->loggingSystem->getFormLogs($form_type, $form_id);
+            wp_send_json_success([
+                'logs' => $logs,
+                'count' => count($logs)
             ]);
+        } catch (\Exception $e) {
+            wp_send_json_error(['message' => 'Failed to get form logs: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * AJAX handler for clearing form-specific logs
+     * 
+     * @since 2.0.0
+     * @return void
+     */
+    public function ajaxClearFormLogs(): void
+    {
+        check_ajax_referer('ctm_form_logs', 'nonce');
+        
+        $form_type = sanitize_text_field($_POST['form_type'] ?? '');
+        $form_id = (int) ($_POST['form_id'] ?? 0);
+        
+        if (empty($form_type) || empty($form_id)) {
+            wp_send_json_error(['message' => 'Form type and form ID are required']);
+        }
+        
+        try {
+            $this->loggingSystem->clearFormLogs($form_type, $form_id);
+            wp_send_json_success(['message' => 'Form logs cleared successfully']);
+        } catch (\Exception $e) {
+            wp_send_json_error(['message' => 'Failed to clear form logs: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * AJAX handler for getting form log statistics
+     * 
+     * @since 2.0.0
+     * @return void
+     */
+    public function ajaxGetFormLogStats(): void
+    {
+        check_ajax_referer('ctm_form_logs', 'nonce');
+        
+        try {
+            $stats = $this->loggingSystem->getFormLogStatistics();
+            wp_send_json_success($stats);
+        } catch (\Exception $e) {
+            wp_send_json_error(['message' => 'Failed to get form log statistics: ' . $e->getMessage()]);
         }
     }
 
@@ -561,6 +707,99 @@ class CallTrackingMetrics
     public function attachDashboard(): void
     {
         // Future enhancement: Additional dashboard functionality
+    }
+
+    /**
+     * Check for forms without phone numbers and show warnings
+     * 
+     * @since 2.0.0
+     * @return void
+     */
+    public function checkFormsWithoutPhone(): void
+    {
+        $formsWithoutPhone = [];
+        
+        // Check CF7 forms
+        if ($this->cf7Active()) {
+            $cf7Forms = \WPCF7_ContactForm::find(['posts_per_page' => -1]);
+            foreach ($cf7Forms as $form) {
+                if (!$this->cf7Service->hasPhoneField($form)) {
+                    $formsWithoutPhone[] = [
+                        'type' => 'CF7',
+                        'id' => $form->id(),
+                        'title' => $form->title(),
+                        'edit_url' => admin_url('admin.php?page=wpcf7&post=' . $form->id() . '&action=edit')
+                    ];
+                }
+            }
+        }
+        
+        // Check GF forms
+        if ($this->gfActive()) {
+            $gfForms = \GFAPI::get_forms();
+            foreach ($gfForms as $form) {
+                if (!$this->gfService->hasPhoneField($form)) {
+                    $formsWithoutPhone[] = [
+                        'type' => 'GF',
+                        'id' => $form['id'],
+                        'title' => $form['title'],
+                        'edit_url' => admin_url('admin.php?page=gf_edit_forms&id=' . $form['id'])
+                    ];
+                }
+            }
+        }
+        
+        // Store the results for display
+        if (!empty($formsWithoutPhone)) {
+            update_option('ctm_forms_without_phone', $formsWithoutPhone);
+        } else {
+            delete_option('ctm_forms_without_phone');
+        }
+    }
+
+    /**
+     * Show warnings for forms without phone numbers
+     * 
+     * @since 2.0.0
+     * @return void
+     */
+    public function showPhoneNumberWarnings(): void
+    {
+        // Only show on CTM admin pages
+        if (!isset($_GET['page']) || $_GET['page'] !== 'call-tracking-metrics') {
+            return;
+        }
+        
+        // Check for forms without phone numbers
+        $this->checkFormsWithoutPhone();
+        $formsWithoutPhone = get_option('ctm_forms_without_phone', []);
+        
+        if (!empty($formsWithoutPhone)) {
+            $count = count($formsWithoutPhone);
+            $formTypes = array_unique(array_column($formsWithoutPhone, 'type'));
+            $formTypeText = implode(' and ', $formTypes);
+            
+            echo '<div class="notice notice-warning is-dismissible">';
+            echo '<p><strong>CallTrackingMetrics Warning:</strong> ';
+            echo sprintf(
+                '%d form%s without phone number fields detected. Forms without phone numbers will not work with CTM. ',
+                $count,
+                $count === 1 ? '' : 's'
+            );
+            echo '<a href="' . admin_url('admin.php?page=call-tracking-metrics&tab=forms') . '">View forms</a>';
+            echo '</p>';
+            
+            if ($count <= 5) {
+                echo '<ul style="margin-left: 20px; margin-top: 10px;">';
+                foreach ($formsWithoutPhone as $form) {
+                    echo '<li><strong>' . esc_html($form['title']) . '</strong> (' . esc_html($form['type']) . ') - ';
+                    echo '<a href="' . esc_url($form['edit_url']) . '">Edit form</a></li>';
+                }
+                echo '</ul>';
+            }
+            
+            echo '</div>';
+        }
     }
 
     // ===================================================================

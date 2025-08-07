@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace CTM\Admin\Ajax;
 
 use CTM\Service\FormImportService;
+use CTM\Admin\LoggingSystem;
 
 /**
  * Form Import AJAX Handler
@@ -23,13 +24,37 @@ class FormImportAjax
     private FormImportService $formImportService;
 
     /**
+     * Logging System instance
+     * 
+     * @since 2.0.0
+     * @var LoggingSystem|null
+     */
+    private $loggingSystem;
+
+    /**
      * Constructor
      * 
      * @param FormImportService $formImportService Form import service
+     * @param LoggingSystem|null $loggingSystem The logging system
      */
-    public function __construct(FormImportService $formImportService)
+    public function __construct(FormImportService $formImportService, $loggingSystem = null)
     {
         $this->formImportService = $formImportService;
+        $this->loggingSystem = $loggingSystem;
+    }
+
+    /**
+     * Internal logging helper to prevent server log pollution
+     * 
+     * @since 2.0.0
+     * @param string $message The message to log
+     * @param string $type The log type (error, debug, api, etc.)
+     */
+    private function logInternal(string $message, string $type = 'debug'): void
+    {
+        if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+            $this->loggingSystem->logActivity($message, $type);
+        }
     }
 
     /**
@@ -221,12 +246,12 @@ class FormImportAjax
     public function previewForm(): void
     {
         // Debug: Log that the method is being called
-        error_log('CTM Preview Debug - previewForm() method called');
-        error_log('CTM Preview Debug - POST data: ' . print_r($_POST, true));
+        $this->logInternal('Preview Debug - previewForm() method called');
+        $this->logInternal('Preview Debug - POST data: ' . print_r($_POST, true));
         
         // Verify nonce
         if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ctm_form_import_nonce')) {
-            error_log('CTM Preview Debug - Nonce verification failed');
+            $this->logInternal('Preview Debug - Nonce verification failed');
             wp_send_json_error(['message' => 'Security check failed']);
             return;
         }
@@ -240,10 +265,10 @@ class FormImportAjax
             $ctmFormId = sanitize_text_field($_POST['ctm_form_id'] ?? '');
             $targetType = sanitize_text_field($_POST['target_type'] ?? '');
 
-            error_log('CTM Preview Debug - Form ID: ' . $ctmFormId . ', Target Type: ' . $targetType);
+            $this->logInternal('Preview Debug - Form ID: ' . $ctmFormId . ', Target Type: ' . $targetType);
 
             if (empty($ctmFormId) || empty($targetType)) {
-                error_log('CTM Preview Debug - Missing required parameters');
+                $this->logInternal('Preview Debug - Missing required parameters');
                 wp_send_json_error(['message' => 'Form ID and target type are required']);
                 return;
             }
@@ -252,25 +277,25 @@ class FormImportAjax
             $apiKey = get_option('ctm_api_key');
             $apiSecret = get_option('ctm_api_secret');
 
-            error_log('CTM Preview Debug - API Key exists: ' . (!empty($apiKey) ? 'Yes' : 'No'));
+            $this->logInternal('Preview Debug - API Key exists: ' . (!empty($apiKey) ? 'Yes' : 'No'));
 
             if (!$apiKey || !$apiSecret) {
-                error_log('CTM Preview Debug - API credentials not configured');
+                $this->logInternal('Preview Debug - API credentials not configured');
                 wp_send_json_error(['message' => 'API credentials not configured']);
                 return;
             }
 
             // Get the specific form data
-            error_log('CTM Preview Debug - Fetching forms from API...');
+            $this->logInternal('Preview Debug - Fetching forms from API...');
             $forms = $this->formImportService->getAvailableForms($apiKey, $apiSecret);
             
             if ($forms === false) {
-                error_log('CTM Preview Debug - Failed to load forms from API');
+                $this->logInternal('Preview Debug - Failed to load forms from API');
                 wp_send_json_error(['message' => 'Failed to load forms from CallTrackingMetrics']);
                 return;
             }
             
-            error_log('CTM Preview Debug - Found ' . count($forms) . ' forms from API');
+            $this->logInternal('Preview Debug - Found ' . count($forms) . ' forms from API');
             
             $ctmForm = null;
             if ($forms) {
@@ -283,12 +308,12 @@ class FormImportAjax
             }
 
             if (!$ctmForm) {
-                error_log('CTM Preview Debug - Form not found with ID: ' . $ctmFormId);
+                $this->logInternal('Preview Debug - Form not found with ID: ' . $ctmFormId);
                 wp_send_json_error(['message' => 'Form not found']);
                 return;
             }
             
-            error_log('CTM Preview Debug - Found form: ' . ($ctmForm['name'] ?? 'Unnamed'));
+            $this->logInternal('Preview Debug - Found form: ' . ($ctmForm['name'] ?? 'Unnamed'));
 
             // Generate preview based on target type
             $preview = '';
@@ -302,16 +327,16 @@ class FormImportAjax
             }
 
             // Debug: Log the preview result
-            error_log('CTM Preview Debug - Generated preview length: ' . strlen($preview));
-            error_log('CTM Preview Debug - Preview content: ' . substr($preview, 0, 200) . '...');
+            $this->logInternal('Preview Debug - Generated preview length: ' . strlen($preview));
+            $this->logInternal('Preview Debug - Preview content: ' . substr($preview, 0, 200) . '...');
 
             if (empty($preview)) {
-                error_log('CTM Preview Debug - Preview is empty, sending error');
+                $this->logInternal('Preview Debug - Preview is empty, sending error');
                 wp_send_json_error(['message' => 'No preview content was generated']);
                 return;
             }
 
-            error_log('CTM Preview Debug - About to send successful response with preview length: ' . strlen($preview));
+            $this->logInternal('Preview Debug - About to send successful response with preview length: ' . strlen($preview));
             
             wp_send_json_success([
                 'preview' => $preview,
@@ -319,12 +344,12 @@ class FormImportAjax
             ]);
 
         } catch (\Exception $e) {
-            error_log('CTM Preview Debug - Exception caught: ' . $e->getMessage());
-            error_log('CTM Preview Debug - Exception trace: ' . $e->getTraceAsString());
+            $this->logInternal('Preview Debug - Exception caught: ' . $e->getMessage(), 'error');
+            $this->logInternal('Preview Debug - Exception trace: ' . $e->getTraceAsString(), 'error');
             wp_send_json_error(['message' => 'Preview failed: ' . $e->getMessage()]);
         } catch (\Error $e) {
-            error_log('CTM Preview Debug - Fatal error caught: ' . $e->getMessage());
-            error_log('CTM Preview Debug - Error trace: ' . $e->getTraceAsString());
+            $this->logInternal('Preview Debug - Fatal error caught: ' . $e->getMessage(), 'error');
+            $this->logInternal('Preview Debug - Error trace: ' . $e->getTraceAsString(), 'error');
             wp_send_json_error(['message' => 'Preview failed due to fatal error: ' . $e->getMessage()]);
         }
     }
@@ -344,13 +369,13 @@ class FormImportAjax
 
         try {
             // Debug: Log the CTM form data
-            error_log('CTM Preview Debug - CTM Form Data: ' . json_encode($ctmForm, JSON_PRETTY_PRINT));
+            $this->logInternal('Preview Debug - CTM Form Data: ' . json_encode($ctmForm, JSON_PRETTY_PRINT));
             
             // Convert CTM form to CF7 format using FormImportService
             $cf7Content = $this->formImportService->convertToCF7Format($ctmForm);
             
             // Debug: Log the converted CF7 content
-            error_log('CTM Preview Debug - CF7 Content: ' . $cf7Content);
+            $this->logInternal('Preview Debug - CF7 Content: ' . $cf7Content);
             
             // If no content, return a debug message
             if (empty($cf7Content)) {
@@ -358,13 +383,13 @@ class FormImportAjax
             }
             
             // Since CF7 doesn't allow easy temporary form creation, use a direct rendering approach
-            error_log('CTM Preview Debug - Using direct CF7 shortcode rendering approach...');
+            $this->logInternal('Preview Debug - Using direct CF7 shortcode rendering approach...');
             
             // Use CF7's shortcode processing to render the form content
             if (function_exists('wpcf7_do_tag')) {
                 return $this->generateCF7DirectPreview($cf7Content, $ctmForm);
             } else {
-                error_log('CTM Preview Debug - CF7 shortcode functions not available, using fallback...');
+                $this->logInternal('Preview Debug - CF7 shortcode functions not available, using fallback...');
                 return $this->generateCF7FallbackPreview($cf7Content, $ctmForm);
             }
 
@@ -391,22 +416,22 @@ class FormImportAjax
 
         try {
             // Debug: Log the CTM form data
-            error_log('CTM GF Preview Debug - CTM Form Data: ' . json_encode($ctmForm, JSON_PRETTY_PRINT));
+            $this->logInternal('GF Preview Debug - CTM Form Data: ' . json_encode($ctmForm, JSON_PRETTY_PRINT));
             
             // Convert CTM form to GF format using FormImportService
             $gfFormArray = $this->formImportService->convertToGFFormat($ctmForm, 'Preview: ' . ($ctmForm['name'] ?? 'CTM Form'));
             
             // Debug: Log the converted GF data
-            error_log('CTM GF Preview Debug - GF Form Array: ' . json_encode($gfFormArray, JSON_PRETTY_PRINT));
+            $this->logInternal('GF Preview Debug - GF Form Array: ' . json_encode($gfFormArray, JSON_PRETTY_PRINT));
             
             // If no form data, return a debug message
             if (empty($gfFormArray) || empty($gfFormArray['fields'])) {
-                error_log('CTM GF Preview Debug - No form fields generated');
+                $this->logInternal('GF Preview Debug - No form fields generated');
                 return '<div class="notice notice-warning"><p>No form fields could be generated for Gravity Forms. Check the form data structure.</p></div>';
             }
 
             // Use custom GF preview rendering instead of GF's internal APIs
-            error_log('CTM GF Preview Debug - Using custom GF rendering');
+            $this->logInternal('GF Preview Debug - Using custom GF rendering');
             return $this->generateGFDirectPreview($gfFormArray, $ctmForm);
 
             
@@ -425,7 +450,7 @@ class FormImportAjax
      */
     private function generateGFDirectPreview(array $gfFormArray, array $ctmForm): string
     {
-        error_log('CTM GF Preview Debug - Using custom GF field rendering');
+                    $this->logInternal('GF Preview Debug - Using custom GF field rendering');
         
         ob_start();
         echo '<div class="ctm-gf-preview">';
@@ -506,7 +531,7 @@ class FormImportAjax
      */
     private function generateCF7DirectPreview(string $cf7Content, array $ctmForm): string
     {
-        error_log('CTM Preview Debug - Using direct CF7 shortcode processing');
+        $this->logInternal('Preview Debug - Using direct CF7 shortcode processing');
         
         ob_start();
         echo '<div class="ctm-cf7-preview">';
@@ -596,7 +621,7 @@ class FormImportAjax
      */
     private function generateCF7FallbackPreview(string $cf7Content, array $ctmForm): string
     {
-        error_log('CTM Preview Debug - Using CF7 fallback preview method');
+        $this->logInternal('Preview Debug - Using CF7 fallback preview method');
         
         ob_start();
         echo '<div class="ctm-cf7-preview">';

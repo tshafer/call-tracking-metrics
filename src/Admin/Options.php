@@ -262,7 +262,10 @@ class Options
             if ($this->loggingSystem) {
                 $this->loggingSystem->logActivity('Settings page error: ' . $e->getMessage(), 'error');
             }
-            echo '<div class="wrap"><div class="notice notice-error"><p>Plugin Error: Unable to load Call Tracking Metrics settings. Please contact support.</p></div></div>';
+            // Only show error message in debug mode
+            if (get_option('ctm_debug_enabled', false)) {
+                echo '<div class="wrap"><div class="notice notice-error"><p>Plugin Error: ' . esc_html($e->getMessage()) . '</p></div></div>';
+            }
         }
     }
 
@@ -344,8 +347,6 @@ class Options
     private function getTabContent(string $active_tab): string
     {
         switch ($active_tab) {
-            case 'logs':
-                return $this->renderer->getLogsTabContent();
             case 'api':
                 return $this->renderer->getApiTabContent();
             case 'import':

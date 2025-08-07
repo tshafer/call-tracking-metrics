@@ -516,4 +516,169 @@ class LoggingSystem
             'debug'
         );
     }
+
+    /**
+     * Log form submission activity with form-specific tracking
+     * 
+     * @since 2.0.0
+     * @param string $form_type The form type (cf7, gf)
+     * @param int $form_id The WordPress form ID
+     * @param string $form_title The form title
+     * @param array $payload The submission payload
+     * @param array $response The API response
+     * @param array $additional_context Additional context data
+     */
+    public function logFormSubmission(string $form_type, int $form_id, string $form_title, array $payload, array $response = [], array $additional_context = []): void
+    {
+        if (!self::isDebugEnabled()) {
+            return;
+        }
+
+        $log_entry = [
+            'timestamp' => \current_time('mysql'),
+            'type' => 'form_submission',
+            'form_type' => $form_type,
+            'form_id' => $form_id,
+            'form_title' => $form_title,
+            'message' => "Form submission processed for {$form_title} (ID: {$form_id})",
+            'payload' => $payload,
+            'response' => $response,
+            'context' => array_merge($additional_context, [
+                'user_id' => \get_current_user_id(),
+                'ip_address' => $this->getUserIP(),
+                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown',
+                'memory_usage' => memory_get_usage(true),
+                'memory_peak' => memory_get_peak_usage(true)
+            ])
+        ];
+
+        $this->writeToLog($log_entry);
+        
+        // Also store in form-specific log
+        $this->writeToFormSpecificLog($form_type, $form_id, $log_entry);
+    }
+
+    /**
+     * Write log entry to form-specific log storage
+     * 
+     * @since 2.0.0
+     * @param string $form_type The form type (cf7, gf)
+     * @param int $form_id The WordPress form ID
+     * @param array $log_entry The log entry data
+     */
+    private function writeToFormSpecificLog(string $form_type, int $form_id, array $log_entry): void
+    {
+        $form_log_key = "ctm_form_log_{$form_type}_{$form_id}";
+        $form_logs = \get_option($form_log_key, []);
+        
+        if (!is_array($form_logs)) {
+            $form_logs = [];
+        }
+        
+        $form_logs[] = $log_entry;
+        
+        // Keep only last 100 entries per form to prevent memory issues
+        if (count($form_logs) > 100) {
+            $form_logs = array_slice($form_logs, -100);
+        }
+        
+        \update_option($form_log_key, $form_logs);
+    }
+
+    /**
+     * Get form-specific logs
+     * 
+     * @since 2.0.0
+     * @param string $form_type The form type (cf7, gf)
+     * @param int $form_id The WordPress form ID
+     * @return array Array of log entries for the specific form
+     */
+    public function getFormLogs(string $form_type, int $form_id): array
+    {
+        $form_log_key = "ctm_form_log_{$form_type}_{$form_id}";
+        $form_logs = \get_option($form_log_key, []);
+        return is_array($form_logs) ? $form_logs : [];
+    }
+
+    /**
+     * Clear form-specific logs
+     * 
+     * @since 2.0.0
+     * @param string $form_type The form type (cf7, gf)
+     * @param int $form_id The WordPress form ID
+     */
+    public function clearFormLogs(string $form_type, int $form_id): void
+    {
+        $form_log_key = "ctm_form_log_{$form_type}_{$form_id}";
+        \delete_option($form_log_key);
+        
+        // Log the clear action
+        $this->logActivity("Form logs cleared for {$form_type} form ID {$form_id}", 'system');
+    }
+
+    /**
+     * Get all form logs for a specific form type
+     * 
+     * @since 2.0.0
+     * @param string $form_type The form type (cf7, gf)
+     * @return array Array of all form logs for the type
+     */
+    public function getAllFormLogs(string $form_type): array
+    {
+        global $wpdb;
+        
+        $form_logs = [];
+        $pattern = "ctm_form_log_{$form_type}_%";
+        
+        $options = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE %s",
+                $pattern
+            )
+        );
+        
+        foreach ($options as $option) {
+            $form_id = str_replace("ctm_form_log_{$form_type}_", '', $option->option_name);
+            $logs = maybe_unserialize($option->option_value);
+            if (is_array($logs)) {
+                $form_logs[$form_id] = $logs;
+            }
+        }
+        
+        return $form_logs;
+    }
+
+    /**
+     * Get form log statistics
+     * 
+     * @since 2.0.0
+     * @return array Statistics about form logs
+     */
+    public function getFormLogStatistics(): array
+    {
+        $cf7_logs = $this->getAllFormLogs('cf7');
+        $gf_logs = $this->getAllFormLogs('gf');
+        
+        $cf7_count = 0;
+        $gf_count = 0;
+        
+        foreach ($cf7_logs as $form_logs) {
+            $cf7_count += count($form_logs);
+        }
+        
+        foreach ($gf_logs as $form_logs) {
+            $gf_count += count($form_logs);
+        }
+        
+        return [
+            'cf7' => [
+                'total_forms' => count($cf7_logs),
+                'total_entries' => $cf7_count
+            ],
+            'gf' => [
+                'total_forms' => count($gf_logs),
+                'total_entries' => $gf_count
+            ]
+        ];
+    }
 } 

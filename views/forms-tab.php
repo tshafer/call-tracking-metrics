@@ -126,9 +126,24 @@ function truncate_ctm_id($id, $max_length = 20) {
                     <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                         <div class="flex items-start justify-between mb-3">
                             <h4 class="font-medium text-gray-900 truncate mr-2"><?php echo esc_html($form['title']); ?></h4>
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 whitespace-nowrap">
-                                CF7
-                            </span>
+                            <div class="flex items-center space-x-2">
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 whitespace-nowrap">
+                                    CF7
+                                </span>
+                                <?php 
+                                // Check if form has phone field
+                                $cf7Service = new \CTM\Service\CF7Service();
+                                $cf7Form = \WPCF7_ContactForm::get_instance($form['id']);
+                                $hasPhoneField = $cf7Service->hasPhoneField($cf7Form);
+                                if (!$hasPhoneField): ?>
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800" title="Missing phone number field - form will not work with CTM">
+                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                    </svg>
+                                    No Phone
+                                </span>
+                                <?php endif; ?>
+                            </div>
                         </div>
                         
                         <div class="space-y-1 mb-4 text-sm text-gray-500">
@@ -146,28 +161,57 @@ function truncate_ctm_id($id, $max_length = 20) {
                             </div>
                         </div>
                         
-                        <div class="space-y-2">
-                            <!-- Preview Form -->
-                            <button type="button" 
-                                    class="w-full inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 rounded-md hover:bg-gray-100 hover:text-gray-700 transition-colors ctm-preview-wp-form"
-                                    data-form-id="<?php echo esc_attr($form['id']); ?>" 
-                                    data-form-type="cf7"
-                                    data-form-title="<?php echo esc_attr($form['title']); ?>">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                </svg>
-                                <?php _e('Preview Form', 'call-tracking-metrics'); ?>
-                            </button>
-                            
-                            <!-- Edit in WordPress -->
-                            <a href="<?php echo admin_url('admin.php?page=wpcf7&post=' . $form['id'] . '&action=edit'); ?>" 
-                               class="w-full inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 hover:text-blue-700 transition-colors">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                </svg>
-                                <?php _e('Edit in WP', 'call-tracking-metrics'); ?>
-                            </a>
+                        <div class="space-y-3">
+                            <!-- Primary Actions Row -->
+                            <div class="grid grid-cols-2 gap-2">
+                                <!-- Preview Form -->
+                                <button type="button" 
+                                        class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 rounded-md hover:bg-gray-100 hover:text-gray-700 transition-colors ctm-preview-wp-form"
+                                        data-form-id="<?php echo esc_attr($form['id']); ?>" 
+                                        data-form-type="cf7"
+                                        data-form-title="<?php echo esc_attr($form['title']); ?>">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                    <?php _e('Preview', 'call-tracking-metrics'); ?>
+                                </button>
+                                
+                                <!-- Edit in WordPress -->
+                                <a href="<?php echo admin_url('admin.php?page=wpcf7&post=' . $form['id'] . '&action=edit'); ?>" 
+                                   class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 hover:text-blue-700 transition-colors">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                    <?php _e('Edit', 'call-tracking-metrics'); ?>
+                                </a>
+                            </div>
+
+                            <?php if (get_option('ctm_debug_enabled', false)): ?>
+                            <!-- Debug Actions Row -->
+                            <div class="border-t border-gray-100 pt-2">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Debug</span>
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        Logs
+                                    </span>
+                                </div>
+                                <!-- View Logs -->
+                                <button type="button" 
+                                        class="w-full inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-purple-600 bg-purple-50 rounded-md hover:bg-purple-100 hover:text-purple-700 transition-colors ctm-view-form-logs"
+                                        data-form-type="cf7"
+                                        data-form-id="<?php echo esc_attr($form['id']); ?>"
+                                        data-form-title="<?php echo esc_attr($form['title']); ?>">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    <?php _e('View Logs', 'call-tracking-metrics'); ?>
+                                </button>
+                            </div>
+                            <?php endif; ?>
                             
                             <!-- CTM Actions -->
                             <?php if ($apiKey && $apiSecret): ?>
@@ -253,6 +297,19 @@ function truncate_ctm_id($id, $max_length = 20) {
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 whitespace-nowrap">
                                     GF
                                 </span>
+                                <?php 
+                                // Check if form has phone field
+                                $gfService = new \CTM\Service\GFService();
+                                $gfForm = \GFAPI::get_form($form['id']);
+                                $hasPhoneField = $gfService->hasPhoneField($gfForm);
+                                if (!$hasPhoneField): ?>
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800" title="Missing phone number field - form will not work with CTM">
+                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                    </svg>
+                                    No Phone
+                                </span>
+                                <?php endif; ?>
                             </div>
                         </div>
                         
@@ -275,28 +332,57 @@ function truncate_ctm_id($id, $max_length = 20) {
                             </div>
                         </div>
                         
-                        <div class="space-y-2">
-                            <!-- Preview Form -->
-                            <button type="button" 
-                                    class="w-full inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 rounded-md hover:bg-gray-100 hover:text-gray-700 transition-colors ctm-preview-wp-form"
-                                    data-form-id="<?php echo esc_attr($form['id']); ?>" 
-                                    data-form-type="gf"
-                                    data-form-title="<?php echo esc_attr($form['title']); ?>">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                </svg>
-                                <?php _e('Preview Form', 'call-tracking-metrics'); ?>
-                            </button>
-                            
-                            <!-- Edit in WordPress -->
-                            <a href="<?php echo admin_url('admin.php?page=gf_edit_forms&id=' . $form['id']); ?>" 
-                               class="w-full inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 hover:text-blue-700 transition-colors">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                </svg>
-                                <?php _e('Edit in WP', 'call-tracking-metrics'); ?>
-                            </a>
+                        <div class="space-y-3">
+                            <!-- Primary Actions Row -->
+                            <div class="grid grid-cols-2 gap-2">
+                                <!-- Preview Form -->
+                                <button type="button" 
+                                        class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 rounded-md hover:bg-gray-100 hover:text-gray-700 transition-colors ctm-preview-wp-form"
+                                        data-form-id="<?php echo esc_attr($form['id']); ?>" 
+                                        data-form-type="gf"
+                                        data-form-title="<?php echo esc_attr($form['title']); ?>">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                    <?php _e('Preview', 'call-tracking-metrics'); ?>
+                                </button>
+                                
+                                <!-- Edit in WordPress -->
+                                <a href="<?php echo admin_url('admin.php?page=gf_edit_forms&id=' . $form['id']); ?>" 
+                                   class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 hover:text-blue-700 transition-colors">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                    <?php _e('Edit', 'call-tracking-metrics'); ?>
+                                </a>
+                            </div>
+
+                            <?php if (get_option('ctm_debug_enabled', false)): ?>
+                            <!-- Debug Actions Row -->
+                            <div class="border-t border-gray-100 pt-2">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Debug</span>
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        Logs
+                                    </span>
+                                </div>
+                                <!-- View Logs -->
+                                <button type="button" 
+                                        class="w-full inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-purple-600 bg-purple-50 rounded-md hover:bg-purple-100 hover:text-purple-700 transition-colors ctm-view-form-logs"
+                                        data-form-type="gf"
+                                        data-form-id="<?php echo esc_attr($form['id']); ?>"
+                                        data-form-title="<?php echo esc_attr($form['title']); ?>">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    <?php _e('View Logs', 'call-tracking-metrics'); ?>
+                                </button>
+                            </div>
+                            <?php endif; ?>
                             
                             <!-- CTM Actions -->
                             <?php if ($apiKey && $apiSecret): ?>

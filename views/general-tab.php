@@ -8,28 +8,6 @@ $apiSecret = $apiSecret ?? '';
 
 $apiKey = 'a558177d58fba59529de6c72c3c749defd033718';
 $apiSecret = '4272ece96eb1d0b7066efc3ed90e436001db';
-
-// Add error handling to prevent blank pages
-try {
-    // Validate that required WordPress functions are available
-    if (!function_exists('wp_nonce_field')) {
-        throw new Exception('WordPress core functions not available');
-    }
-    
-    if (!function_exists('_e')) {
-        throw new Exception('WordPress translation functions not available');
-    }
-    
-    if (!function_exists('esc_attr')) {
-        throw new Exception('WordPress escaping functions not available');
-    }
-    
-} catch (Exception $e) {
-    // Log the error and show a user-friendly message
-    error_log('CTM Plugin Error: ' . $e->getMessage());
-    echo '<div class="wrap"><div class="notice notice-error"><p>Plugin Error: Unable to load Call Tracking Metrics settings. Please contact support.</p></div></div>';
-    return;
-}
 ?>
 <form method="post" action="" class="space-y-6">
     <?php wp_nonce_field('ctm_save_settings', 'ctm_settings_nonce'); ?>

@@ -35,6 +35,39 @@ namespace CTM\Service;
 class CF7Service
 {
     /**
+     * Logging System instance
+     * 
+     * @since 2.0.0
+     * @var \CTM\Admin\LoggingSystem|null
+     */
+    private $loggingSystem;
+
+    /**
+     * Initialize the CF7 service
+     * 
+     * @since 2.0.0
+     * @param \CTM\Admin\LoggingSystem|null $loggingSystem The logging system
+     */
+    public function __construct($loggingSystem = null)
+    {
+        $this->loggingSystem = $loggingSystem;
+    }
+
+    /**
+     * Internal logging helper to prevent server log pollution
+     * 
+     * @since 2.0.0
+     * @param string $message The message to log
+     * @param string $type The log type (error, debug, api, etc.)
+     */
+    private function logInternal(string $message, string $type = 'debug'): void
+    {
+        if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+            $this->loggingSystem->logActivity($message, $type);
+        }
+    }
+
+    /**
      * Process Contact Form 7 submission for CTM API
      * 
      * Takes raw CF7 form submission data and converts it into the format
@@ -142,7 +175,7 @@ class CF7Service
             }
             
         } catch (\Exception $e) {
-            error_log('CTM CF7 getForms Error: ' . $e->getMessage());
+            $this->logInternal('CF7 getForms Error: ' . $e->getMessage(), 'error');
         }
         
         return $forms;
@@ -210,7 +243,7 @@ class CF7Service
             }
             
         } catch (\Exception $e) {
-            error_log('CTM CF7 getFormFields Error: ' . $e->getMessage());
+            $this->logInternal('CF7 getFormFields Error: ' . $e->getMessage(), 'error');
         }
         
         return $fields;
@@ -434,10 +467,80 @@ class CF7Service
         return $utmParams;
     }
 
+    /**
+     * Check if a form has a phone number field
+     * 
+     * @since 2.0.0
+     * @param object $form The CF7 form object
+     * @return bool True if form has a phone field
+     */
+    public function hasPhoneField($form): bool
+    {
+        if (!$form) {
+            return false;
+        }
+
+        $fields = $this->getFormFields($form);
+        
+        foreach ($fields as $field) {
+            $fieldName = strtolower($field['name']);
+            $fieldType = strtolower($field['type']);
+            
+            // Check for phone field type
+            if ($fieldType === 'phone' || $fieldType === 'tel') {
+                return true;
+            }
+            
+            // Check for phone-related field names
+            $phoneKeywords = ['phone', 'telephone', 'tel', 'mobile', 'cell', 'number'];
+            foreach ($phoneKeywords as $keyword) {
+                if (strpos($fieldName, $keyword) !== false) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Get phone field information for a form
+     * 
+     * @since 2.0.0
+     * @param object $form The CF7 form object
+     * @return array|null Phone field info or null if not found
+     */
+    public function getPhoneField($form): ?array
+    {
+        if (!$form) {
+            return null;
+        }
+
+        $fields = $this->getFormFields($form);
+        
+        foreach ($fields as $field) {
+            $fieldName = strtolower($field['name']);
+            $fieldType = strtolower($field['type']);
+            
+            // Check for phone field type
+            if ($fieldType === 'phone' || $fieldType === 'tel') {
+                return $field;
+            }
+            
+            // Check for phone-related field names
+            $phoneKeywords = ['phone', 'telephone', 'tel', 'mobile', 'cell', 'number'];
+            foreach ($phoneKeywords as $keyword) {
+                if (strpos($fieldName, $keyword) !== false) {
+                    return $field;
+                }
+            }
+        }
+        
+        return null;
+    }
+
     // Add debug logging helper
     private function logDebug($msg) {
-        if (function_exists('error_log')) {
-            error_log('[CTM CF7Service] ' . $msg);
-        }
+        $this->logInternal($msg, 'debug');
     }
 }

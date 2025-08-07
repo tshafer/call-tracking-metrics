@@ -65,7 +65,7 @@ class SystemPerformanceAjax {
             $styles_loaded = 'N/A (Client-side)';
             $images_loaded = 'N/A (Client-side)';
             if ($client_metrics && is_array($client_metrics)) {
-                // Use internal logging instead of error_log
+                // Use internal
                 if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
                     $this->loggingSystem->logActivity('Performance: Received client metrics: ' . json_encode($client_metrics), 'debug');
                 }
@@ -108,15 +108,19 @@ class SystemPerformanceAjax {
                     }
                 }
             } else {
-                // Use internal logging instead of error_log
+                // Use internal logging
                 if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
                     $this->loggingSystem->logActivity('Performance: No client metrics received or invalid format', 'debug');
                 }
             }
             // Call helpers before array construction
-            error_log('DEBUG: About to call getCacheHits');
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('DEBUG: About to call getCacheHits', 'debug');
+            }
             $cache_hits = $this->getCacheHits();
-            error_log('DEBUG: After getCacheHits');
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('DEBUG: After getCacheHits', 'debug');
+            }
             $cache_misses = $this->getCacheMisses();
             $api_calls_24h = $this->getApiCalls24h();
             $api_response_time = $this->getApiResponseTime();

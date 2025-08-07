@@ -41,6 +41,39 @@ if (class_exists('GFAPI')) {
 class GFService
 {
     /**
+     * Logging System instance
+     * 
+     * @since 2.0.0
+     * @var \CTM\Admin\LoggingSystem|null
+     */
+    private $loggingSystem;
+
+    /**
+     * Initialize the GF service
+     * 
+     * @since 2.0.0
+     * @param \CTM\Admin\LoggingSystem|null $loggingSystem The logging system
+     */
+    public function __construct($loggingSystem = null)
+    {
+        $this->loggingSystem = $loggingSystem;
+    }
+
+    /**
+     * Internal logging helper to prevent server log pollution
+     * 
+     * @since 2.0.0
+     * @param string $message The message to log
+     * @param string $type The log type (error, debug, api, etc.)
+     */
+    private function logInternal(string $message, string $type = 'debug'): void
+    {
+        if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+            $this->loggingSystem->logActivity($message, $type);
+        }
+    }
+
+    /**
      * Process Gravity Forms submission for CTM API
      * 
      * Takes raw GF form submission data and converts it into the format
@@ -241,11 +274,11 @@ class GFService
             $payload['domain'] = $_SERVER['HTTP_HOST'] ?? '';
             $payload['raw_data'] = $entry;
 
-            error_log(print_r($payload, true));
+            $this->logInternal('GF Payload: ' . print_r($payload, true), 'debug');
             return $payload;
         } catch (\Exception $e) {
             // Log error but don't break the form submission
-            error_log('CTM GF Processing Error: ' . $e->getMessage());
+            $this->logInternal('GF Processing Error: ' . $e->getMessage(), 'error');
             return null;
         }
     }
@@ -286,7 +319,7 @@ class GFService
             }
             
         } catch (\Exception $e) {
-            error_log('CTM GF getForms Error: ' . $e->getMessage());
+            $this->logInternal('GF getForms Error: ' . $e->getMessage(), 'error');
         }
         
         return $forms;
@@ -349,7 +382,7 @@ class GFService
             }
             
         } catch (\Exception $e) {
-            error_log('CTM GF getFormFields Error: ' . $e->getMessage());
+            $this->logInternal('GF getFormFields Error: ' . $e->getMessage(), 'error');
         }
         
         return $fields;
@@ -729,10 +762,88 @@ class GFService
         return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
     }
 
+    /**
+     * Check if a form has a phone number field
+     * 
+     * @since 2.0.0
+     * @param array $form The GF form configuration
+     * @return bool True if form has a phone field
+     */
+    public function hasPhoneField(array $form): bool
+    {
+        if (empty($form['fields'])) {
+            return false;
+        }
+
+        foreach ($form['fields'] as $field) {
+            $fieldType = $field->type ?? '';
+            $fieldLabel = strtolower($field->label ?? '');
+            $fieldName = strtolower($field->inputName ?? '');
+            
+            // Check for phone field type
+            if ($fieldType === 'phone') {
+                return true;
+            }
+            
+            // Check for phone-related field names and labels
+            $phoneKeywords = ['phone', 'telephone', 'tel', 'mobile', 'cell', 'number'];
+            foreach ($phoneKeywords as $keyword) {
+                if (strpos($fieldLabel, $keyword) !== false || strpos($fieldName, $keyword) !== false) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Get phone field information for a form
+     * 
+     * @since 2.0.0
+     * @param array $form The GF form configuration
+     * @return array|null Phone field info or null if not found
+     */
+    public function getPhoneField(array $form): ?array
+    {
+        if (empty($form['fields'])) {
+            return null;
+        }
+
+        foreach ($form['fields'] as $field) {
+            $fieldType = $field->type ?? '';
+            $fieldLabel = strtolower($field->label ?? '');
+            $fieldName = strtolower($field->inputName ?? '');
+            
+            // Check for phone field type
+            if ($fieldType === 'phone') {
+                return [
+                    'id' => $field->id,
+                    'label' => $field->label,
+                    'type' => $field->type,
+                    'name' => $field->inputName
+                ];
+            }
+            
+            // Check for phone-related field names and labels
+            $phoneKeywords = ['phone', 'telephone', 'tel', 'mobile', 'cell', 'number'];
+            foreach ($phoneKeywords as $keyword) {
+                if (strpos($fieldLabel, $keyword) !== false || strpos($fieldName, $keyword) !== false) {
+                    return [
+                        'id' => $field->id,
+                        'label' => $field->label,
+                        'type' => $field->type,
+                        'name' => $field->inputName
+                    ];
+                }
+            }
+        }
+        
+        return null;
+    }
+
     // Add debug logging helper
     private function logDebug($msg) {
-        if (function_exists('error_log')) {
-            error_log('[CTM GFService] ' . $msg);
-        }
+        $this->logInternal($msg, 'debug');
     }
 } 

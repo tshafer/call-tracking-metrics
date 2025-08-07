@@ -121,33 +121,7 @@ class AdminSettingsRendererTest extends TestCase
         $this->assertIsString($result);
     }
 
-    public function testGetLogsTabContentReturnsStringWithNoLogs()
-    {
-        \Brain\Monkey\Functions\when('get_option')->justReturn([]);
-        $this->createDummyViews(['logs-tab.php']);
-        $renderer = new SettingsRenderer(null, null, $this->tempViewsDir);
-        ob_start();
-        $result = $renderer->getLogsTabContent();
-        ob_end_clean();
-        $this->cleanupDummyViews(['logs-tab.php']);
-        $this->assertIsString($result);
-    }
 
-    public function testGetLogsTabContentReturnsStringWithLogs()
-    {
-        \Brain\Monkey\Functions\when('get_option')->alias(function($key) {
-            if ($key === 'ctm_api_cf7_logs') return [['id'=>1]];
-            if ($key === 'ctm_api_gf_logs') return [['id'=>2]];
-            return [];
-        });
-        $this->createDummyViews(['logs-tab.php']);
-        $renderer = new SettingsRenderer(null, null, $this->tempViewsDir);
-        ob_start();
-        $result = $renderer->getLogsTabContent();
-        ob_end_clean();
-        $this->cleanupDummyViews(['logs-tab.php']);
-        $this->assertIsString($result);
-    }
 
     public function testGetApiTabContentReturnsStringConnected()
     {
@@ -242,19 +216,7 @@ class AdminSettingsRendererTest extends TestCase
         $this->assertIsString($result);
     }
 
-    public function testGetLogsTabContentWithManyLogs() {
-        $logs = array_map(function($i){ return ['id'=>$i]; }, range(1, 50));
-        \Brain\Monkey\Functions\when('get_option')->alias(function($key) use ($logs) {
-            if ($key === 'ctm_api_cf7_logs') return $logs;
-            if ($key === 'ctm_api_gf_logs') return $logs;
-            return [];
-        });
-        $this->createDummyViews(['logs-tab.php']);
-        $renderer = new SettingsRenderer(null, null, $this->tempViewsDir);
-        $result = $renderer->getLogsTabContent();
-        $this->cleanupDummyViews(['logs-tab.php']);
-        $this->assertIsString($result);
-    }
+
 
     public function testGetApiTabContentNoAccountInfo() {
         $mockApiService = new class {
@@ -326,16 +288,7 @@ class AdminSettingsRendererTest extends TestCase
         $this->assertEmpty($output);
     }
 
-    public function testLogsTabRendersView()
-    {
-        $this->createDummyViews(['logs-tab.php']);
-        $renderer = new SettingsRenderer(null, null, $this->tempViewsDir);
-        ob_start();
-        $result = $renderer->getLogsTabContent();
-        ob_end_clean();
-        $this->cleanupDummyViews(['logs-tab.php']);
-        $this->assertIsString($result);
-    }
+
 
     public function testGetGeneralTabContentHandlesApiException()
     {

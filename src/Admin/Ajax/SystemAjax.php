@@ -895,23 +895,23 @@ class SystemAjax {
     public function ajaxEmailSystemInfo(): void
     {
         try {
-            error_log('CTM: Email system info request received');
+            $this->loggingSystem->logActivity('Email system info request received', 'debug');
             check_ajax_referer('ctm_email_system_info', 'nonce');
             
             $email_to = sanitize_email($_POST['email_to'] ?? '');
             $subject = sanitize_text_field($_POST['subject'] ?? '');
             $additional_message = sanitize_textarea_field($_POST['message'] ?? '');
             
-            error_log("CTM: Email system info - To: {$email_to}, Subject: {$subject}");
+            $this->loggingSystem->logActivity("Email system info - To: {$email_to}, Subject: {$subject}", 'debug');
             
             if (!$email_to) {
-                error_log('CTM: No email address provided');
+                $this->loggingSystem->logActivity('No email address provided', 'debug');
                 wp_send_json_error(['message' => 'Email address is required']);
                 return;
             }
             
             if (!is_email($email_to)) {
-                error_log("CTM: Invalid email address: {$email_to}");
+                $this->loggingSystem->logActivity("Invalid email address: {$email_to}", 'debug');
                 wp_send_json_error(['message' => 'Invalid email address']);
                 return;
             }
@@ -920,7 +920,7 @@ class SystemAjax {
                 $subject = 'System Information Report - ' . \get_bloginfo('name');
             }
             
-            error_log("CTM: Generating system info report");
+            $this->loggingSystem->logActivity("Generating system info report", 'debug');
             
             // Generate comprehensive system information (HTML)
             $system_info_html = $this->generateSystemInfoReport(true);
@@ -947,11 +947,11 @@ class SystemAjax {
                 'From: ' . \get_bloginfo('name') . ' <' . \get_option('admin_email') . '>'
             ];
             
-            error_log("CTM: Attempting to send system info email to {$email_to}");
+            $this->loggingSystem->logActivity("Attempting to send system info email to {$email_to}", 'debug');
             
             $sent = wp_mail($email_to, $subject, $email_body, $headers);
             
-            error_log("CTM: wp_mail result for system info: " . ($sent ? 'true' : 'false'));
+            $this->loggingSystem->logActivity("wp_mail result for system info: " . ($sent ? 'true' : 'false'), 'debug');
             
             if ($sent) {
                 wp_send_json_success([
@@ -964,7 +964,7 @@ class SystemAjax {
             }
             
         } catch (\Exception $e) {
-            error_log("CTM: Exception while emailing system info: " . $e->getMessage());
+            $this->loggingSystem->logActivity("Exception while emailing system info: " . $e->getMessage(), 'error');
             wp_send_json_error(['message' => 'Error sending email: ' . $e->getMessage()]);
         }
     }
@@ -1468,7 +1468,7 @@ class SystemAjax {
         $images_loaded = 'N/A (Client-side)';
         
         if ($client_metrics && is_array($client_metrics)) {
-            // Use internal logging instead of error_log
+            // Use internal logging
             if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
                 $this->loggingSystem->logActivity('Performance: Received client metrics: ' . json_encode($client_metrics), 'debug');
             }
@@ -1521,7 +1521,7 @@ class SystemAjax {
                 }
             }
         } else {
-            // Use internal logging instead of error_log
+            // Use internal logging
             if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
                 $this->loggingSystem->logActivity('Performance: No client metrics received or invalid format', 'debug');
             }
@@ -1791,7 +1791,7 @@ class SystemAjax {
             update_option('ctm_api_response_times', $response_times);
         } catch (\Exception $e) {
             // Silently fail to avoid disrupting API monitoring
-            error_log('CTM API Response Time Storage Error: ' . $e->getMessage());
+            $this->loggingSystem->logActivity('API Response Time Storage Error: ' . $e->getMessage(), 'error');
         }
     }
 

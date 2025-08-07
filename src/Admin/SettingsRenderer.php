@@ -156,47 +156,7 @@ class SettingsRenderer
         return ob_get_clean();
     }
 
-    /**
-     * Get logs tab content
-     * 
-     * Generates the content for the logs tab including form submission
-     * logs, log management controls, and log statistics.
-     * 
-     * @since 2.0.0
-     * @return string The rendered logs tab content HTML
-     */
-    public function getLogsTabContent(): string
-    {
-        // Get log data
-        $cf7Logs = get_option('ctm_api_cf7_logs', []);
-        $gfLogs = get_option('ctm_api_gf_logs', []);
-        
-        // Ensure logs are arrays
-        if (!is_array($cf7Logs)) {
-            $cf7Logs = [];
-        }
-        if (!is_array($gfLogs)) {
-            $gfLogs = [];
-        }
-        
-     
-        // Calculate log statistics
-        $cf7Count = count($cf7Logs);
-        $gfCount = count($gfLogs);
-        $totalLogs = $cf7Count + $gfCount;
-        
-        // Get recent logs (last 10)
-        $recentCf7Logs = array_slice(array_reverse($cf7Logs), 0, 10);
-        $recentGfLogs = array_slice(array_reverse($gfLogs), 0, 10);
-        ob_start();
-        
-        $this->renderView('logs-tab', compact(
-            'cf7Logs', 'gfLogs', 'cf7Count', 'gfCount', 'totalLogs',
-            'recentCf7Logs', 'recentGfLogs'
-        ));
-        
-        return ob_get_clean();
-    }
+
 
     /**
      * Get API tab content
@@ -441,7 +401,9 @@ class SettingsRenderer
                 }
             }
         } catch (\Exception $e) {
-            error_log('CTM: Error getting GF forms: ' . $e->getMessage());
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('Error getting GF forms: ' . $e->getMessage(), 'error');
+            }
         }
         
         return $forms;

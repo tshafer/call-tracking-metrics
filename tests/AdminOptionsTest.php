@@ -115,27 +115,7 @@ class AdminOptionsTest extends TestCase
         $this->assertStringContainsString('general', $result);
     }
 
-    public function testGetTabContentRoutesToLogs()
-    {
-        \Brain\Monkey\Functions\when('get_option')->alias(function($key, $default = null) {
-            if ($key === 'ctm_api_cf7_logs' || $key === 'ctm_api_gf_logs') return [];
-            return $default;
-        });
-        $renderer = new class extends \CTM\Admin\SettingsRenderer {
-            public function renderView(string $view, array $vars = []): void {
-                echo $view;
-            }
-        };
-        $options = new Options();
-        $reflection = new \ReflectionClass($options);
-        $prop = $reflection->getProperty('renderer');
-        $prop->setAccessible(true);
-        $prop->setValue($options, $renderer);
-        $method = $reflection->getMethod('getTabContent');
-        $method->setAccessible(true);
-        $result = $method->invoke($options, 'logs');
-        $this->assertStringContainsString('logs', $result);
-    }
+
 
     public function testGetTabContentRoutesToDocumentation()
     {
@@ -317,66 +297,7 @@ class AdminOptionsTest extends TestCase
         $this->assertEquals('<script async src="//12345.tctm.co/t.js"></script>', get_option('call_track_account_script'));
     }
 
-    public function testRenderSettingsPageHandlesToggleDebugPost()
-    {
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_POST['toggle_debug'] = '1';
-        \Brain\Monkey\Functions\when('get_option')->alias(function($key, $default = false) {
-            if ($key === 'ctm_debug_enabled') return false;
-            return $default;
-        });
-        \Brain\Monkey\Functions\when('update_option')->alias(function($key, $value) {
-            if ($key === 'ctm_debug_enabled') return true;
-            return true;
-        });
-        \Brain\Monkey\Functions\when('wp_redirect')->alias(function($url) {
-            throw new \Exception('redirected');
-        });
-        $options = new Options();
-        try {
-            $options->renderSettingsPage();
-        } catch (\Exception $e) {
-            $this->assertEquals('redirected', $e->getMessage());
-        }
-        unset($_POST['toggle_debug']);
-    }
 
-    public function testRenderSettingsPageHandlesClearDebugLogPost()
-    {
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_POST['clear_debug_log'] = '1';
-        \Brain\Monkey\Functions\when('wp_redirect')->alias(function($url) {
-            throw new \Exception('redirected');
-        });
-        $options = new Options();
-        try {
-            $options->renderSettingsPage();
-        } catch (\Exception $e) {
-            $this->assertEquals('redirected', $e->getMessage());
-        }
-        unset($_POST['clear_debug_log']);
-    }
-
-    public function testRenderSettingsPageHandlesUpdateLogSettingsPost()
-    {
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_POST['update_log_settings'] = '1';
-        $_POST['log_retention_days'] = '10';
-        $_POST['log_auto_cleanup'] = '1';
-        $_POST['log_email_notifications'] = '1';
-        $_POST['log_notification_email'] = 'test@example.com';
-        \Brain\Monkey\Functions\when('update_option')->alias(function($key, $value) { return true; });
-        \Brain\Monkey\Functions\when('wp_redirect')->alias(function($url) {
-            throw new \Exception('redirected');
-        });
-        $options = new Options();
-        try {
-            $options->renderSettingsPage();
-        } catch (\Exception $e) {
-            $this->assertEquals('redirected', $e->getMessage());
-        }
-        unset($_POST['update_log_settings'], $_POST['log_retention_days'], $_POST['log_auto_cleanup'], $_POST['log_email_notifications'], $_POST['log_notification_email']);
-    }
 
     public function testRenderSettingsPageHandlesApiErrorGracefully()
     {

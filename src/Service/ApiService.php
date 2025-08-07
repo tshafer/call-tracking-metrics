@@ -151,7 +151,7 @@ class ApiService
             }
             return $data;
         } catch (\Exception $e) {
-            error_log('CTM API Error (getAccountById): ' . $e->getMessage());
+            $this->logInternal('API Error (getAccountById): ' . $e->getMessage(), 'error');
             return null;
         }
     }
@@ -191,7 +191,7 @@ class ApiService
             }
             return $data;
         } catch (\Exception $e) {
-            error_log('CTM API Error (submitFormReactor): ' . $e->getMessage());
+            $this->logInternal('API Error (submitFormReactor): ' . $e->getMessage(), 'error');
             return null;
         }
     }
@@ -227,7 +227,7 @@ class ApiService
             }
             return $data;
         } catch (\Exception $e) {
-            error_log('CTM API Error (getFormReactors): ' . $e->getMessage());
+            $this->logInternal('API Error (getFormReactors): ' . $e->getMessage(), 'error');
             return null;
         }
     }
@@ -267,10 +267,7 @@ class ApiService
             
                     // Safety check to prevent infinite loops
         if ($page > 50) {
-            $is_production_pagination = !defined('WP_DEBUG') || !WP_DEBUG || !defined('WP_DEBUG_LOG') || !WP_DEBUG_LOG;
-            if (!$is_production_pagination) {
-                error_log('CTM API Error: Pagination limit exceeded (50 pages)');
-            }
+            $this->logInternal('API Error: Pagination limit exceeded (50 pages)', 'error');
             break;
         }
         }
@@ -311,7 +308,7 @@ class ApiService
             }
             return $data;
         } catch (\Exception $e) {
-            error_log('CTM API Error (getFormReactorById): ' . $e->getMessage());
+            $this->logInternal('API Error (getFormReactorById): ' . $e->getMessage(), 'error');
             return null;
         }
     }
@@ -331,18 +328,18 @@ class ApiService
      */
     public function getFormsDirect(string $apiKey, string $apiSecret, int $page = 1, int $perPage = 50): ?array
     {
-        error_log('CTM Debug: ApiService::getFormsDirect - Starting');
+        $this->logInternal('Debug: ApiService::getFormsDirect - Starting');
         
         // First get account information to get the account ID
         $accountInfo = $this->getAccountInfo($apiKey, $apiSecret);
         if (!$accountInfo || !isset($accountInfo['account']['id'])) {
-            error_log('CTM API Error: Could not retrieve account information for forms');
-            error_log('CTM Debug: Account info response: ' . json_encode($accountInfo));
+            $this->logInternal('API Error: Could not retrieve account information for forms', 'error');
+            $this->logInternal('Debug: Account info response: ' . json_encode($accountInfo), 'debug');
             return null;
         }
         
         $accountId = $accountInfo['account']['id'];
-        error_log('CTM Debug: Using account ID: ' . $accountId);
+        $this->logInternal('Debug: Using account ID: ' . $accountId);
         
         $endpoint = "/api/v1/accounts/{$accountId}/form_reactors";
         $params = [
@@ -350,8 +347,8 @@ class ApiService
             'per_page' => min(100, max(1, $perPage))
         ];
         
-        error_log('CTM Debug: Making request to endpoint: ' . $endpoint);
-        error_log('CTM Debug: Request params: ' . json_encode($params));
+        $this->logInternal('Debug: Making request to endpoint: ' . $endpoint);
+        $this->logInternal('Debug: Request params: ' . json_encode($params));
         
         $start = microtime(true);
         try {
@@ -360,19 +357,19 @@ class ApiService
             $this->trackApiCall();
             $this->trackApiResponseTime($elapsed);
             
-            error_log('CTM Debug: API response received in ' . round($elapsed, 2) . 'ms');
-            error_log('CTM Debug: Response keys: ' . implode(', ', array_keys($data)));
+            $this->logInternal('Debug: API response received in ' . round($elapsed, 2) . 'ms');
+            $this->logInternal('Debug: Response keys: ' . implode(', ', array_keys($data)));
             
             if (isset($data['error']) || (isset($data['status']) && $data['status'] === 'error')) {
-                error_log('CTM API Error: API returned error response: ' . json_encode($data));
+                $this->logInternal('API Error: API returned error response: ' . json_encode($data), 'error');
                 return null;
             }
             
-            error_log('CTM Debug: Successfully retrieved forms data');
+            $this->logInternal('Debug: Successfully retrieved forms data');
             return $data;
         } catch (\Exception $e) {
-            error_log('CTM API Error (getFormsDirect): ' . $e->getMessage());
-            error_log('CTM Debug: Exception stack trace: ' . $e->getTraceAsString());
+            $this->logInternal('API Error (getFormsDirect): ' . $e->getMessage(), 'error');
+            $this->logInternal('Debug: Exception stack trace: ' . $e->getTraceAsString(), 'debug');
             return null;
         }
     }
@@ -435,7 +432,7 @@ class ApiService
             }
             return $data;
         } catch (\Exception $e) {
-            error_log('CTM API Error (getTrackingNumbers): ' . $e->getMessage());
+            $this->logInternal('API Error (getTrackingNumbers): ' . $e->getMessage(), 'error');
             return null;
         }
     }
@@ -466,7 +463,7 @@ class ApiService
             }
             return $data;
         } catch (\Exception $e) {
-            error_log('CTM API Error (getCalls): ' . $e->getMessage());
+            $this->logInternal('API Error (getCalls): ' . $e->getMessage(), 'error');
             return null;
         }
     }
@@ -489,7 +486,7 @@ class ApiService
             $this->trackApiResponseTime($elapsed);
             return $result;
         } catch (\Exception $e) {
-            error_log('CTM API Error (getTrackingScript): ' . $e->getMessage());
+            $this->logInternal('API Error (getTrackingScript): ' . $e->getMessage(), 'error');
             return null;
         }
     }
@@ -514,7 +511,7 @@ class ApiService
     {
         $url = $this->baseUrl . $endpoint;
         
-        // Use internal logging system instead of error_log to prevent server log pollution
+        // Use internal logging system
         $loggingSystem = null;
         if (class_exists('\CTM\Admin\LoggingSystem')) {
             $loggingSystem = new \CTM\Admin\LoggingSystem();
@@ -716,7 +713,7 @@ class ApiService
             update_option('ctm_api_calls_24h', $current_calls);
         } catch (\Exception $e) {
             // Silently fail to avoid disrupting API calls
-            error_log('CTM API Call Tracking Error: ' . $e->getMessage());
+            $this->logInternal('API Call Tracking Error: ' . $e->getMessage(), 'error');
         }
     }
 
@@ -756,7 +753,7 @@ class ApiService
             update_option('ctm_api_response_times', $response_times);
         } catch (\Exception $e) {
             // Silently fail to avoid disrupting API calls
-            error_log('CTM API Response Time Tracking Error: ' . $e->getMessage());
+            $this->logInternal('API Response Time Tracking Error: ' . $e->getMessage(), 'error');
         }
     }
 } 

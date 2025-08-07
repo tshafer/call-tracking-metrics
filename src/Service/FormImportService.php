@@ -55,18 +55,42 @@ class FormImportService
     private GFService $gfService;
 
     /**
+     * Logging System instance
+     * 
+     * @since 2.0.0
+     * @var \CTM\Admin\LoggingSystem|null
+     */
+    private $loggingSystem;
+
+    /**
      * Initialize the form import service
      * 
      * @since 2.0.0
      * @param ApiService $apiService The API service for CTM communication
      * @param CF7Service $cf7Service The CF7 service for form creation
      * @param GFService $gfService The GF service for form creation
+     * @param \CTM\Admin\LoggingSystem|null $loggingSystem The logging system
      */
-    public function __construct(ApiService $apiService, CF7Service $cf7Service, GFService $gfService)
+    public function __construct(ApiService $apiService, CF7Service $cf7Service, GFService $gfService, $loggingSystem = null)
     {
         $this->apiService = $apiService;
         $this->cf7Service = $cf7Service;
         $this->gfService = $gfService;
+        $this->loggingSystem = $loggingSystem;
+    }
+
+    /**
+     * Internal logging helper to prevent server log pollution
+     * 
+     * @since 2.0.0
+     * @param string $message The message to log
+     * @param string $type The log type (error, debug, api, etc.)
+     */
+    private function logInternal(string $message, string $type = 'debug'): void
+    {
+        if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+            $this->loggingSystem->logActivity($message, $type);
+        }
     }
 
     /**
@@ -80,38 +104,38 @@ class FormImportService
     public function getAvailableForms(string $apiKey, string $apiSecret): ?array
     {
         try {
-            error_log('CTM Debug: FormImportService::getAvailableForms - Starting');
+            $this->logInternal('FormImportService::getAvailableForms - Starting');
             
             // Get forms from the form_reactors endpoint
             $formsResponse = $this->apiService->getFormsDirect($apiKey, $apiSecret);
             
-            error_log('CTM Debug: getFormsDirect response: ' . ($formsResponse ? 'success' : 'null'));
+            $this->logInternal('getFormsDirect response: ' . ($formsResponse ? 'success' : 'null'));
             
             if (!$formsResponse) {
-                error_log('CTM Form Import Error: No response from forms API');
+                $this->logInternal('Form Import Error: No response from forms API', 'error');
                 return null;
             }
 
-            error_log('CTM Debug: Forms response keys: ' . implode(', ', array_keys($formsResponse)));
+            $this->logInternal('Forms response keys: ' . implode(', ', array_keys($formsResponse)));
 
             // Handle the response format from /api/v1/accounts/{account_id}/form_reactors
             $forms = [];
             if (isset($formsResponse['forms'])) {
                 // New format - forms array
                 $forms = $formsResponse['forms'];
-                error_log('CTM Debug: Using new format (forms array) - count: ' . count($forms));
+                $this->logInternal('Using new format (forms array) - count: ' . count($forms));
             } elseif (isset($formsResponse['form_reactors'])) {
                 // Old format - form_reactors array
                 $forms = $formsResponse['form_reactors'];
-                error_log('CTM Debug: Using old format (form_reactors array) - count: ' . count($forms));
+                $this->logInternal('Using old format (form_reactors array) - count: ' . count($forms));
             } else {
                 // Direct array of forms
                 $forms = $formsResponse;
-                error_log('CTM Debug: Using direct array format - count: ' . count($forms));
+                $this->logInternal('Using direct array format - count: ' . count($forms));
             }
 
             if (empty($forms)) {
-                error_log('CTM Form Import Error: No forms found in API response');
+                $this->logInternal('Form Import Error: No forms found in API response', 'error');
                 return null;
             }
 
@@ -119,21 +143,21 @@ class FormImportService
             $availableForms = [];
             foreach ($forms as $form) {
                 if (isset($form['id']) && isset($form['name'])) {
-                    error_log('CTM Debug: getAvailableForms - Processing form: ' . $form['name'] . ' (ID: ' . $form['id'] . ')');
-                    error_log('CTM Debug: getAvailableForms - Form keys: ' . implode(', ', array_keys($form)));
+                    $this->logInternal('getAvailableForms - Processing form: ' . $form['name'] . ' (ID: ' . $form['id'] . ')');
+                    $this->logInternal('getAvailableForms - Form keys: ' . implode(', ', array_keys($form)));
                     
                     // Handle both old and new field structures
                     $fields = [];
                     if (isset($form['fields']) && is_array($form['fields'])) {
                         // Old format - fields
                         $fields = $form['fields'];
-                        error_log('CTM Debug: getAvailableForms - Using old format (fields) - count: ' . count($fields));
+                        $this->logInternal('getAvailableForms - Using old format (fields) - count: ' . count($fields));
                     } elseif (isset($form['custom_fields']) && is_array($form['custom_fields'])) {
                         // New format - custom_fields
                         $fields = $form['custom_fields'];
-                        error_log('CTM Debug: getAvailableForms - Using new format (custom_fields) - count: ' . count($fields));
+                        $this->logInternal('getAvailableForms - Using new format (custom_fields) - count: ' . count($fields));
                     } else {
-                        error_log('CTM Debug: getAvailableForms - No fields or custom_fields found in form');
+                        $this->logInternal('getAvailableForms - No fields or custom_fields found in form');
                     }
 
                     $availableForms[] = [
@@ -155,20 +179,20 @@ class FormImportService
                         'error_text' => $form['error_text'] ?? ''
                     ];
                     
-                    error_log('CTM Debug: getAvailableForms - Added form with ' . count($fields) . ' fields');
+                    $this->logInternal('getAvailableForms - Added form with ' . count($fields) . ' fields');
                 }
             }
 
             if (empty($availableForms)) {
-                error_log('CTM Form Import Error: No valid forms found after processing');
+                $this->logInternal('Form Import Error: No valid forms found after processing', 'error');
                 return null;
             }
 
-            error_log('CTM Debug: Successfully processed ' . count($availableForms) . ' forms');
+            $this->logInternal('Successfully processed ' . count($availableForms) . ' forms');
             return $availableForms;
         } catch (\Exception $e) {
-            error_log('CTM Form Import Error (getAvailableForms): ' . $e->getMessage());
-            error_log('CTM Debug: Exception stack trace: ' . $e->getTraceAsString());
+            $this->logInternal('Form Import Error (getAvailableForms): ' . $e->getMessage(), 'error');
+            $this->logInternal('Exception stack trace: ' . $e->getTraceAsString(), 'error');
             return null;
         }
     }
@@ -190,7 +214,7 @@ class FormImportService
             $formsResponse = $this->apiService->getFormsDirect($apiKey, $apiSecret, $page, $perPage);
             
             if (!$formsResponse) {
-                error_log('CTM Form Import Error: No response from paginated forms API');
+                $this->logInternal('Form Import Error: No response from paginated forms API', 'error');
                 return null;
             }
 
@@ -219,7 +243,7 @@ class FormImportService
             }
 
             if (empty($forms)) {
-                error_log('CTM Form Import Error: No forms found in paginated API response');
+                $this->logInternal('Form Import Error: No forms found in paginated API response', 'error');
                 return null;
             }
 
@@ -259,7 +283,7 @@ class FormImportService
             }
 
             if (empty($availableForms)) {
-                error_log('CTM Form Import Error: No valid forms found after processing paginated response');
+                $this->logInternal('Form Import Error: No valid forms found after processing paginated response', 'error');
                 return null;
             }
 
@@ -268,7 +292,7 @@ class FormImportService
                 'pagination' => $pagination
             ];
         } catch (\Exception $e) {
-            error_log('CTM Form Import Error (getAvailableFormsPaginated): ' . $e->getMessage());
+            $this->logInternal('Form Import Error (getAvailableFormsPaginated): ' . $e->getMessage(), 'error');
             return null;
         }
     }
@@ -288,7 +312,7 @@ class FormImportService
             // First get account information to get the account ID
             $accountInfo = $this->apiService->getAccountInfo($apiKey, $apiSecret);
             if (!$accountInfo || !isset($accountInfo['account']['id'])) {
-                error_log('CTM Form Import Error: Could not retrieve account information');
+                $this->logInternal('Form Import Error: Could not retrieve account information', 'error');
                 return null;
             }
             
@@ -329,7 +353,7 @@ class FormImportService
                 'error_text' => $formReactor['error_text'] ?? ''
             ];
         } catch (\Exception $e) {
-            error_log('CTM Form Import Error (getFormReactorById): ' . $e->getMessage());
+            $this->logInternal('Form Import Error (getFormReactorById): ' . $e->getMessage(), 'error');
             return null;
         }
     }
@@ -488,10 +512,10 @@ class FormImportService
      */
     public function importToCF7(array $ctmForm, string $formTitle): ?array
     {
-        error_log('CTM Debug: importToCF7 - Starting import for form: ' . $formTitle);
+        $this->logInternal('importToCF7 - Starting import for form: ' . $formTitle);
         
         if (!class_exists('WPCF7_ContactForm')) {
-            error_log('CTM Debug: importToCF7 - Contact Form 7 is not installed');
+            $this->logInternal('importToCF7 - Contact Form 7 is not installed');
             return ['success' => false, 'error' => 'Contact Form 7 is not installed'];
         }
 
@@ -499,7 +523,7 @@ class FormImportService
             // Convert CTM form to CF7 format
             $cf7FormContent = $this->convertToCF7Format($ctmForm);
             
-            error_log('CTM Debug: importToCF7 - Converted form content length: ' . strlen($cf7FormContent));
+            $this->logInternal('importToCF7 - Converted form content length: ' . strlen($cf7FormContent));
             
             // Create the form using CF7 API properly
             $formData = [
@@ -508,16 +532,16 @@ class FormImportService
                 'post_type' => 'wpcf7_contact_form'
             ];
 
-            error_log('CTM Debug: importToCF7 - Creating post with data: ' . json_encode($formData));
+            $this->logInternal('importToCF7 - Creating post with data: ' . json_encode($formData));
             
             $postId = wp_insert_post($formData);
             
             if (is_wp_error($postId)) {
-                error_log('CTM Debug: importToCF7 - Failed to create post: ' . $postId->get_error_message());
+                $this->logInternal('importToCF7 - Failed to create post: ' . $postId->get_error_message());
                 return ['success' => false, 'error' => 'Failed to create form: ' . $postId->get_error_message()];
             }
 
-            error_log('CTM Debug: importToCF7 - Successfully created post with ID: ' . $postId);
+            $this->logInternal('importToCF7 - Successfully created post with ID: ' . $postId);
 
             // Set form properties using CF7 API
             if (method_exists('\WPCF7_ContactForm', 'get_instance')) {
@@ -527,8 +551,8 @@ class FormImportService
                     $mail2Template = $this->generateCF7Mail2Template($ctmForm);
                     $messages = $this->generateCF7Messages($ctmForm);
                     
-                    error_log('CTM Debug: importToCF7 - Setting form properties');
-                    error_log('CTM Debug: importToCF7 - Mail template: ' . json_encode($mailTemplate));
+                    $this->logInternal('importToCF7 - Setting form properties');
+                    $this->logInternal('importToCF7 - Mail template: ' . json_encode($mailTemplate));
                     
                     $form->set_properties([
                         'form' => $cf7FormContent,
@@ -540,13 +564,13 @@ class FormImportService
                     // Save the form to ensure the shortcode gets the correct ID
                     $form->save();
                     
-                    error_log('CTM Debug: importToCF7 - Form properties set successfully');
-                    error_log('CTM Debug: importToCF7 - Form saved with ID: ' . $postId);
+                    $this->logInternal('importToCF7 - Form properties set successfully');
+                    $this->logInternal('importToCF7 - Form saved with ID: ' . $postId);
                 } else {
-                    error_log('CTM Debug: importToCF7 - Could not set form properties - form or method not available');
+                    $this->logInternal('importToCF7 - Could not set form properties - form or method not available');
                 }
             } else {
-                error_log('CTM Debug: importToCF7 - WPCF7_ContactForm::get_instance method not available');
+                $this->logInternal('importToCF7 - WPCF7_ContactForm::get_instance method not available');
             }
 
             // Store CTM metadata for tracking imported forms
@@ -555,7 +579,7 @@ class FormImportService
             update_post_meta($postId, '_ctm_import_date', current_time('mysql'));
             update_post_meta($postId, '_ctm_form_data', json_encode($ctmForm));
             
-            error_log('CTM Debug: importToCF7 - Import completed successfully with CTM metadata');
+            $this->logInternal('importToCF7 - Import completed successfully with CTM metadata');
             
             return [
                 'success' => true,
@@ -566,8 +590,8 @@ class FormImportService
             ];
 
         } catch (\Exception $e) {
-            error_log('CTM Form Import Error (importToCF7): ' . $e->getMessage());
-            error_log('CTM Debug: importToCF7 - Exception stack trace: ' . $e->getTraceAsString());
+            $this->logInternal('Form Import Error (importToCF7): ' . $e->getMessage(), 'error');
+            $this->logInternal('importToCF7 - Exception stack trace: ' . $e->getTraceAsString(), 'error');
             return ['success' => false, 'error' => 'Import failed: ' . $e->getMessage()];
         }
     }
@@ -616,7 +640,7 @@ class FormImportService
             ];
 
         } catch (\Exception $e) {
-            error_log('CTM Form Import Error (importToGF): ' . $e->getMessage());
+            $this->logInternal('Form Import Error (importToGF): ' . $e->getMessage(), 'error');
             return ['success' => false, 'error' => 'Import failed: ' . $e->getMessage()];
         }
     }
@@ -632,27 +656,27 @@ class FormImportService
     {
         $formContent = '';
         
-        error_log('CTM Debug: convertToCF7Format - Starting conversion');
-        error_log('CTM Debug: convertToCF7Format - Form data keys: ' . implode(', ', array_keys($ctmForm)));
-        error_log('CTM Debug: convertToCF7Format - Full form data: ' . json_encode($ctmForm, JSON_PRETTY_PRINT));
+        $this->logInternal('convertToCF7Format - Starting conversion');
+        $this->logInternal('convertToCF7Format - Form data keys: ' . implode(', ', array_keys($ctmForm)));
+        $this->logInternal('convertToCF7Format - Full form data: ' . json_encode($ctmForm, JSON_PRETTY_PRINT));
         
         // Handle both old and new field structures
         $fields = [];
         if (isset($ctmForm['fields']) && is_array($ctmForm['fields'])) {
             $fields = $ctmForm['fields'];
-            error_log('CTM Debug: convertToCF7Format - Using old format (fields) - count: ' . count($fields));
+            $this->logInternal('convertToCF7Format - Using old format (fields) - count: ' . count($fields));
         } elseif (isset($ctmForm['custom_fields']) && is_array($ctmForm['custom_fields'])) {
             $fields = $ctmForm['custom_fields'];
-            error_log('CTM Debug: convertToCF7Format - Using new format (custom_fields) - count: ' . count($fields));
+            $this->logInternal('convertToCF7Format - Using new format (custom_fields) - count: ' . count($fields));
         } else {
-            error_log('CTM Debug: convertToCF7Format - No fields or custom_fields found in form data');
-            error_log('CTM Debug: convertToCF7Format - Available keys: ' . implode(', ', array_keys($ctmForm)));
+            $this->logInternal('convertToCF7Format - No fields or custom_fields found in form data');
+            $this->logInternal('convertToCF7Format - Available keys: ' . implode(', ', array_keys($ctmForm)));
         }
         
         if (!empty($fields)) {
-            error_log('CTM Debug: convertToCF7Format - Processing ' . count($fields) . ' fields');
+            $this->logInternal('convertToCF7Format - Processing ' . count($fields) . ' fields');
             foreach ($fields as $index => $field) {
-                error_log('CTM Debug: convertToCF7Format - Field ' . $index . ' data: ' . json_encode($field));
+                $this->logInternal('convertToCF7Format - Field ' . $index . ' data: ' . json_encode($field));
                 
                 $fieldType = $field['type'] ?? 'text';
                 $fieldName = $field['name'] ?? 'field_' . uniqid();
@@ -665,7 +689,7 @@ class FormImportService
                     $fieldType = 'document';
                 }
                 
-                error_log("CTM Debug: convertToCF7Format - Processing field {$index}: {$fieldName} (type: {$fieldType}, required: " . ($required ? 'yes' : 'no') . ", label: {$fieldLabel})");
+            
                 
                 // Start label tag
                 $formContent .= "<label> {$fieldLabel}\n    ";
@@ -673,26 +697,26 @@ class FormImportService
                 switch ($fieldType) {
                     case 'email':
                         $formContent .= "[email{$required} {$fieldName} autocomplete:email]";
-                        error_log("CTM Debug: convertToCF7Format - Added email field: [email{$required} {$fieldName} autocomplete:email]");
+                        $this->logInternal("convertToCF7Format - Added email field: [email{$required} {$fieldName} autocomplete:email]");
                         break;
                     case 'textarea':
                     case 'text_area':
                         $formContent .= "[textarea{$required} {$fieldName}]";
-                        error_log("CTM Debug: convertToCF7Format - Added textarea field: [textarea{$required} {$fieldName}]");
+                        $this->logInternal("convertToCF7Format - Added textarea field: [textarea{$required} {$fieldName}]");
                         break;
                     case 'number':
                     case 'decimal':
                         $formContent .= "[number{$required} {$fieldName}]";
-                        error_log("CTM Debug: convertToCF7Format - Added number field: [number{$required} {$fieldName}]");
+                        $this->logInternal("convertToCF7Format - Added number field: [number{$required} {$fieldName}]");
                         break;
                     case 'phone':
                         $formContent .= "[tel{$required} {$fieldName} autocomplete:tel]";
-                        error_log("CTM Debug: convertToCF7Format - Added phone field: [tel{$required} {$fieldName} autocomplete:tel]");
+                        $this->logInternal("convertToCF7Format - Added phone field: [tel{$required} {$fieldName} autocomplete:tel]");
                         break;
                        case 'website':
                        case 'url':
-                           $formContent .= "[text{$required} {$fieldName}]";
-                           error_log("CTM Debug: convertToCF7Format - Added website field as text: [text{$required} {$fieldName}]");
+                           $formContent .= "[url{$required} {$fieldName}]";
+                           $this->logInternal("convertToCF7Format - Added URL field: [url{$required} {$fieldName}]");
                            break;
                     case 'picker':
                     case 'select':
@@ -704,11 +728,11 @@ class FormImportService
                         }
                         $optionsStr = implode('|', $options);
                         $formContent .= "[select{$required} {$fieldName} \"{$optionsStr}\"]";
-                        error_log("CTM Debug: convertToCF7Format - Added select field: [select{$required} {$fieldName} \"{$optionsStr}\"]");
+                        $this->logInternal("convertToCF7Format - Added select field: [select{$required} {$fieldName} \"{$optionsStr}\"]");
                         break;
                     case 'checkbox':
                         $formContent .= "[checkbox{$required} {$fieldName}]";
-                        error_log("CTM Debug: convertToCF7Format - Added checkbox field: [checkbox{$required} {$fieldName}]");
+                        $this->logInternal("convertToCF7Format - Added checkbox field: [checkbox{$required} {$fieldName}]");
                         break;
                     case 'radio':
                         $options = $field['options'] ?? [];
@@ -718,20 +742,20 @@ class FormImportService
                         }
                         $optionsStr = implode('|', $options);
                         $formContent .= "[radio{$required} {$fieldName} \"{$optionsStr}\"]";
-                        error_log("CTM Debug: convertToCF7Format - Added radio field: [radio{$required} {$fieldName} \"{$optionsStr}\"]");
+                        $this->logInternal("convertToCF7Format - Added radio field: [radio{$required} {$fieldName} \"{$optionsStr}\"]");
                         break;
                     case 'information':
                         // Information fields are typically display-only, so we'll use a hidden field or text
                         $formContent .= "[text {$fieldName}]";
-                        error_log("CTM Debug: convertToCF7Format - Added information field: [text {$fieldName}]");
+                        $this->logInternal("convertToCF7Format - Added information field: [text {$fieldName}]");
                         break;
                     case 'captcha':
                         $formContent .= "[captchar]";
-                        error_log("CTM Debug: convertToCF7Format - Added captcha field: [captchar]");
+                        $this->logInternal("convertToCF7Format - Added captcha field: [captchar]");
                         break;
                     case 'date':
                         $formContent .= "[date{$required} {$fieldName}]";
-                        error_log("CTM Debug: convertToCF7Format - Added date field: [date{$required} {$fieldName}]");
+                        $this->logInternal("convertToCF7Format - Added date field: [date{$required} {$fieldName}]");
                         break;
                     case 'file_upload':
                     case 'file':
@@ -739,7 +763,7 @@ class FormImportService
                     case 'document':
                         $fileType = $field['file_type'] ?? '';
                         $formContent .= "[file{$required} {$fieldName}]";
-                        error_log("CTM Debug: convertToCF7Format - Added file field: [file{$required} {$fieldName}]");
+                        $this->logInternal("convertToCF7Format - Added file field: [file{$required} {$fieldName}]");
                         break;
                     default:
                         // For text fields, add autocomplete if it's a name field
@@ -748,7 +772,7 @@ class FormImportService
                             $autocomplete = ' autocomplete:name';
                         }
                         $formContent .= "[text{$required} {$fieldName}{$autocomplete}]";
-                        error_log("CTM Debug: convertToCF7Format - Added default text field: [text{$required} {$fieldName}{$autocomplete}]");
+                        $this->logInternal("convertToCF7Format - Added default text field: [text{$required} {$fieldName}{$autocomplete}]");
                         break;
                 }
                 
@@ -756,7 +780,7 @@ class FormImportService
                 $formContent .= " </label>\n\n";
             }
         } else {
-            error_log('CTM Debug: convertToCF7Format - No fields found to convert');
+            $this->logInternal('convertToCF7Format - No fields found to convert');
             // Add a default form if no fields are found
             $formContent = "<label> Your name
     [text* your-name autocomplete:name] </label>
@@ -771,16 +795,16 @@ class FormImportService
     [textarea your-message] </label>
 
 [submit \"Submit\"]";
-            error_log('CTM Debug: convertToCF7Format - Added default form content');
+            $this->logInternal('convertToCF7Format - Added default form content');
         }
         
         // Add submit button if not already present
         if (strpos($formContent, '[submit') === false) {
             $formContent .= "[submit \"Submit\"]\n";
-            error_log("CTM Debug: convertToCF7Format - Added submit button");
+            $this->logInternal("convertToCF7Format - Added submit button");
         }
         
-        error_log("CTM Debug: convertToCF7Format - Final form content:\n" . $formContent);
+        $this->logInternal("convertToCF7Format - Final form content:\n" . $formContent);
         
         return $formContent;
     }
@@ -1020,8 +1044,8 @@ class FormImportService
             'number' => 'number',
             'decimal' => 'number',
             'phone' => 'phone',
-            'url' => 'url',
-            'website' => 'url',
+            'url' => 'text',
+            'website' => 'text',
             'date' => 'date',
             'time' => 'time',
             'file_upload' => 'fileupload',
