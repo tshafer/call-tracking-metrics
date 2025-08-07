@@ -104,34 +104,25 @@ class FormImportService
     public function getAvailableForms(string $apiKey, string $apiSecret): ?array
     {
         try {
-            $this->logInternal('FormImportService::getAvailableForms - Starting');
-            
             // Get forms from the form_reactors endpoint
             $formsResponse = $this->apiService->getFormsDirect($apiKey, $apiSecret);
-            
-            $this->logInternal('getFormsDirect response: ' . ($formsResponse ? 'success' : 'null'));
             
             if (!$formsResponse) {
                 $this->logInternal('Form Import Error: No response from forms API', 'error');
                 return null;
             }
 
-            $this->logInternal('Forms response keys: ' . implode(', ', array_keys($formsResponse)));
-
             // Handle the response format from /api/v1/accounts/{account_id}/form_reactors
             $forms = [];
             if (isset($formsResponse['forms'])) {
                 // New format - forms array
                 $forms = $formsResponse['forms'];
-                $this->logInternal('Using new format (forms array) - count: ' . count($forms));
             } elseif (isset($formsResponse['form_reactors'])) {
                 // Old format - form_reactors array
                 $forms = $formsResponse['form_reactors'];
-                $this->logInternal('Using old format (form_reactors array) - count: ' . count($forms));
             } else {
                 // Direct array of forms
                 $forms = $formsResponse;
-                $this->logInternal('Using direct array format - count: ' . count($forms));
             }
 
             if (empty($forms)) {
@@ -143,21 +134,14 @@ class FormImportService
             $availableForms = [];
             foreach ($forms as $form) {
                 if (isset($form['id']) && isset($form['name'])) {
-                    $this->logInternal('getAvailableForms - Processing form: ' . $form['name'] . ' (ID: ' . $form['id'] . ')');
-                    $this->logInternal('getAvailableForms - Form keys: ' . implode(', ', array_keys($form)));
-                    
                     // Handle both old and new field structures
                     $fields = [];
                     if (isset($form['fields']) && is_array($form['fields'])) {
                         // Old format - fields
                         $fields = $form['fields'];
-                        $this->logInternal('getAvailableForms - Using old format (fields) - count: ' . count($fields));
                     } elseif (isset($form['custom_fields']) && is_array($form['custom_fields'])) {
                         // New format - custom_fields
                         $fields = $form['custom_fields'];
-                        $this->logInternal('getAvailableForms - Using new format (custom_fields) - count: ' . count($fields));
-                    } else {
-                        $this->logInternal('getAvailableForms - No fields or custom_fields found in form');
                     }
 
                     $availableForms[] = [
@@ -179,7 +163,6 @@ class FormImportService
                         'error_text' => $form['error_text'] ?? ''
                     ];
                     
-                    $this->logInternal('getAvailableForms - Added form with ' . count($fields) . ' fields');
                 }
             }
 
@@ -188,11 +171,9 @@ class FormImportService
                 return null;
             }
 
-            $this->logInternal('Successfully processed ' . count($availableForms) . ' forms');
             return $availableForms;
         } catch (\Exception $e) {
             $this->logInternal('Form Import Error (getAvailableForms): ' . $e->getMessage(), 'error');
-            $this->logInternal('Exception stack trace: ' . $e->getTraceAsString(), 'error');
             return null;
         }
     }
@@ -656,30 +637,19 @@ class FormImportService
     {
         $formContent = '';
         
-        $this->logInternal('convertToCF7Format - Starting conversion');
-        $this->logInternal('convertToCF7Format - Form data keys: ' . implode(', ', array_keys($ctmForm)));
-        $this->logInternal('convertToCF7Format - Full form data: ' . json_encode($ctmForm, JSON_PRETTY_PRINT));
-        
         // Handle both old and new field structures
         $fields = [];
         if (isset($ctmForm['fields']) && is_array($ctmForm['fields'])) {
             $fields = $ctmForm['fields'];
-            $this->logInternal('convertToCF7Format - Using old format (fields) - count: ' . count($fields));
         } elseif (isset($ctmForm['custom_fields']) && is_array($ctmForm['custom_fields'])) {
             $fields = $ctmForm['custom_fields'];
-            $this->logInternal('convertToCF7Format - Using new format (custom_fields) - count: ' . count($fields));
-        } else {
-            $this->logInternal('convertToCF7Format - No fields or custom_fields found in form data');
-            $this->logInternal('convertToCF7Format - Available keys: ' . implode(', ', array_keys($ctmForm)));
         }
         
         // Add required fields based on CTM options
         $fields = $this->addRequiredFields($fields);
         
         if (!empty($fields)) {
-            $this->logInternal('convertToCF7Format - Processing ' . count($fields) . ' fields');
             foreach ($fields as $index => $field) {
-                $this->logInternal('convertToCF7Format - Field ' . $index . ' data: ' . json_encode($field));
                 
                 $fieldType = $field['type'] ?? 'text';
                 $fieldName = $field['name'] ?? 'field_' . uniqid();
@@ -710,16 +680,13 @@ class FormImportService
                     case 'number':
                     case 'decimal':
                         $formContent .= "[number{$required} {$fieldName}]";
-                        $this->logInternal("convertToCF7Format - Added number field: [number{$required} {$fieldName}]");
                         break;
                     case 'phone':
                         $formContent .= "[tel{$required} {$fieldName} autocomplete:tel]";
-                        $this->logInternal("convertToCF7Format - Added phone field: [tel{$required} {$fieldName} autocomplete:tel]");
                         break;
                        case 'website':
                        case 'url':
                            $formContent .= "[url{$required} {$fieldName}]";
-                           $this->logInternal("convertToCF7Format - Added URL field: [url{$required} {$fieldName}]");
                            break;
                     case 'picker':
                     case 'select':
@@ -731,11 +698,9 @@ class FormImportService
                         }
                         $optionsStr = implode('|', $options);
                         $formContent .= "[select{$required} {$fieldName} \"{$optionsStr}\"]";
-                        $this->logInternal("convertToCF7Format - Added select field: [select{$required} {$fieldName} \"{$optionsStr}\"]");
                         break;
                     case 'checkbox':
                         $formContent .= "[checkbox{$required} {$fieldName}]";
-                        $this->logInternal("convertToCF7Format - Added checkbox field: [checkbox{$required} {$fieldName}]");
                         break;
                     case 'radio':
                         $options = $field['options'] ?? [];
@@ -745,27 +710,22 @@ class FormImportService
                         }
                         $optionsStr = implode('|', $options);
                         $formContent .= "[radio{$required} {$fieldName} \"{$optionsStr}\"]";
-                        $this->logInternal("convertToCF7Format - Added radio field: [radio{$required} {$fieldName} \"{$optionsStr}\"]");
                         break;
                     case 'information':
                         // Information fields are typically display-only, so we'll use a hidden field or text
                         $formContent .= "[text {$fieldName}]";
-                        $this->logInternal("convertToCF7Format - Added information field: [text {$fieldName}]");
                         break;
                     case 'captcha':
                         $formContent .= "[captchar]";
-                        $this->logInternal("convertToCF7Format - Added captcha field: [captchar]");
                         break;
                     case 'date':
                         $formContent .= "[date{$required} {$fieldName}]";
-                        $this->logInternal("convertToCF7Format - Added date field: [date{$required} {$fieldName}]");
                         break;
                     case 'file_upload':
                     case 'file':
                     case 'upload':
                     case 'document':
                         $formContent .= "[file{$required} {$fieldName}]";
-                        $this->logInternal("convertToCF7Format - Added file field: [file{$required} {$fieldName}]");
                         break;
                     default:
                         // For text fields, add autocomplete if it's a name field
@@ -774,7 +734,6 @@ class FormImportService
                             $autocomplete = ' autocomplete:name';
                         }
                         $formContent .= "[text{$required} {$fieldName}{$autocomplete}]";
-                        $this->logInternal("convertToCF7Format - Added default text field: [text{$required} {$fieldName}{$autocomplete}]");
                         break;
                 }
                 
@@ -782,7 +741,6 @@ class FormImportService
                 $formContent .= " </label>\n\n";
             }
         } else {
-            $this->logInternal('convertToCF7Format - No fields found to convert');
             // Add a default form if no fields are found
             $formContent = "<label> Your name
     [text* your-name autocomplete:name] </label>
@@ -797,16 +755,12 @@ class FormImportService
     [textarea your-message] </label>
 
 [submit \"Submit\"]";
-            $this->logInternal('convertToCF7Format - Added default form content');
         }
         
         // Add submit button if not already present
         if (strpos($formContent, '[submit') === false) {
             $formContent .= "[submit \"Submit\"]\n";
-            $this->logInternal("convertToCF7Format - Added submit button");
         }
-        
-        $this->logInternal("convertToCF7Format - Final form content:\n" . $formContent);
         
         return $formContent;
     }
@@ -820,13 +774,9 @@ class FormImportService
      */
     private function addRequiredFields(array $fields): array
     {
-        $this->logInternal('addRequiredFields - Starting to add required fields');
-        
         // Get CTM options
         $includeEmail = get_option('ctm_include_email', false);
         $includeName = get_option('ctm_include_name', false);
-        
-        $this->logInternal('addRequiredFields - CTM options - Email: ' . ($includeEmail ? 'true' : 'false') . ', Name: ' . ($includeName ? 'true' : 'false'));
         
         // Check if phone field already exists
         $hasPhoneField = false;
