@@ -110,6 +110,47 @@
                 }
             });
         });
+
+        // Handle reload logs button clicks
+        $(document).on('click', '.ctm-reload-form-logs', function(e) {
+            e.preventDefault();
+            
+            const $button = $(this);
+            const formType = $button.data('form-type');
+            const formId = $button.data('form-id');
+            const formTitle = $button.data('form-title');
+            
+            // Show loading state
+            $button.prop('disabled', true).html('<svg class="animate-spin w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Loading...');
+            
+            // Reload form logs
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'ctm_get_form_logs',
+                    form_type: formType,
+                    form_id: formId,
+                    nonce: ctmFormLogsData.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        const $modal = $('#ctm-form-logs-modal');
+                        updateFormLogsContent($modal, formType, formId, formTitle, response.data.logs);
+                        showSuccess('Logs refreshed successfully');
+                    } else {
+                        showError('Failed to reload logs: ' + (response.data?.message || 'Unknown error'));
+                    }
+                },
+                error: function() {
+                    showError('Failed to reload logs. Please try again.');
+                },
+                complete: function() {
+                    // Reset button state
+                    $button.prop('disabled', false).html('<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Reload');
+                }
+            });
+        });
     }
 
     // Show form logs modal
@@ -151,12 +192,20 @@
                                     <span class="text-sm text-gray-600" id="modal-form-info"></span>
                                     <span class="text-sm text-gray-500" id="modal-log-count"></span>
                                 </div>
-                                <button type="button" class="ctm-clear-form-logs inline-flex items-center px-3 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 hover:text-red-700 transition-colors">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                    </svg>
-                                    Clear Logs
-                                </button>
+                                <div class="flex items-center space-x-2">
+                                    <button type="button" class="ctm-reload-form-logs inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 hover:text-blue-700 transition-colors">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                        </svg>
+                                        Reload
+                                    </button>
+                                    <button type="button" class="ctm-clear-form-logs inline-flex items-center px-3 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 hover:text-red-700 transition-colors">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                        Clear Logs
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <div class="overflow-y-auto" style="max-height: calc(90vh - 200px);">
@@ -177,15 +226,18 @@
         $modal.find('#modal-form-info').text(`${formType.toUpperCase()} Form ID: ${formId}`);
         $modal.find('#modal-log-count').text(`${logs.length} log entries`);
         
-        // Set data attributes for clear button
-        $modal.find('.ctm-clear-form-logs').data({
+        // Set data attributes for buttons
+        $modal.find('.ctm-clear-form-logs, .ctm-reload-form-logs').data({
             'form-type': formType,
             'form-id': formId,
             'form-title': formTitle
         });
         
+        // Sort logs by most recent first
+        const sortedLogs = sortLogsByDate(logs);
+        
         // Generate logs content
-        const logsHtml = generateLogsHtml(logs);
+        const logsHtml = generateLogsHtml(sortedLogs);
         $modal.find('#modal-logs-content').html(logsHtml);
         
         // Handle close button
@@ -257,6 +309,15 @@
     // Format timestamp
     function formatTimestamp(timestamp) {
         return new Date(timestamp).toLocaleString();
+    }
+
+    // Sort logs by date (most recent first)
+    function sortLogsByDate(logs) {
+        return logs.sort((a, b) => {
+            const dateA = new Date(a.timestamp);
+            const dateB = new Date(b.timestamp);
+            return dateB - dateA; // Most recent first
+        });
     }
 
     // Refresh form logs

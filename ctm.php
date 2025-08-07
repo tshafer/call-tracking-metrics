@@ -201,6 +201,9 @@ class CallTrackingMetrics
      */
     public function __construct()
     {
+        // Set up global error handling to prevent white screens
+        $this->setupGlobalErrorHandling();
+        
         // Load plugin translations
         /** @noinspection PhpUndefinedFunctionInspection */
         add_action('init', function() {
@@ -424,6 +427,48 @@ class CallTrackingMetrics
     }
 
     /**
+     * Set up global error handling to prevent white screens
+     * 
+     * @since 2.0.0
+     * @return void
+     */
+    private function setupGlobalErrorHandling(): void
+    {
+        // Set up error handler for fatal errors
+        set_error_handler(function($severity, $message, $file, $line) {
+            // Only handle errors if they're not being suppressed
+            if (!(error_reporting() & $severity)) {
+                return false;
+            }
+            
+            // Log the error but don't throw an exception
+            if (class_exists('\CTM\Admin\LoggingSystem')) {
+                $loggingSystem = new \CTM\Admin\LoggingSystem();
+                if ($loggingSystem->isDebugEnabled()) {
+                    $loggingSystem->logActivity("PHP Error: {$message} in {$file} on line {$line}", 'error');
+                }
+            }
+            
+            // Return false to let PHP handle the error normally
+            return false;
+        });
+        
+        // Set up exception handler for uncaught exceptions
+        set_exception_handler(function($exception) {
+            // Log the exception but don't cause a white screen
+            if (class_exists('\CTM\Admin\LoggingSystem')) {
+                $loggingSystem = new \CTM\Admin\LoggingSystem();
+                if ($loggingSystem->isDebugEnabled()) {
+                    $loggingSystem->logActivity("Uncaught Exception: " . $exception->getMessage() . " in " . $exception->getFile() . " on line " . $exception->getLine(), 'error');
+                }
+            }
+            
+            // Don't output anything to prevent white screens
+            return true;
+        });
+    }
+
+    /**
      * Register plugin activation and deactivation hooks
      * 
      * @since 2.0.0
@@ -519,9 +564,18 @@ class CallTrackingMetrics
             return;
         }
         
+        // Set error handler to prevent fatal errors
+        $original_error_handler = set_error_handler(function($severity, $message, $file, $line) {
+            if (!(error_reporting() & $severity)) {
+                return false;
+            }
+            throw new \ErrorException($message, 0, $severity, $file, $line);
+        });
+        
         try {
             // Get form submission data
             $dataObject = \WPCF7_Submission::get_instance();
+            
             $data = $dataObject->get_posted_data();
             
             // Process the submission through CF7 service
@@ -574,8 +628,8 @@ class CallTrackingMetrics
                         }
                         // No fallback: $abort = true will prevent mail send and CF7 will show a generic error
                     }
-                } catch (\Exception $e) {
-                    // Log the API error
+                } catch (\Throwable $e) {
+                    // Log the API error (catch both Exception and Error)
                     $this->logInternal('CF7 API Error: ' . $e->getMessage(), 'error');
                     
                     // Don't abort the form submission - just log the error
@@ -590,12 +644,17 @@ class CallTrackingMetrics
                     );
                 }
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // Log any unexpected errors but don't break the form submission
             $this->logInternal('CF7 Submission Error: ' . $e->getMessage(), 'error');
             
             // Don't set $abort = true to prevent white screens
             // Just log the error and let the form submission continue
+        } finally {
+            // Restore original error handler
+            if ($original_error_handler) {
+                set_error_handler($original_error_handler);
+            }
         }
     }
 
@@ -612,6 +671,14 @@ class CallTrackingMetrics
      */
     public function submitGF($entry, $form): void
     {
+        // Set error handler to prevent fatal errors
+        $original_error_handler = set_error_handler(function($severity, $message, $file, $line) {
+            if (!(error_reporting() & $severity)) {
+                return false;
+            }
+            throw new \ErrorException($message, 0, $severity, $file, $line);
+        });
+        
         try {
             // Process the submission through GF service
             $result = $this->gfService->processSubmission($entry, $form);
@@ -650,8 +717,8 @@ class CallTrackingMetrics
                             $this->logInternal('GF Submission Error: ' . $reason, 'error');
                         }
                     }
-                } catch (\Exception $e) {
-                    // Log the API error
+                } catch (\Throwable $e) {
+                    // Log the API error (catch both Exception and Error)
                     $this->logInternal('GF API Error: ' . $e->getMessage(), 'error');
                     
                     // Don't break the form submission - just log the error
@@ -664,14 +731,37 @@ class CallTrackingMetrics
                         ['error' => $e->getMessage()],
                         ['entry_id' => $entry['id']]
                     );
+
+                // Return a JSON response to the frontend indicating success or error
+                if (defined('DOING_AJAX') && DOING_AJAX) {
+                    if (isset($response) && isset($response['status']) && $response['status'] === 'success') {
+                        wp_send_json_success([
+                            'message' => 'Form submitted successfully',
+                            'response' => $response,
+                        ]);
+                    } else {
+                        $errorMsg = $response['reason'] ?? ($e->getMessage() ?? 'Unknown error');
+                        wp_send_json_error([
+                            'message' => 'Failed to submit form',
+                            'error' => $errorMsg,
+                        ]);
+                    }
+                    // Always exit after sending JSON response in AJAX context
+                    exit;
+                }
                 }
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // Log any unexpected errors but don't break the form submission
             $this->logInternal('GF Submission Error: ' . $e->getMessage(), 'error');
             
             // Don't throw the exception to prevent white screens
             // Just log the error and let the form submission continue
+        } finally {
+            // Restore original error handler
+            if ($original_error_handler) {
+                set_error_handler($original_error_handler);
+            }
         }
     }
 

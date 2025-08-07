@@ -93,30 +93,34 @@ class GFService
         if (!class_exists('GFAPI') || empty($entry) || empty($form)) {
             return null;
         }
-
- 
+        
         try {
-            // File-based debug logging for troubleshooting
-            $logFile = WP_CONTENT_DIR . '/ctm-gf-debug.log';
 
-            // Build a mapping of entry keys to field labels (single pass)
-            $fieldLabels = [];
+            // Build a mapping of entry keys to field labels and types
+            $fieldMapping = [];
+            $fieldTypes = [];
             if (!empty($form['fields']) && is_array($form['fields'])) {
                 foreach ($form['fields'] as $field) {
                     if (!is_object($field) || !isset($field->id)) {
                         continue;
                     }
-                    $fid = (string)$field->id;
-                    $flabel = $field->label ?? ('Field ' . $fid);
-                    $fieldLabels[$fid] = $flabel;
+                    $fieldId = (string)$field->id;
+                    $fieldLabel = $field->label ?? ('Field ' . $fieldId);
+                    $fieldType = $field->type ?? 'text';
+                    
+                    $fieldMapping[$fieldId] = $fieldLabel;
+                    $fieldTypes[$fieldId] = $fieldType;
+                    
+                    // Handle multi-input fields (like name, address)
                     if (!empty($field->inputs) && is_array($field->inputs)) {
                         foreach ($field->inputs as $input) {
                             if (!is_array($input) || !isset($input['id'])) {
                                 continue;
                             }
-                            $iid = (string)$input['id'];
-                            $ilabel = $input['label'] ?? ($flabel . ' ' . $iid);
-                            $fieldLabels[$iid] = $ilabel;
+                            $inputId = (string)$input['id'];
+                            $inputLabel = $input['label'] ?? ($fieldLabel . ' ' . $inputId);
+                            $fieldMapping[$inputId] = $inputLabel;
+                            $fieldTypes[$inputId] = $fieldType;
                         }
                     }
                 }
@@ -130,26 +134,23 @@ class GFService
                 return $str;
             };
 
-            // Map form fields using labels as keys, and build pretty entry
+            // Map entry data using field labels as keys
             $fieldsWithLabels = [];
             $prettyEntry = [];
             foreach ($entry as $key => $value) {
-                $label = $fieldLabels[(string)$key] ?? $key;
-                $slug = $slugify($label);
+                // Skip Gravity Forms internal fields
+                if (in_array($key, ['id', 'status', 'form_id', 'ip', 'source_url', 'currency', 'post_id', 
+                                   'date_created', 'date_updated', 'is_starred', 'is_read', 'user_agent', 
+                                   'payment_status', 'payment_date', 'payment_amount', 'payment_method', 
+                                   'transaction_id', 'is_fulfilled', 'created_by', 'transaction_type', 'source_id'])) {
+                    continue;
+                }
+                
+                $fieldLabel = $fieldMapping[(string)$key] ?? ('Field ' . $key);
+                $slug = $slugify($fieldLabel);
                 $fieldsWithLabels[$slug] = $value;
                 $prettyEntry[$slug] = $value;
             }
-
-
-            // Log entry for debugging
-            $logEntry = [
-                'timestamp' => date('Y-m-d H:i:s'),
-                'entry' => $entry,
-                'pretty_entry' => $prettyEntry,
-                'form' => $form,
-                'backtrace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10)
-            ];
-            file_put_contents($logFile, json_encode($logEntry, JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
 
             // Extract basic form and entry information
             $formId = $form['id'];
@@ -181,46 +182,82 @@ class GFService
                 $fieldsWithLabels['name'] = implode(' ', $nameValues);
             }
 
-            // Extract form_reactor fields (top 5)
+            // Extract form_reactor fields with proper field detection
             $formReactor = [
                 'form_id' => $formId
             ];
-            if (!empty($fieldsWithLabels['phone'])) {
-                $formReactor['phone_number'] = $fieldsWithLabels['phone'];
+            
+            // Find phone number field
+            $phoneNumber = '';
+            foreach ($fieldsWithLabels as $fieldName => $value) {
+                $fieldNameLower = strtolower($fieldName);
+                if (strpos($fieldNameLower, 'phone') !== false || 
+                    strpos($fieldNameLower, 'tel') !== false) {
+                    $phoneNumber = $value;
+                    break;
+                }
             }
-            if (!empty($fieldsWithLabels['name'])) {
-                $formReactor['caller_name'] = $fieldsWithLabels['name'];
+            if (!empty($phoneNumber)) {
+                $formReactor['phone_number'] = $phoneNumber;
             }
-            // Map any field whose label contains 'email' (case-insensitive) to email
-            $emailField = null;
-            foreach ($fieldsWithLabels as $label => $value) {
-                if (stripos($label, 'email') !== false && !empty($value)) {
+            
+            // Find name field
+            $callerName = '';
+            foreach ($fieldsWithLabels as $fieldName => $value) {
+                $fieldNameLower = strtolower($fieldName);
+                if (strpos($fieldNameLower, 'name') !== false && 
+                    (strpos($fieldNameLower, 'first') !== false || 
+                     strpos($fieldNameLower, 'last') !== false || 
+                     strpos($fieldNameLower, 'full') !== false)) {
+                    $callerName = $value;
+                    break;
+                }
+            }
+            if (!empty($callerName)) {
+                $formReactor['caller_name'] = $callerName;
+            }
+            
+            // Find email field
+            $emailField = '';
+            foreach ($fieldsWithLabels as $fieldName => $value) {
+                $fieldNameLower = strtolower($fieldName);
+                if (strpos($fieldNameLower, 'email') !== false) {
                     $emailField = $value;
                     break;
                 }
             }
-            if ($emailField !== null) {
+            if (!empty($emailField)) {
                 $formReactor['email'] = $emailField;
             }
-            if (!empty($fieldsWithLabels['country'])) {
-                $formReactor['country_code'] = $fieldsWithLabels['country'];
+            
+            // Find country code field
+            $countryCode = '';
+            foreach ($fieldsWithLabels as $fieldName => $value) {
+                $fieldNameLower = strtolower($fieldName);
+                if (strpos($fieldNameLower, 'country') !== false) {
+                    $countryCode = $value;
+                    break;
+                }
+            }
+            if (!empty($countryCode)) {
+                $formReactor['country_code'] = $countryCode;
             }
 
-            // Add callback_number and delay_calling_by if present (case-insensitive search)
+            // Add callback_number and delay_calling_by if present
             $callbackNumber = '';
             $delayCallingBy = '';
-            foreach ($fieldsWithLabels as $label => $value) {
-                $l = strtolower($label);
-                if ($l === 'callback number' || $l === 'callback_number') {
+            foreach ($fieldsWithLabels as $fieldName => $value) {
+                $fieldNameLower = strtolower($fieldName);
+                if (strpos($fieldNameLower, 'callback') !== false && strpos($fieldNameLower, 'number') !== false) {
                     $callbackNumber = $value;
-                } elseif ($l === 'delay calling by' || $l === 'delay_calling_by') {
+                } elseif (strpos($fieldNameLower, 'delay') !== false && strpos($fieldNameLower, 'calling') !== false) {
                     $delayCallingBy = $value;
                 }
             }
-            if ($callbackNumber !== '') {
+            if (!empty($callbackNumber)) {
                 $formReactor['callback_number'] = $callbackNumber;
             }
-            if ($delayCallingBy !== '') {
+            if (!empty($delayCallingBy)) {
                 $formReactor['delay_calling_by'] = $delayCallingBy;
             }
 
@@ -252,6 +289,18 @@ class GFService
             ] as $removeKey) {
                 unset($normalizedCustomFields[$removeKey]);
             }
+            
+            // Also remove any fields that contain phone/tel in their name
+            foreach ($normalizedCustomFields as $key => $value) {
+                $keyLower = strtolower($key);
+                if (strpos($keyLower, 'phone') !== false || 
+                    strpos($keyLower, 'tel') !== false ||
+                    strpos($keyLower, 'name') !== false ||
+                    strpos($keyLower, 'email') !== false ||
+                    strpos($keyLower, 'country') !== false) {
+                    unset($normalizedCustomFields[$key]);
+                }
+            }
 
             // Build the payload with top-level fields and mapped custom fields
             $payload = [
@@ -274,6 +323,7 @@ class GFService
             $payload['domain'] = $_SERVER['HTTP_HOST'] ?? '';
             $payload['raw_data'] = $entry;
 
+            
             $this->logInternal('GF Payload processed successfully', 'debug');
             return $payload;
         } catch (\Exception $e) {

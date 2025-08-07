@@ -152,45 +152,52 @@ $notification_email = $notification_email ?? get_option('ctm_log_notification_em
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
-                ctmShowToast(data.data.message, 'success');
+            if (data && data.success) {
+                const message = data.data && data.data.message ? data.data.message : 'Settings updated successfully';
+                ctmShowToast(message, 'success');
                 
-                // Show what was updated
-                const settings = data.data.settings;
-                let updateDetails = [];
-                
-                if (settings.retention_days) {
-                    updateDetails.push(`Retention: ${settings.retention_days} days`);
+                // Show what was updated if settings data exists
+                if (data.data && data.data.settings) {
+                    const settings = data.data.settings;
+                    let updateDetails = [];
+                    
+                    if (settings.retention_days) {
+                        updateDetails.push(`Retention: ${settings.retention_days} days`);
+                    }
+                    
+                    if (settings.auto_cleanup) {
+                        updateDetails.push('Auto-cleanup: enabled');
+                    } else {
+                        updateDetails.push('Auto-cleanup: disabled');
+                    }
+                    
+                    if (settings.email_notifications) {
+                        updateDetails.push('Email notifications: enabled');
+                    } else {
+                        updateDetails.push('Email notifications: disabled');
+                    }
+                    
+                    if (settings.notification_email) {
+                        updateDetails.push(`Email: ${settings.notification_email}`);
+                    }
+                    
+                    // Show detailed update message after a short delay
+                    if (updateDetails.length > 0) {
+                        setTimeout(() => {
+                            ctmShowToast(`Settings updated: ${updateDetails.join(', ')}`, 'info');
+                        }, 1000);
+                    }
                 }
-                
-                if (settings.auto_cleanup) {
-                    updateDetails.push('Auto-cleanup: enabled');
-                } else {
-                    updateDetails.push('Auto-cleanup: disabled');
-                }
-                
-                if (settings.email_notifications) {
-                    updateDetails.push('Email notifications: enabled');
-                } else {
-                    updateDetails.push('Email notifications: disabled');
-                }
-                
-                if (settings.notification_email) {
-                    updateDetails.push(`Email: ${settings.notification_email}`);
-                }
-                
-                // Show detailed update message after a short delay
-                setTimeout(() => {
-                    ctmShowToast(`Settings updated: ${updateDetails.join(', ')}`, 'info');
-                }, 1000);
                 
             } else {
-                ctmShowToast(data.data.message || '<?php _e('Failed to update log settings', 'call-tracking-metrics'); ?>', 'error');
+                const errorMessage = data && data.data && data.data.message ? data.data.message : '<?php _e('Failed to update log settings', 'call-tracking-metrics'); ?>';
+                ctmShowToast(errorMessage, 'error');
             }
         })
         .catch(error => {
             console.error('Error updating log settings:', error);
-            ctmShowToast('<?php _e('Network error occurred while updating settings', 'call-tracking-metrics'); ?>', 'error');
+            const errorMessage = error && error.message ? error.message : '<?php _e('Network error occurred while updating settings', 'call-tracking-metrics'); ?>';
+            ctmShowToast(errorMessage, 'error');
         })
         .finally(() => {
             // Re-enable button
@@ -285,42 +292,52 @@ $notification_email = $notification_email ?? get_option('ctm_log_notification_em
     function showClearAllLogsModal() {
         // Create modal HTML
         const modalHTML = `
-            <div id="clear-all-logs-modal" class="fixed inset-0 bg-black bg-opacity-60 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-                <div class="relative mx-auto p-6 border w-96 shadow-lg rounded-lg bg-white">
-                    <div class="text-center">
-                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                            <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+            <div id="clear-all-logs-modal" class="fixed inset-0 bg-black bg-opacity-60 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+                <div class="relative mx-auto w-full max-w-md shadow-2xl rounded-xl bg-white overflow-hidden transform transition-all">
+                    <!-- Header with Icon -->
+                    <div class="bg-gradient-to-r from-red-50 to-red-100 px-6 py-8 text-center border-b border-red-200">
+                        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 border-2 border-red-200 mb-4 shadow-sm">
+                            <svg class="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                             </svg>
                         </div>
-                        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4"><?php _e('Clear All Logs', 'call-tracking-metrics'); ?></h3>
-                        <div class="mt-2 px-7 py-3">
-                            <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
-                                <div class="flex">
-                                    <div class="flex-shrink-0">
-                                        <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                                        </svg>
-                                    </div>
-                                    <div class="ml-3">
-                                        <p class="text-sm text-red-700 font-medium">
-                                            <?php _e('This action cannot be undone!', 'call-tracking-metrics'); ?>
-                                        </p>
-                                        <p class="text-sm text-red-600 mt-1">
-                                            <?php _e('All debug logs, form logs, and log history will be permanently deleted.', 'call-tracking-metrics'); ?>
-                                        </p>
-                                    </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-2"><?php _e('Clear All Logs', 'call-tracking-metrics'); ?></h3>
+                        <p class="text-sm text-gray-600"><?php _e('This action cannot be undone', 'call-tracking-metrics'); ?></p>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div class="px-6 py-6">
+                        <!-- Warning Alert -->
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-red-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <h4 class="text-sm font-semibold text-red-800"><?php _e('Warning', 'call-tracking-metrics'); ?></h4>
+                                    <p class="text-sm text-red-700 mt-1"><?php _e('This action will remove all logs including daily logs, form-specific logs, and log history. This is irreversible.', 'call-tracking-metrics'); ?></p>
                                 </div>
                             </div>
-                            <p class="text-sm text-gray-500">
-                                <?php _e('Are you sure you want to clear all logs? This will remove all debugging information and cannot be recovered.', 'call-tracking-metrics'); ?>
+                        </div>
+                        
+                        <!-- Description -->
+                        <div class="text-center mb-6">
+                            <p class="text-sm text-gray-600 leading-relaxed">
+                                <?php _e('Are you absolutely sure you want to clear all logs? This will permanently delete all debugging information and cannot be recovered.', 'call-tracking-metrics'); ?>
                             </p>
                         </div>
-                        <div class="flex space-x-3 mt-6">
-                            <button type="button" onclick="closeClearAllLogsModal()" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors">
+                        
+                        <!-- Action Buttons -->
+                        <div class="flex space-x-3">
+                            <button type="button" onclick="closeClearAllLogsModal()" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-all duration-200 transform hover:scale-105">
                                 <?php _e('Cancel', 'call-tracking-metrics'); ?>
                             </button>
-                            <button type="button" onclick="clearAllLogs()" class="flex-1 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300 transition-colors">
+                            <button type="button" onclick="clearAllLogs()" class="flex-1 px-4 py-3 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300 transition-all duration-200 transform hover:scale-105 shadow-sm">
+                                <svg class="inline-block w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
                                 <?php _e('Clear All Logs', 'call-tracking-metrics'); ?>
                             </button>
                         </div>

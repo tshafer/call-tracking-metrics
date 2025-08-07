@@ -301,6 +301,11 @@ class ApiService
             return '+' . $cleaned;
         }
         
+        // For any other number without + prefix, assume US and add +1
+        if (strlen($cleaned) > 0 && substr($cleaned, 0, 1) !== '+') {
+            return '+1' . $cleaned;
+        }
+        
         // Return as is if we can't determine format
         return $cleaned;
     }

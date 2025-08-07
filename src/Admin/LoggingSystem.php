@@ -993,4 +993,89 @@ class LoggingSystem
             ]
         ];
     }
+
+    /**
+     * Get recent error logs for display
+     * 
+     * @since 2.0.0
+     * @param int $limit Maximum number of errors to return
+     * @return array Array of recent error logs
+     */
+    public function getRecentErrors(int $limit = 10): array
+    {
+        $errors = [];
+        $log_index = \get_option('ctm_log_index', []);
+        
+        if (!is_array($log_index)) {
+            return $errors;
+        }
+        
+        // Get logs from the last 7 days
+        $recent_dates = array_slice(array_reverse($log_index), 0, 7);
+        
+        foreach ($recent_dates as $date) {
+            $logs = \get_option("ctm_daily_log_{$date}", []);
+            if (is_array($logs)) {
+                foreach ($logs as $log_entry) {
+                    if (isset($log_entry['type']) && $log_entry['type'] === 'error') {
+                        $errors[] = [
+                            'date' => $date,
+                            'timestamp' => $log_entry['timestamp'] ?? '',
+                            'message' => $log_entry['message'] ?? '',
+                            'context' => $log_entry['context'] ?? [],
+                            'user_id' => $log_entry['user_id'] ?? 0,
+                            'ip_address' => $log_entry['ip_address'] ?? '',
+                            'memory_usage' => $log_entry['memory_usage'] ?? 0
+                        ];
+                        
+                        if (count($errors) >= $limit) {
+                            break 2;
+                        }
+                    }
+                }
+            }
+        }
+        
+        return $errors;
+    }
+
+    /**
+     * Get error rate statistics
+     * 
+     * @since 2.0.0
+     * @return array Error rate statistics
+     */
+    public function getErrorRateStats(): array
+    {
+        $log_index = \get_option('ctm_log_index', []);
+        $total_logs = 0;
+        $error_logs = 0;
+        
+        if (!is_array($log_index)) {
+            return ['error_rate' => 0, 'total_logs' => 0, 'error_logs' => 0];
+        }
+        
+        // Get logs from the last 7 days
+        $recent_dates = array_slice(array_reverse($log_index), 0, 7);
+        
+        foreach ($recent_dates as $date) {
+            $logs = \get_option("ctm_daily_log_{$date}", []);
+            if (is_array($logs)) {
+                $total_logs += count($logs);
+                foreach ($logs as $log_entry) {
+                    if (isset($log_entry['type']) && $log_entry['type'] === 'error') {
+                        $error_logs++;
+                    }
+                }
+            }
+        }
+        
+        $error_rate = $total_logs > 0 ? ($error_logs / $total_logs) * 100 : 0;
+        
+        return [
+            'error_rate' => round($error_rate, 2),
+            'total_logs' => $total_logs,
+            'error_logs' => $error_logs
+        ];
+    }
 } 

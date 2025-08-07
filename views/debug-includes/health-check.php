@@ -165,6 +165,16 @@
                 </svg>
                 <?php _e('Run Health Check', 'call-tracking-metrics'); ?>
             </button>
+            
+            <!-- Error Rate Monitor -->
+            <div id="error-rate-monitor" class="hidden">
+                <button onclick="showRecentErrors()" id="show-errors-btn" class="bg-red-600 hover:bg-red-700 !text-white font-medium px-6 py-2 rounded-lg transition duration-200 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                    <span id="error-rate-text">High error rate detected</span>
+                </button>
+            </div>
         </div>
 
         <!-- Health Recommendations -->
@@ -589,7 +599,200 @@ function runHealthCheckSilent() {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('[CTM] DOM Content Loaded - starting silent health check');
     runHealthCheckSilent();
+    
+    // Check error rate on page load
+    checkErrorRate();
 });
+
+// Check error rate and show warning if high
+function checkErrorRate() {
+    const formData = new FormData();
+    formData.append('action', 'ctm_get_error_rate_stats');
+    formData.append('nonce', '<?= wp_create_nonce('ctm_form_logs') ?>');
+    
+    fetch('<?= admin_url('admin-ajax.php') ?>', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const stats = data.data;
+            const errorRate = stats.error_rate || 0;
+            
+            // Show error rate monitor if error rate is above 10%
+            if (errorRate > 10) {
+                const monitor = document.getElementById('error-rate-monitor');
+                const text = document.getElementById('error-rate-text');
+                
+                if (monitor && text) {
+                    monitor.classList.remove('hidden');
+                    text.textContent = `High error rate detected (${errorRate}%)`;
+                }
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error checking error rate:', error);
+    });
+}
+
+// Show recent errors modal
+function showRecentErrors() {
+    const formData = new FormData();
+    formData.append('action', 'ctm_get_recent_errors');
+    formData.append('nonce', '<?= wp_create_nonce('ctm_form_logs') ?>');
+    formData.append('limit', '20');
+    
+    fetch('<?= admin_url('admin-ajax.php') ?>', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showErrorsModal(data.data.errors);
+        } else {
+            showDebugMessage('Failed to load recent errors', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error loading recent errors:', error);
+        showDebugMessage('Network error loading errors', 'error');
+    });
+}
+
+// Display errors in a modal
+function showErrorsModal(errors) {
+    // Create modal overlay
+    const modalOverlay = document.createElement('div');
+    modalOverlay.className = 'fixed inset-0 bg-black bg-opacity-60 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4';
+    
+    // Create modal content
+    const modalContent = `
+        <div class="relative mx-auto w-full max-w-4xl shadow-2xl rounded-xl bg-white overflow-hidden" style="max-height: 90vh;">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-red-50 to-red-100 px-6 py-6 border-b border-red-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-red-100 border-2 border-red-200 rounded-xl flex items-center justify-center shadow-sm">
+                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">Recent Errors</h3>
+                            <p class="text-sm text-gray-600">Showing the last ${errors.length} error logs</p>
+                        </div>
+                    </div>
+                    <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-full hover:bg-gray-100">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Content -->
+            <div class="px-6 py-6" style="max-height: calc(100vh - 200px); overflow-y: auto;">
+                ${errors.length === 0 ? `
+                    <div class="text-center py-8">
+                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h4 class="text-lg font-semibold text-gray-900 mb-2">No Recent Errors</h4>
+                        <p class="text-gray-600">Great! No errors have been detected in the recent logs.</p>
+                    </div>
+                ` : `
+                    <div class="space-y-4">
+                        ${errors.map((error, index) => `
+                            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <div class="flex items-start justify-between mb-2">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                                        <span class="text-sm font-medium text-red-800">Error #${index + 1}</span>
+                                    </div>
+                                    <div class="text-xs text-gray-500">
+                                        ${error.date} at ${error.timestamp}
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <p class="text-sm text-red-700 font-medium">${error.message}</p>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs text-gray-600">
+                                    <div>
+                                        <span class="font-medium">User ID:</span> ${error.user_id || 'N/A'}
+                                    </div>
+                                    <div>
+                                        <span class="font-medium">IP Address:</span> ${error.ip_address || 'N/A'}
+                                    </div>
+                                    <div>
+                                        <span class="font-medium">Memory:</span> ${formatBytes(error.memory_usage)}
+                                    </div>
+                                </div>
+                                ${Object.keys(error.context).length > 0 ? `
+                                    <details class="mt-3">
+                                        <summary class="text-xs font-medium text-gray-700 cursor-pointer hover:text-gray-900 flex items-center gap-1">
+                                            <svg class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                            Show Context (${Object.keys(error.context).length} items)
+                                        </summary>
+                                        <div class="mt-2 p-3 bg-gray-100 rounded text-xs font-mono text-gray-700" style="max-height: 200px; overflow-y: auto; overflow-x: auto;">
+                                            <pre class="whitespace-pre-wrap">${JSON.stringify(error.context, null, 2)}</pre>
+                                        </div>
+                                    </details>
+                                ` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                `}
+            </div>
+            
+            <!-- Footer -->
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                <div class="flex justify-between items-center">
+                    <div class="text-sm text-gray-600">
+                        ${errors.length} error${errors.length !== 1 ? 's' : ''} shown
+                    </div>
+                    <div class="flex gap-3">
+                        <button onclick="this.closest('.fixed').remove()" 
+                                class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            Close
+                        </button>
+                        <button onclick="clearAllLogs()" 
+                                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            Clear All Logs
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    modalOverlay.innerHTML = modalContent;
+    
+    // Close modal when clicking overlay
+    modalOverlay.addEventListener('click', function(e) {
+        if (e.target === modalOverlay) {
+            modalOverlay.remove();
+        }
+    });
+    
+    // Add to page
+    document.body.appendChild(modalOverlay);
+}
+
+// Helper function to format bytes
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
 
 // Show health score information modal
 function showHealthScoreInfo() {

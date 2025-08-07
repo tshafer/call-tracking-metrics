@@ -167,9 +167,16 @@ class CF7Service
                 }
             }
             
-            // Add custom fields (all other fields)
+            // Add custom fields (all other fields, excluding required CTM fields)
             foreach ($mappedFields as $fieldName => $fieldValue) {
-                if (!in_array($fieldName, ['phone', 'name', 'email', 'country'])) {
+                $fieldNameLower = strtolower($fieldName);
+                // Skip fields that are already mapped to top-level CTM fields
+                if (!in_array($fieldName, ['phone', 'name', 'email', 'country']) && 
+                    strpos($fieldNameLower, 'phone') === false && 
+                    strpos($fieldNameLower, 'tel') === false &&
+                    strpos($fieldNameLower, 'name') === false &&
+                    strpos($fieldNameLower, 'email') === false &&
+                    strpos($fieldNameLower, 'country') === false) {
                     $payload['custom_' . $fieldName] = $fieldValue;
                 }
             }
