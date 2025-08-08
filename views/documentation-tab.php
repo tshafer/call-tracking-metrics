@@ -24,19 +24,7 @@
             </svg>
             <h2 class="text-2xl font-bold text-[#16294f] tracking-tight font-brand-heading"><?php _e('Documentation', 'call-tracking-metrics'); ?></h2>
         </div>
-        <div id="main-doc-tabs" class="mb-8">
-            <nav class="flex flex-wrap border-b border-gray-200">
-                <button class="main-doc-tab px-4 py-2 -mb-px text-gray-700 border-b-2 border-transparent hover:text-blue-700 hover:border-blue-300 flex items-center gap-2" data-tab="general">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
-                    <?php _e('General', 'call-tracking-metrics'); ?>
-                </button>
-            </nav>
-        </div>
-        <div id="main-doc-tab-content">
-            <div class="main-doc-tab-panel" data-tab="general">
+        <div id="main-doc-content">
                 <!-- General documentation content -->
                 <div class="space-y-8">
                     <!-- Installation Section -->
@@ -194,6 +182,86 @@
                             <div>
                                 <h4 class="font-semibold text-teal-800 mb-2"><?php _e('Q: How do I enable debugging?', 'call-tracking-metrics'); ?></h4>
                                 <p class="text-sm text-gray-700"><?php _e('A: Check the "Enable Debugging" option in the General settings to access the Debug tab for troubleshooting.', 'call-tracking-metrics'); ?></p>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-teal-800 mb-2"><?php _e('Q: How do I test my API connection?', 'call-tracking-metrics'); ?></h4>
+                                <p class="text-sm text-gray-700"><?php _e('A: Go to the API tab and click "Test Connection" to manually test your API credentials and view detailed results.', 'call-tracking-metrics'); ?></p>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-teal-800 mb-2"><?php _e('Q: How do I manage log files?', 'call-tracking-metrics'); ?></h4>
+                                <p class="text-sm text-gray-700"><?php _e('A: In the Debug tab, use the Log Settings section to configure retention periods, auto-cleanup, and view daily logs.', 'call-tracking-metrics'); ?></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- API Testing Guide Section -->
+                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-blue-100 p-2 rounded-lg mr-3">
+                                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-semibold text-blue-700"><?php _e('API Testing Guide', 'call-tracking-metrics'); ?></h3>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-semibold text-blue-800 mb-2">🔍 <?php _e('Testing Your Connection', 'call-tracking-metrics'); ?></h4>
+                                <ol class="list-decimal pl-6 text-sm text-gray-700 space-y-1">
+                                    <li><?php _e('Navigate to the API tab in the plugin settings', 'call-tracking-metrics'); ?></li>
+                                    <li><?php _e('Click the "Test Connection" button to verify your API credentials', 'call-tracking-metrics'); ?></li>
+                                    <li><?php _e('Review the test results showing account information and performance metrics', 'call-tracking-metrics'); ?></li>
+                                    <li><?php _e('Check the Technical Details section for connection quality and response times', 'call-tracking-metrics'); ?></li>
+                                </ol>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-blue-800 mb-2">📊 <?php _e('Understanding Test Results', 'call-tracking-metrics'); ?></h4>
+                                <ul class="list-disc pl-6 text-sm text-gray-700 space-y-1">
+                                    <li><?php _e('Account Summary: Shows your account name, ID, and API access permissions', 'call-tracking-metrics'); ?></li>
+                                    <li><?php _e('Performance Metrics: Displays response times and network overhead', 'call-tracking-metrics'); ?></li>
+                                    <li><?php _e('Connection Quality: Indicates overall connection health (Good/Fair/Poor)', 'call-tracking-metrics'); ?></li>
+                                    <li><?php _e('Technical Details: Shows request metadata and API endpoints used', 'call-tracking-metrics'); ?></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Debug & Logging Guide Section -->
+                    <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-lg border border-purple-200">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-purple-100 p-2 rounded-lg mr-3">
+                                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-semibold text-purple-700"><?php _e('Debug & Logging Guide', 'call-tracking-metrics'); ?></h3>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-semibold text-purple-800 mb-2">🔧 <?php _e('Enabling Debug Mode', 'call-tracking-metrics'); ?></h4>
+                                <ol class="list-decimal pl-6 text-sm text-gray-700 space-y-1">
+                                    <li><?php _e('Go to the General tab in plugin settings', 'call-tracking-metrics'); ?></li>
+                                    <li><?php _e('Check the "Enable Debugging" option', 'call-tracking-metrics'); ?></li>
+                                    <li><?php _e('Save settings to access the Debug tab', 'call-tracking-metrics'); ?></li>
+                                </ol>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-purple-800 mb-2">📋 <?php _e('Managing Logs', 'call-tracking-metrics'); ?></h4>
+                                <ul class="list-disc pl-6 text-sm text-gray-700 space-y-1">
+                                    <li><?php _e('Log Settings: Configure retention periods and auto-cleanup', 'call-tracking-metrics'); ?></li>
+                                    <li><?php _e('Daily Logs: View and filter logs by date and type', 'call-tracking-metrics'); ?></li>
+                                    <li><?php _e('Performance Monitor: Track system performance and resource usage', 'call-tracking-metrics'); ?></li>
+                                    <li><?php _e('Health Check: Run comprehensive system diagnostics', 'call-tracking-metrics'); ?></li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-purple-800 mb-2">⚙️ <?php _e('Log Configuration', 'call-tracking-metrics'); ?></h4>
+                                <ul class="list-disc pl-6 text-sm text-gray-700 space-y-1">
+                                    <li><?php _e('Set log retention period (default: 30 days)', 'call-tracking-metrics'); ?></li>
+                                    <li><?php _e('Enable/disable auto-cleanup of old logs', 'call-tracking-metrics'); ?></li>
+                                    <li><?php _e('Clear all logs manually when needed', 'call-tracking-metrics'); ?></li>
+                                    <li><?php _e('View logs grouped by date for easier navigation', 'call-tracking-metrics'); ?></li>
+                                </ul>
                             </div>
                         </div>
                     </div>
