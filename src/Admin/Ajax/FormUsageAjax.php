@@ -57,15 +57,25 @@ class FormUsageAjax
         $form_type = sanitize_text_field($_POST['form_type'] ?? '');
         $force_refresh = (bool) ($_POST['force_refresh'] ?? false);
         
+        // Enhanced debugging
+        $this->logInternal('=== FORM USAGE DEBUG START ===', 'debug');
+        $this->logInternal('Form ID: ' . $form_id, 'debug');
+        $this->logInternal('Form Type: ' . $form_type, 'debug');
+        $this->logInternal('Force Refresh: ' . ($force_refresh ? 'true' : 'false'), 'debug');
+        $this->logInternal('GFAPI Available: ' . (class_exists('GFAPI') ? 'YES' : 'NO'), 'debug');
+        
         if (empty($form_id) || empty($form_type)) {
             wp_send_json_error(['message' => 'Form ID and form type are required']);
         }
         
         try {
             $usage_data = $this->getFormUsage($form_id, $form_type, $force_refresh);
+            $this->logInternal('Usage data generated successfully', 'debug');
+            $this->logInternal('=== FORM USAGE DEBUG END ===', 'debug');
             wp_send_json_success($usage_data);
         } catch (\Exception $e) {
             $this->logInternal('Form Usage Error: ' . $e->getMessage(), 'error');
+            $this->logInternal('=== FORM USAGE DEBUG END (ERROR) ===', 'debug');
             wp_send_json_error(['message' => 'Failed to get form usage: ' . $e->getMessage()]);
         }
     }
@@ -108,11 +118,14 @@ class FormUsageAjax
      */
     private function getFormUsage(int $form_id, string $form_type, bool $force_refresh = false): array
     {
+        $this->logInternal('Starting getFormUsage for form ' . $form_id . ' (' . $form_type . ')', 'debug');
+        
         // Check cache first (unless force refresh is requested)
         if (!$force_refresh) {
             $cache_key = 'ctm_form_usage_' . $form_type . '_' . $form_id;
             $cached_data = get_transient($cache_key);
             if ($cached_data !== false) {
+                $this->logInternal('Returning cached data for form ' . $form_id, 'debug');
                 return $cached_data;
             }
         }
@@ -125,7 +138,9 @@ class FormUsageAjax
         ];
 
         // Get shortcode for the form
+        $this->logInternal('Getting shortcode for form ' . $form_id . ' (' . $form_type . ')', 'debug');
         $shortcode = $this->getFormShortcode($form_id, $form_type);
+        $this->logInternal('Shortcode result: ' . ($shortcode ?: 'NULL'), 'debug');
         
         // Temporary testing for form 64
         if ($form_id == 64 && $form_type == 'gf') {
@@ -183,13 +198,32 @@ class FormUsageAjax
             $usage_data['shortcodes'] = $this->getShortcodeUsageStats($shortcode);
             
             // Enhanced search: Look for form ID in various contexts
+            $this->logInternal('Starting enhanced search for form ' . $form_id, 'debug');
             $usage_data['enhanced_pages'] = $this->searchEnhancedFormUsage($form_id, $form_type);
+            $this->logInternal('Enhanced search found ' . count($usage_data['enhanced_pages']) . ' results', 'debug');
             
             // Search in custom post types
             $usage_data['custom_post_types'] = $this->searchCustomPostTypes($form_id, $form_type);
             
             // Search in theme files
             $usage_data['theme_files_forms'] = $this->searchThemeFilesForForms($form_id, $form_type);
+        } else {
+            // No shortcode found - form likely doesn't exist
+            $usage_data['error'] = 'Form not found or inaccessible';
+            $usage_data['error_details'] = $form_type === 'gf' 
+                ? 'Gravity Forms form ID ' . $form_id . ' does not exist or Gravity Forms is not available'
+                : 'Contact Form 7 form ID ' . $form_id . ' does not exist or Contact Form 7 is not available';
+            
+            $this->logInternal('Form shortcode not found, but still doing enhanced search', 'debug');
+            
+            // Still do enhanced search in case the form exists but shortcode generation failed
+            $usage_data['enhanced_pages'] = $this->searchEnhancedFormUsage($form_id, $form_type);
+            
+            // Add a very broad search for any Gravity Forms references
+            if ($form_type === 'gf') {
+                $this->logInternal('Doing broad Gravity Forms search', 'debug');
+                $usage_data['gravity_forms_references'] = $this->searchForGravityFormsReferences($form_id);
+            }
         }
         
         // Cache the results for 1 hour (3600 seconds)
@@ -219,15 +253,38 @@ class FormUsageAjax
             }
         } elseif ($form_type === 'gf') {
             // For GF, check if the form exists
-            if (class_exists('GFAPI')) {
-                try {
-                    $form = \GFAPI::get_form($form_id);
-                    if ($form) {
-                        return '[gravityform id="' . $form_id . '"]';
+            $this->logInternal('Checking Gravity Forms for form ID: ' . $form_id, 'debug');
+            
+            if (!class_exists('GFAPI')) {
+                $this->logInternal('GFAPI class not available for form usage check', 'error');
+                return null;
+            }
+            
+            $this->logInternal('GFAPI class is available', 'debug');
+            
+            try {
+                $this->logInternal('Attempting to get GF form ' . $form_id . ' via GFAPI::get_form()', 'debug');
+                $form = \GFAPI::get_form($form_id);
+                
+                if ($form) {
+                    $this->logInternal('SUCCESS: GF Form ' . $form_id . ' found - Title: ' . $form['title'], 'debug');
+                    $this->logInternal('Form data keys: ' . implode(', ', array_keys($form)), 'debug');
+                    return '[gravityform id="' . $form_id . '"]';
+                } else {
+                    $this->logInternal('FAILED: GF Form ' . $form_id . ' does not exist in Gravity Forms (get_form returned: ' . gettype($form) . ')', 'error');
+                    
+                    // Try to get all forms to see what's available
+                    $all_forms = \GFAPI::get_forms();
+                    if ($all_forms) {
+                        $form_ids = array_map(function($f) { return $f['id']; }, $all_forms);
+                        $this->logInternal('Available GF form IDs: ' . implode(', ', $form_ids), 'debug');
+                    } else {
+                        $this->logInternal('No Gravity Forms found in system', 'debug');
                     }
-                } catch (\Exception $e) {
-                    $this->logInternal('Error getting GF form ' . $form_id . ': ' . $e->getMessage(), 'error');
                 }
+            } catch (\Exception $e) {
+                $this->logInternal('EXCEPTION getting GF form ' . $form_id . ': ' . $e->getMessage(), 'error');
+                $this->logInternal('Exception trace: ' . $e->getTraceAsString(), 'error');
             }
         }
         
@@ -523,12 +580,16 @@ class FormUsageAjax
     {
         $usage = [];
         
-        // Get all posts and pages
+        $this->logInternal('Enhanced search: Looking for form ' . $form_id . ' (' . $form_type . ')', 'debug');
+        
+        // Get all posts and pages (including drafts for more comprehensive search)
         $posts = get_posts([
             'post_type' => ['post', 'page'],
-            'post_status' => 'publish',
+            'post_status' => ['publish', 'draft', 'private'],
             'posts_per_page' => -1
         ]);
+        
+        $this->logInternal('Enhanced search: Found ' . count($posts) . ' posts to search', 'debug');
         
         foreach ($posts as $post) {
             $content = $post->post_content;
@@ -569,26 +630,53 @@ class FormUsageAjax
                     'wpcf7-submit'
                 ],
                 'gf' => [
+                    // Standard shortcodes
                     '[gravityform id="' . $form_id . '"]',
                     '[gravityform id=\'' . $form_id . '\']',
                     '[gravityform id=' . $form_id . ']',
                     'gravityform id="' . $form_id . '"',
                     'gravityform id=\'' . $form_id . '\'',
                     'gravityform id=' . $form_id,
+                    // CSS classes and IDs
                     'gform_' . $form_id,
                     'gform_wrapper_' . $form_id,
                     'gform_submit_button_' . $form_id,
                     'gform_ajax_frame_' . $form_id,
                     'gform_confirmation_wrapper_' . $form_id,
                     'gform_confirmation_message_' . $form_id,
+                    'gform_fields_' . $form_id,
+                    'gform_body_' . $form_id,
+                    'gform_footer_' . $form_id,
+                    'gform_validation_container_' . $form_id,
+                    // JavaScript functions
                     'gformInitSpinner(' . $form_id,
+                    'gform_submit_' . $form_id,
+                    'gf_apply_rules(' . $form_id,
+                    'gformCalculateTotalPrice(' . $form_id,
                     'gformInitDatepicker',
                     'gformInitPriceFields',
                     'gform_page_loaded',
                     'gform_confirmation_loaded',
                     'gform_pre_post_render',
-                    'data-formid=\'' . $form_id . '\' novalidate',
-                    'data-formid="' . $form_id . '" novalidate'
+                    // Data attributes
+                    'data-formid=\'' . $form_id . '\'',
+                    'data-formid="' . $form_id . '"',
+                    'data-formid=' . $form_id,
+                    // Form element attributes
+                    'action="#gf_' . $form_id . '"',
+                    'method="post" id="gform_' . $form_id . '"',
+                    // Simple form ID patterns
+                    '"' . $form_id . '"',
+                    '\'' . $form_id . '\'',
+                    '=' . $form_id . ' ',
+                    '=' . $form_id . '\n',
+                    '=' . $form_id . '\r',
+                    '=' . $form_id . '\t',
+                    // Block editor patterns
+                    '"formId":' . $form_id,
+                    '"formId":"' . $form_id . '"',
+                    '"form_id":' . $form_id,
+                    '"form_id":"' . $form_id . '"'
                 ]
             ];
             
@@ -599,6 +687,28 @@ class FormUsageAjax
                         $found = true;
                         $match_type = 'shortcode_pattern';
                         $match_details = $pattern;
+                        $this->logInternal('Found pattern "' . $pattern . '" in post ' . $post->ID . ' (' . $post->post_title . ')', 'debug');
+                        break;
+                    }
+                }
+            }
+            
+            // Also do a simple search for the form ID as a number (very broad search)
+            if (!$found && $form_type === 'gf') {
+                $simple_patterns = [
+                    (string)$form_id,
+                    ' ' . $form_id . ' ',
+                    '>' . $form_id . '<',
+                    '"' . $form_id . '"',
+                    '\'' . $form_id . '\'',
+                ];
+                
+                foreach ($simple_patterns as $simple_pattern) {
+                    if (strpos($search_content, $simple_pattern) !== false) {
+                        $found = true;
+                        $match_type = 'simple_id_match';
+                        $match_details = $simple_pattern;
+                        $this->logInternal('Found simple pattern "' . $simple_pattern . '" in post ' . $post->ID . ' (' . $post->post_title . ')', 'debug');
                         break;
                     }
                 }
@@ -857,6 +967,74 @@ class FormUsageAjax
         }
         
         return $usage;
+    }
+
+    /**
+     * Search for any Gravity Forms references (broad search)
+     * 
+     * @since 2.0.0
+     * @param int $form_id The form ID to search for
+     * @return array Array of pages with any GF references
+     */
+    private function searchForGravityFormsReferences(int $form_id): array
+    {
+        $references = [];
+        
+        $this->logInternal('Searching for broad Gravity Forms references for form ' . $form_id, 'debug');
+        
+        // Get all posts and pages
+        $posts = get_posts([
+            'post_type' => ['post', 'page'],
+            'post_status' => ['publish', 'draft', 'private'],
+            'posts_per_page' => -1
+        ]);
+        
+        foreach ($posts as $post) {
+            $content = $post->post_content;
+            
+            // Search for very broad Gravity Forms patterns
+            $gf_patterns = [
+                'gravityform',
+                'gform_',
+                'gravity_form',
+                'GFAPI',
+                'gf_apply_rules',
+                'gformInitSpinner',
+                'gravity forms',
+                'Gravity Forms',
+                '[gf ',
+                'data-formid',
+                // Also search for the specific form ID in any context
+                'id="' . $form_id . '"',
+                'id=\'' . $form_id . '\'',
+                '"' . $form_id . '"',
+                '\'' . $form_id . '\'',
+                '=' . $form_id . ' ',
+                '>' . $form_id . '<',
+            ];
+            
+            foreach ($gf_patterns as $pattern) {
+                if (stripos($content, $pattern) !== false) {
+                    $references[] = [
+                        'id' => $post->ID,
+                        'title' => $post->post_title,
+                        'type' => $post->post_type,
+                        'status' => $post->post_status,
+                        'url' => get_permalink($post->ID),
+                        'edit_url' => get_edit_post_link($post->ID),
+                        'match_type' => 'gravity_forms_reference',
+                        'match_details' => $pattern,
+                        'view_url' => get_permalink($post->ID)
+                    ];
+                    $this->logInternal('Found GF reference "' . $pattern . '" in post ' . $post->ID . ' (' . $post->post_title . ')', 'debug');
+                    break; // Only count each post once
+                }
+            }
+        }
+        
+        $this->logInternal('Found ' . count($references) . ' posts with Gravity Forms references', 'debug');
+        
+        return $references;
     }
 
     /**

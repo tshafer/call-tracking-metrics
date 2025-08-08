@@ -1089,6 +1089,20 @@ jQuery(document).ready(function($) {
                 if (response.success && response.data) {
                     let usageHtml = '';
                     
+                    // Check for form existence error
+                    if (response.data.error) {
+                        usageHtml += '<div class="mb-4 p-4 bg-red-50 rounded-lg border border-red-200">';
+                        usageHtml += '<div class="flex items-center mb-2">';
+                        usageHtml += '<svg class="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">';
+                        usageHtml += '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>';
+                        usageHtml += '</svg>';
+                        usageHtml += '<h4 class="text-sm font-medium text-red-800">Form Not Found</h4>';
+                        usageHtml += '</div>';
+                        usageHtml += '<p class="text-sm text-red-700">' + response.data.error_details + '</p>';
+                        usageHtml += '<p class="text-xs text-red-600 mt-2">The form may have been deleted or the plugin may not be active. Enhanced search results below may still show cached references.</p>';
+                        usageHtml += '</div>';
+                    }
+                    
                     // Show cache status
                     if (forceRefresh) {
                         usageHtml += '<div class="mb-4 p-3 bg-green-50 rounded-lg border border-green-200">';
@@ -1203,7 +1217,24 @@ jQuery(document).ready(function($) {
                         usageHtml += '</div></div>';
                     }
                     
-                    if (!usageHtml || (response.data.pages.length === 0 && response.data.enhanced_pages.length === 0 && response.data.custom_post_types.length === 0 && response.data.widgets.length === 0 && response.data.theme_files.length === 0)) {
+                    // Show broad Gravity Forms references if available
+                    if (response.data.gravity_forms_references && response.data.gravity_forms_references.length > 0) {
+                        usageHtml += '<div class="mb-6"><h4 class="text-sm font-medium text-gray-900 mb-3"><?php _e('Gravity Forms References (Broad Search)', 'call-tracking-metrics'); ?></h4>';
+                        usageHtml += '<div class="space-y-2">';
+                        response.data.gravity_forms_references.forEach(function(ref) {
+                            usageHtml += '<div class="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-200">';
+                            usageHtml += '<div><a href="' + ref.edit_url + '" class="text-sm font-medium text-purple-700 hover:text-purple-800" target="_blank">' + ref.title + '</a>';
+                            usageHtml += '<p class="text-xs text-purple-600">' + ref.type + ' • ID: ' + ref.id + ' • Match: ' + ref.match_details + '</p>';
+                            usageHtml += '<p class="text-xs text-purple-500">' + ref.url + '</p></div>';
+                            usageHtml += '<div class="flex space-x-2">';
+                            usageHtml += '<a href="' + ref.view_url + '" class="text-xs text-purple-600 hover:text-purple-700" target="_blank"><?php _e('View', 'call-tracking-metrics'); ?></a>';
+                            usageHtml += '<a href="' + ref.edit_url + '" class="text-xs text-purple-600 hover:text-purple-700" target="_blank"><?php _e('Edit', 'call-tracking-metrics'); ?></a>';
+                            usageHtml += '</div></div>';
+                        });
+                        usageHtml += '</div></div>';
+                    }
+                    
+                    if (!usageHtml || (response.data.pages.length === 0 && response.data.enhanced_pages.length === 0 && response.data.custom_post_types.length === 0 && response.data.widgets.length === 0 && response.data.theme_files.length === 0 && (!response.data.gravity_forms_references || response.data.gravity_forms_references.length === 0))) {
                         usageHtml = '<div class="text-center py-8"><svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>';
                         usageHtml += '<p class="text-gray-500 text-sm"><?php _e('No usage found for this form.', 'call-tracking-metrics'); ?></p>';
                         usageHtml += '<p class="text-gray-400 text-xs mt-2"><?php _e('The form may not be used anywhere yet, or usage detection is limited.', 'call-tracking-metrics'); ?></p>';
