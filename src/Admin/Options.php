@@ -650,13 +650,7 @@ class Options
                 echo '<div class="notice notice-warning is-dismissible"><p><strong>CallTrackingMetrics:</strong> Contact Form 7 integration was automatically disabled because the Contact Form 7 plugin is not installed or activated. <a href="' . admin_url('plugin-install.php?s=contact+form+7&tab=search&type=term') . '" target="_blank">Install Contact Form 7</a> to enable this integration.</p></div>';
             });
         } else {
-            // Debug: Log what we found for CF7 in auto-disable check
-            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
-                $cf7_class_exists = class_exists('WPCF7_ContactForm');
-                $cf7_function_exists = function_exists('wpcf7_contact_form');
-                $cf7_enabled = get_option('ctm_api_cf7_enabled', false);
-                $this->loggingSystem->logActivity("CF7 auto-disable check - Plugin active: " . ($cf7_plugin_active ? 'true' : 'false') . ", Class exists: " . ($cf7_class_exists ? 'true' : 'false') . ", Function exists: " . ($cf7_function_exists ? 'true' : 'false') . ", Currently enabled: " . ($cf7_enabled ? 'true' : 'false'), 'debug');
-            }
+
         }
         
         // Check Gravity Forms integration - only auto-disable if currently enabled but plugin not available
@@ -666,10 +660,7 @@ class Options
         $gf_function_exists = function_exists('gravity_form');
         $gf_available = $gf_plugin_active || $gf_class_exists;
         
-        // Debug: Log what we found for GF in auto-disable check
-        if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
-            $this->loggingSystem->logActivity("GF auto-disable check - Plugin active: " . ($gf_plugin_active ? 'true' : 'false') . ", Class exists: " . ($gf_class_exists ? 'true' : 'false') . ", Function exists: " . ($gf_function_exists ? 'true' : 'false') . ", Available: " . ($gf_available ? 'true' : 'false') . ", Currently enabled: " . ($gf_currently_enabled ? 'true' : 'false'), 'debug');
-        }
+
         
         // Only auto-disable if not available and currently enabled
         if (!$gf_available && $gf_currently_enabled) {

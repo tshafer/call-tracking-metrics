@@ -1,0 +1,44 @@
+includes:
+    - vendor/shipmonk/dead-code-detector/rules.neon
+
+parameters:
+    level: 1
+    paths:
+        - src
+        - tests
+        - ctm.php
+    
+    # Configure dead code detection
+    shipmonkDeadCode:
+        detect:
+            deadMethods: true
+            deadConstants: true
+            deadEnumCases: false
+        
+        # Exclude test-only usages to find code used only in tests
+        usageExcluders:
+            tests:
+                enabled: true
+                devPaths:
+                    - %currentWorkingDirectory%/tests
+        
+        # Enable WordPress-specific providers if needed
+        usageProviders:
+            phpunit:
+                enabled: true
+    
+    # Ignore some common WordPress patterns that might be false positives
+    # ignoreErrors:
+        
+    # Autoloader configuration for WordPress plugin
+    # bootstrapFiles:
+    #     - ctm.php
+        
+    # Scan additional paths if needed
+    scanDirectories:
+        - .
+        
+    # Exclude vendor and other irrelevant paths
+    excludePaths:
+        - vendor
+        - node_modules

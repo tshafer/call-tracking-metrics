@@ -1,4 +1,19 @@
 <?php
+/**
+ * Settings Page View
+ * 
+ * This view file displays the main settings page for the CallTrackingMetrics plugin admin interface.
+ * 
+ * @package     CallTrackingMetrics
+ * @subpackage  Views
+ * @author      CallTrackingMetrics Team
+ * @copyright   2024 CallTrackingMetrics
+ * @license     GPL-2.0+
+ * @version     2.0.0
+ * @link        https://calltrackingmetrics.com
+ * @since       1.0.0
+ */
+
 // Ensure required variables are defined with defaults
 $apiStatus = $apiStatus ?? 'not_connected';
 $active_tab = $active_tab ?? 'general';

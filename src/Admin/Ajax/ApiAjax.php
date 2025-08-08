@@ -1,15 +1,74 @@
 <?php
+/**
+ * API AJAX Handler
+ * 
+ * This file contains the ApiAjax class which handles AJAX requests related to
+ * CallTrackingMetrics API operations including connection testing, API simulations,
+ * and credential management.
+ * 
+ * @package     CallTrackingMetrics
+ * @subpackage  Admin\Ajax
+ * @author      CallTrackingMetrics Team
+ * @copyright   2024 CallTrackingMetrics
+ * @license     GPL-2.0+
+ * @version     2.0.0
+ * @link        https://calltrackingmetrics.com
+ * @since       1.0.0
+ */
+
 namespace CTM\Admin\Ajax;
 
 use CTM\Service\ApiService;
 
+/**
+ * API AJAX Request Handler
+ * 
+ * Handles AJAX requests related to CallTrackingMetrics API operations including:
+ * - API connection testing and validation
+ * - API request simulation and debugging
+ * - API credential management
+ * - Connection quality assessment
+ * 
+ * @package     CallTrackingMetrics
+ * @subpackage  Admin\Ajax
+ * @author      CallTrackingMetrics Team
+ * @since       1.0.0
+ * @version     2.0.0
+ */
 class ApiAjax {
+    /**
+     * API service instance
+     * 
+     * @since 1.0.0
+     * @var ApiService
+     */
     private $apiService;
 
+    /**
+     * Initialize API AJAX handler
+     * 
+     * Sets up the API service instance for handling API-related AJAX requests.
+     * If no API service is provided, creates a default instance with the configured API URL.
+     * 
+     * @since 1.0.0
+     * @param ApiService|null $apiService Optional API service instance for dependency injection
+     */
     public function __construct($apiService = null) {
         $this->apiService = $apiService ?: new ApiService(\ctm_get_api_url());
     }
 
+    /**
+     * Register API AJAX handlers
+     * 
+     * Registers all API-related AJAX endpoints with WordPress including:
+     * - ctm_test_api_connection: Test API connectivity and credentials
+     * - ctm_simulate_api_request: Simulate API requests for debugging
+     * - ctm_change_api_keys: Update API credentials
+     * - ctm_disable_api: Disable API integration
+     * 
+     * @since 1.0.0
+     * @return void
+     */
     public function registerHandlers() {
         add_action('wp_ajax_ctm_test_api_connection', [$this, 'ajaxTestApiConnection']);
         add_action('wp_ajax_ctm_simulate_api_request', [$this, 'ajaxSimulateApiRequest']);
@@ -20,6 +79,21 @@ class ApiAjax {
     }
 
 
+    /**
+     * AJAX handler to test API connection
+     * 
+     * Tests the connection to the CallTrackingMetrics API using provided credentials.
+     * Performs comprehensive testing including account validation, response time measurement,
+     * and connection quality assessment. Returns detailed diagnostic information.
+     * 
+     * Expected POST parameters:
+     * - api_key: The API key to test
+     * - api_secret: The API secret to test
+     * - nonce: Security nonce for verification
+     * 
+     * @since 1.0.0
+     * @return void Outputs JSON response with connection test results
+     */
     public function ajaxTestApiConnection(): void
     {
         $start_time = microtime(true);
@@ -160,6 +234,24 @@ class ApiAjax {
         }
     }
 
+    /**
+     * Assess API connection quality based on response times
+     * 
+     * Analyzes the response times from API calls to determine connection quality
+     * and assign appropriate visual indicators. Returns quality assessment with
+     * color coding for UI display.
+     * 
+     * Quality levels:
+     * - Excellent (green): < 500ms total
+     * - Good (blue): 500-1000ms total  
+     * - Fair (yellow): 1000-2000ms total
+     * - Poor (red): > 2000ms total
+     * 
+     * @since 1.0.0
+     * @param float      $api_time     API response time in milliseconds
+     * @param float|null $details_time Details response time in milliseconds (optional)
+     * @return array Quality assessment with 'quality', 'color', and 'total_time' keys
+     */
     private function assessConnectionQuality($api_time, $details_time): array
     {
         $total_time = $api_time + ($details_time ?? 0);
@@ -184,6 +276,21 @@ class ApiAjax {
         ];
     }
 
+    /**
+     * AJAX handler to simulate API requests
+     * 
+     * Simulates various types of API requests for testing and debugging purposes.
+     * Supports different HTTP methods and endpoints to help troubleshoot API integration
+     * issues and validate request/response handling.
+     * 
+     * Expected POST parameters:
+     * - endpoint: The API endpoint to simulate (optional)
+     * - method: HTTP method (GET, POST, PUT, DELETE)
+     * - nonce: Security nonce for verification
+     * 
+     * @since 1.0.0
+     * @return void Outputs JSON response with simulation results
+     */
     public function ajaxSimulateApiRequest(): void
     {
         check_ajax_referer('ctm_simulate_api_request', 'nonce');
@@ -229,6 +336,21 @@ class ApiAjax {
         }
     }
 
+    /**
+     * AJAX handler to change API credentials
+     * 
+     * Updates the API key and secret for the CallTrackingMetrics integration.
+     * Validates the new credentials by testing the connection before saving.
+     * Updates plugin settings and refreshes tracking script if successful.
+     * 
+     * Expected POST parameters:
+     * - api_key: New API key
+     * - api_secret: New API secret
+     * - nonce: Security nonce for verification
+     * 
+     * @since 1.0.0
+     * @return void Outputs JSON response with update results
+     */
     public function ajaxChangeApiKeys() {
         check_ajax_referer('ctm_change_api_keys', 'nonce');
         if (!current_user_can('manage_options')) {
@@ -262,6 +384,19 @@ class ApiAjax {
         wp_send_json_success(['message' => 'API keys updated.']);
     }
 
+    /**
+     * AJAX handler to disable API integration
+     * 
+     * Disables the CallTrackingMetrics API integration by clearing stored credentials
+     * and related settings. This effectively disconnects the plugin from the CTM service
+     * while preserving other plugin functionality.
+     * 
+     * Expected POST parameters:
+     * - nonce: Security nonce for verification
+     * 
+     * @since 1.0.0
+     * @return void Outputs JSON response with disable operation results
+     */
     public function ajaxDisableApi() {
         check_ajax_referer('ctm_disable_api', 'nonce');
         if (!current_user_can('manage_options')) {

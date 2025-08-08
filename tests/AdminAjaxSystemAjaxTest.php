@@ -565,42 +565,25 @@ class AdminAjaxSystemAjaxTest extends TestCase
     // BEGIN: Additional tests merged from root-level tests/AdminAjaxSystemAjaxTest.php
     public function testCanBeConstructedWithDependencies()
     {
-        $systemAjax = new SystemAjax(new LoggingSystem(), new SettingsRenderer());
+        $systemAjax = new SystemAjax(new LoggingSystem());
         $this->assertInstanceOf(SystemAjax::class, $systemAjax);
     }
     public function testInjectLoggingSystemFromRoot()
     {
         $realLogger = new LoggingSystem();
-        $systemAjax = new SystemAjax($realLogger, new SettingsRenderer());
+        $systemAjax = new SystemAjax($realLogger);
         $ref = new \ReflectionClass($systemAjax);
         $prop = $ref->getProperty('loggingSystem');
         $prop->setAccessible(true);
         $this->assertSame($realLogger, $prop->getValue($systemAjax));
     }
-    public function testInjectSettingsRendererFromRoot()
-    {
-        $realRenderer = new SettingsRenderer();
-        $systemAjax = new SystemAjax(new LoggingSystem(), $realRenderer);
-        $ref = new \ReflectionClass($systemAjax);
-        $prop = $ref->getProperty('renderer');
-        $prop->setAccessible(true);
-        $this->assertSame($realRenderer, $prop->getValue($systemAjax));
-    }
     public function testDefaultLoggingSystemFromRoot()
     {
-        $systemAjax = new SystemAjax(new LoggingSystem(), new SettingsRenderer());
+        $systemAjax = new SystemAjax(new LoggingSystem());
         $ref = new \ReflectionClass($systemAjax);
         $prop = $ref->getProperty('loggingSystem');
         $prop->setAccessible(true);
         $this->assertInstanceOf(LoggingSystem::class, $prop->getValue($systemAjax));
-    }
-    public function testDefaultSettingsRendererFromRoot()
-    {
-        $systemAjax = new SystemAjax(new LoggingSystem(), new SettingsRenderer());
-        $ref = new \ReflectionClass($systemAjax);
-        $prop = $ref->getProperty('renderer');
-        $prop->setAccessible(true);
-        $this->assertInstanceOf(SettingsRenderer::class, $prop->getValue($systemAjax));
     }
 
     public function testAjaxEmailSystemInfoInvalidEmail() {

@@ -41,48 +41,4 @@ function updateElement(elementId, value) {
     }
 }
 
-// Remove showDebugMessage function and replace all calls with ctmShowToast
-document.addEventListener('DOMContentLoaded', function() {
-    const exportBtn = document.getElementById('ctm-export-system-info');
-    if (exportBtn) {
-        exportBtn.addEventListener('click', function() {
-            exportBtn.disabled = true;
-            exportBtn.textContent = 'Exporting...';
-            fetch(window.ajaxurl, {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: new URLSearchParams({
-                    action: 'ctm_export_diagnostic_report',
-                    nonce: window.ctmDebugVars?.ctm_export_diagnostic_report_nonce || ''
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                exportBtn.disabled = false;
-                exportBtn.textContent = 'Export System Info';
-                if (data.success && data.data && data.data.report) {
-                    const blob = new Blob([data.data.report], {type: 'text/plain'});
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'ctm-system-info.txt';
-                    document.body.appendChild(a);
-                    a.click();
-                    setTimeout(() => {
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                    }, 100);
-                } else {
-                    alert('Failed to export system info: ' + (data.data?.message || 'Unknown error'));
-                }
-            })
-            .catch(err => {
-                exportBtn.disabled = false;
-                exportBtn.textContent = 'Export System Info';
-                alert('Export failed: ' + err);
-            });
-        });
-    }
-});
 </script> 

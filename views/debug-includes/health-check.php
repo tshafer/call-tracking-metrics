@@ -1,72 +1,64 @@
 <?php
 /**
  * Plugin Health Check Component
- * Comprehensive system assessment and health monitoring
+ * Simplified system assessment and health monitoring
  */
 ?>
 
-<div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-    <div class="flex items-center justify-between mb-4 gap-4">
+<div class="bg-white rounded-xl shadow-lg border border-gray-200">
+    <div class="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors" onclick="togglePanel('health-check')">
         <div class="flex items-center gap-2">
-            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg id="health-check-icon" class="w-5 h-5 text-green-600 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: rotate(180deg);">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
-            <h3 class="text-2xl font-extrabold text-gray-900"><?php _e('Plugin Health Check', 'call-tracking-metrics'); ?></h3>
+            <h3 class="text-lg font-semibold text-gray-900"><?php _e('Plugin Health Check', 'call-tracking-metrics'); ?></h3>
         </div>
-        <div class="flex justify-center my-4">
-            <button onclick="exportHealthReport()" class="bg-gray-600 hover:bg-gray-700 !text-white font-medium px-6 py-2 rounded-xl flex items-center gap-2 justify-center transition" type="button">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-                <?php _e('Export Health Report', 'call-tracking-metrics'); ?>
-            </button>
-        </div>
+        <button onclick="event.stopPropagation(); exportHealthReport()" class="bg-gray-600 hover:bg-gray-700 !text-white font-medium px-4 py-1 rounded-lg flex items-center gap-2 text-sm transition">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <?php _e('Export', 'call-tracking-metrics'); ?>
+        </button>
     </div>
     
-    <div class="space-y-4">
+    <div id="health-check-content" class="border-t border-gray-200 p-6">
         <!-- Overall Health Score -->
-        <div class="bg-gradient-to-br from-green-50 via-blue-50 to-green-100 border border-green-200 rounded-xl p-6 shadow-sm">
+        <div class="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-xl p-6 mb-6">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-4">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-sm">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
+                    <div class="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
                     </div>
-                    <div class="flex-1">
-                        <div class="flex items-center gap-3">
-                            <h4 class="text-xl font-bold text-green-800 !mt-0 !mb-0"><?php _e('Overall Health Score', 'call-tracking-metrics'); ?></h4>
-                            <button onclick="showHealthScoreInfo()" class="text-green-600 hover:text-green-800 transition-colors p-1.5 rounded-full hover:bg-green-100 flex items-center justify-center" title="<?php _e('How is the health score calculated?', 'call-tracking-metrics'); ?>">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </button>
-                        </div>
-                        <p class="text-sm text-green-600 font-medium !mt-0 !mb-0"><?php _e('System status assessment', 'call-tracking-metrics'); ?></p>
+                    <div>
+                        <h4 class="text-xl font-bold text-green-800"><?php _e('Overall Health Score', 'call-tracking-metrics'); ?></h4>
+                        <p class="text-sm text-green-600"><?php _e('System status assessment', 'call-tracking-metrics'); ?></p>
                     </div>
                 </div>
                 <div class="text-right">
-                    <div id="health-score" class="text-4xl font-bold text-green-600 mb-1">--</div>
-                    <div class="text-sm text-green-700 font-medium"><?php _e('out of 100', 'call-tracking-metrics'); ?></div>
+                    <div id="health-score" class="text-4xl font-bold text-green-600">--</div>
+                    <div class="text-sm text-green-700"><?php _e('out of 100', 'call-tracking-metrics'); ?></div>
                 </div>
             </div>
         </div>
 
         <!-- Health Check Categories -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <!-- API Configuration -->
             <div class="border border-gray-200 rounded-lg p-4">
-                <div class="flex items-center gap-1 mb-2">
+                <div class="flex items-center gap-2 mb-3">
                     <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                     </svg>
-                    <h5 class="text-lg font-bold text-gray-900"><?php _e('API Configuration', 'call-tracking-metrics'); ?></h5>
+                    <h5 class="font-bold text-gray-900"><?php _e('API Configuration', 'call-tracking-metrics'); ?></h5>
                 </div>
-                <div id="health-api" class="space-y-2">
+                <div class="space-y-2">
                     <div class="flex items-center justify-between text-sm">
-                        <span><?php _e('API Key Configured', 'call-tracking-metrics'); ?></span>
+                        <span><?php _e('API Key', 'call-tracking-metrics'); ?></span>
                         <span id="check-api-key" class="health-indicator">⏳</span>
                     </div>
                     <div class="flex items-center justify-between text-sm">
@@ -80,37 +72,17 @@
                 </div>
             </div>
 
-            <!-- Form Integration -->
-            <div class="border border-gray-200 rounded-lg p-4">
-                <div class="flex items-center gap-1 mb-2">
-                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    <h5 class="text-lg font-bold text-gray-900"><?php _e('Form Integration', 'call-tracking-metrics'); ?></h5>
-                </div>
-                <div id="health-forms" class="space-y-2">
-                    <div class="flex items-center justify-between text-sm">
-                        <span><?php _e('Contact Form 7', 'call-tracking-metrics'); ?></span>
-                        <span id="check-cf7" class="health-indicator">⏳</span>
-                    </div>
-                    <div class="flex items-center justify-between text-sm">
-                        <span><?php _e('Gravity Forms', 'call-tracking-metrics'); ?></span>
-                        <span id="check-gf" class="health-indicator">⏳</span>
-                    </div>
-                </div>
-            </div>
-
             <!-- Server Requirements -->
             <div class="border border-gray-200 rounded-lg p-4">
-                <div class="flex items-center gap-1 mb-2">
+                <div class="flex items-center gap-2 mb-3">
                     <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path>
                     </svg>
-                    <h5 class="text-lg font-bold text-gray-900"><?php _e('Server Requirements', 'call-tracking-metrics'); ?></h5>
+                    <h5 class="font-bold text-gray-900"><?php _e('Server Requirements', 'call-tracking-metrics'); ?></h5>
                 </div>
-                <div id="health-server" class="space-y-2">
+                <div class="space-y-2">
                     <div class="flex items-center justify-between text-sm">
-                        <span><?php _e('PHP Version (7.4+)', 'call-tracking-metrics'); ?></span>
+                        <span><?php _e('PHP Version', 'call-tracking-metrics'); ?></span>
                         <span id="check-php-version" class="health-indicator">⏳</span>
                     </div>
                     <div class="flex items-center justify-between text-sm">
@@ -130,13 +102,13 @@
 
             <!-- Plugin Status -->
             <div class="border border-gray-200 rounded-lg p-4">
-                <div class="flex items-center gap-1 mb-2">
-                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m0 0V1a1 1 0 011-1h2a1 1 0 011 1v3M7 4H5a1 1 0 00-1 1v3m0 0v8a2 2 0 002 2h10a2 2 0 002-2V8m0 0V5a1 1 0 00-1-1h-2M7 4h10"/>
                     </svg>
-                    <h5 class="text-lg font-bold text-gray-900"><?php _e('Plugin Status', 'call-tracking-metrics'); ?></h5>
+                    <h5 class="font-bold text-gray-900"><?php _e('Plugin Status', 'call-tracking-metrics'); ?></h5>
                 </div>
-                <div id="health-plugin" class="space-y-2">
+                <div class="space-y-2">
                     <div class="flex items-center justify-between text-sm">
                         <span><?php _e('Plugin Version', 'call-tracking-metrics'); ?></span>
                         <span id="check-plugin-version" class="health-indicator">⏳</span>
@@ -155,39 +127,41 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Form Integration -->
+            <div class="border border-gray-200 rounded-lg p-4">
+                <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <h5 class="font-bold text-gray-900"><?php _e('Form Integration', 'call-tracking-metrics'); ?></h5>
+                </div>
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between text-sm">
+                        <span><?php _e('Contact Form 7', 'call-tracking-metrics'); ?></span>
+                        <span id="check-cf7" class="health-indicator">⏳</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <span><?php _e('Gravity Forms', 'call-tracking-metrics'); ?></span>
+                        <span id="check-gf" class="health-indicator">⏳</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="flex gap-3 pt-4 border-t border-gray-200">
-            <button onclick="runHealthCheck()" id="health-check-btn" class="bg-green-600 hover:bg-green-700 !text-white font-medium px-6 py-2 rounded-lg transition duration-200 flex items-center gap-2">
+        <!-- Action Button -->
+        <div class="flex justify-center">
+            <button onclick="runHealthCheck()" id="health-check-btn" class="bg-green-600 hover:bg-green-700 !text-white font-medium px-6 py-2 rounded-lg transition flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
                 </svg>
                 <?php _e('Run Health Check', 'call-tracking-metrics'); ?>
             </button>
-            
-            <!-- Error Rate Monitor -->
-            <div id="error-rate-monitor" class="hidden">
-                <button onclick="showRecentErrors()" id="show-errors-btn" class="bg-red-600 hover:bg-red-700 !text-white font-medium px-6 py-2 rounded-lg transition duration-200 flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                    </svg>
-                    <span id="error-rate-text">High error rate detected</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Health Recommendations -->
-        <div id="health-recommendations" class="hidden mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <h5 class="font-semibold text-blue-800 mb-2"><?php _e('Recommendations', 'call-tracking-metrics'); ?></h5>
-            <ul id="recommendations-list" class="text-sm text-blue-700 space-y-1"></ul>
         </div>
     </div>
 </div>
+
 <script>
-
-
-
 // Export Health Report
 function exportHealthReport() {
     const button = event.target;
@@ -196,7 +170,7 @@ function exportHealthReport() {
     button.disabled = true;
     button.textContent = 'Generating...';
     
-    // Collect current health check data
+    // Collect health check data
     const healthData = {
         timestamp: new Date().toISOString(),
         overall_score: document.getElementById('health-score')?.textContent || 'N/A',
@@ -210,64 +184,29 @@ function exportHealthReport() {
         const status = element.textContent === '✓' ? 'pass' : 
                      element.textContent === '⚠' ? 'warning' : 
                      element.textContent === '✗' ? 'fail' : 'pending';
-        const message = element.title || '';
         
         healthData.checks.push({
             name: checkName,
-            status: status,
-            message: message
+            status: status
         });
     });
     
-    // Get system information from the correct elements
-    const getSystemInfo = () => {
-        // Get WordPress version from system info panel
-        const wpVersionElement = document.querySelector('[data-metric="wp_version"] .text-2xl');
-        const wpVersion = wpVersionElement?.textContent || 'N/A';
-        
-        // Get PHP version from system info panel
-        const phpVersionElement = document.querySelector('[data-metric="php_version"] .text-2xl');
-        const phpVersion = phpVersionElement?.textContent || 'N/A';
-        
-        // Get memory usage from system info panel
-        const memoryElement = document.querySelector('[data-metric="memory_usage"] .text-2xl');
-        const memoryUsage = memoryElement?.textContent || 'N/A';
-        
-        // Plugin version is hardcoded as 2.0 in the system
-        const pluginVersion = '2.0';
-        
-        return {
-            wordpress_version: wpVersion,
-            php_version: phpVersion,
-            plugin_version: pluginVersion,
-            memory_usage: memoryUsage
-        };
-    };
-    
-    const systemInfo = getSystemInfo();
-    
-    // Generate downloadable report
+    // Generate report
     const reportContent = `
 Call Tracking Metrics - Health Report
 Generated: ${new Date().toLocaleString()}
 
 Overall Health Score: ${healthData.overall_score}/100
 
-Detailed Check Results:
+Check Results:
 ${healthData.checks.map(check => 
-    `${check.name}: ${check.status.toUpperCase()}${check.message ? ' - ' + check.message : ''}`
+    `${check.name}: ${check.status.toUpperCase()}`
 ).join('\n')}
-
-System Information:
-- WordPress Version: ${systemInfo.wordpress_version}
-- PHP Version: ${systemInfo.php_version}
-- Plugin Version: ${systemInfo.plugin_version}
-- Memory Usage: ${systemInfo.memory_usage}
 
 Report generated by Call Tracking Metrics Plugin
     `.trim();
     
-    // Create and download file
+    // Download file
     const blob = new Blob([reportContent], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -280,15 +219,15 @@ Report generated by Call Tracking Metrics Plugin
     
     button.disabled = false;
     button.textContent = originalText;
-    showDebugMessage('Health report exported successfully', 'success');
+                ctmShowToast('Health report exported successfully', 'success');
 }
 
-// Plugin Health Check
+// Run Health Check
 function runHealthCheck() {
     const button = document.getElementById('health-check-btn');
     
     if (!button) {
-        showDebugMessage('Health check button not found', 'error');
+        ctmShowToast('Health check button not found', 'error');
         return;
     }
     
@@ -300,7 +239,7 @@ function runHealthCheck() {
         Running Checks...
     `;
     
-    // Reset all health indicators to loading state
+    // Reset all health indicators
     const healthIndicators = document.querySelectorAll('.health-indicator');
     healthIndicators.forEach(indicator => {
         indicator.textContent = '⏳';
@@ -348,28 +287,8 @@ function runHealthCheck() {
                                          check.status === 'warning' ? 'text-yellow-600' : 'text-red-600';
                         
                         element.textContent = icon;
-                        element.className = `health-indicator ${colorClass} cursor-help`;
-                        
-                        // Enhanced tooltip with status-specific information
-                        let tooltipText = check.message;
-                        if (check.status === 'fail') {
-                            tooltipText = `❌ FAILED: ${check.message}`;
-                        } else if (check.status === 'warning') {
-                            tooltipText = `⚠️ WARNING: ${check.message}`;
-                        } else if (check.status === 'pass') {
-                            tooltipText = `✅ PASSED: ${check.message}`;
-                        }
-                        
-                        element.title = tooltipText;
-                        
-                        // Add click handler for mobile/better UX
-                        element.onclick = function(e) {
-                            e.preventDefault();
-                            showDetailedCheckInfo(check.name, check.status, check.message);
-                        };
-                        
-                        // Add hover styling for better indication
-                        element.style.cursor = 'help';
+                        element.className = `health-indicator ${colorClass}`;
+                        element.title = check.message || '';
                     }
                 }
             });
@@ -381,33 +300,29 @@ function runHealthCheck() {
                 const totalChecks = checks.length;
                 const score = Math.round((passedChecks / totalChecks) * 100);
                 
-                console.log(`Health Score Calculation: ${passedChecks}/${totalChecks} = ${score}%`);
-                
                 healthScore.textContent = score;
-                healthScore.className = score >= 80 ? 'text-3xl font-bold text-green-600' :
-                                       score >= 60 ? 'text-3xl font-bold text-yellow-600' :
-                                       'text-3xl font-bold text-red-600';
-            } else {
-                console.log('Health score element not found');
+                healthScore.className = score >= 80 ? 'text-4xl font-bold text-green-600' :
+                                       score >= 60 ? 'text-4xl font-bold text-yellow-600' :
+                                       'text-4xl font-bold text-red-600';
             }
             
             const failedChecks = checks.filter(c => c.status === 'fail').length;
             const warningChecks = checks.filter(c => c.status === 'warning').length;
             
             if (failedChecks === 0 && warningChecks === 0) {
-                showDebugMessage('All health checks passed!', 'success');
+                ctmShowToast('All health checks passed!', 'success');
             } else if (failedChecks > 0) {
-                showDebugMessage(`Health check completed with ${failedChecks} failures and ${warningChecks} warnings`, 'error');
+                ctmShowToast(`Health check completed with ${failedChecks} failures and ${warningChecks} warnings`, 'error');
             } else {
-                showDebugMessage(`Health check completed with ${warningChecks} warnings`, 'warning');
+                ctmShowToast(`Health check completed with ${warningChecks} warnings`, 'warning');
             }
         } else {
-            showDebugMessage('Health check failed to run', 'error');
+            ctmShowToast('Health check failed to run', 'error');
         }
     })
     .catch(error => {
         console.error('Health check error:', error);
-        showDebugMessage('Network error during health check', 'error');
+                    ctmShowToast('Network error during health check', 'error');
     })
     .finally(() => {
         button.disabled = false;
@@ -420,676 +335,9 @@ function runHealthCheck() {
     });
 }
 
-
-
-// Show detailed check information
-function showDetailedCheckInfo(checkName, status, message) {
-    // Create modal overlay
-    const modalOverlay = document.createElement('div');
-    modalOverlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-    modalOverlay.style.zIndex = '9999';
-    
-    // Determine colors based on status
-    const statusColors = {
-        'pass': { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-800', icon: '✅' },
-        'warning': { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-800', icon: '⚠️' },
-        'fail': { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800', icon: '❌' }
-    };
-    
-    const colors = statusColors[status] || statusColors['fail'];
-    
-    // Create modal content
-    modalOverlay.innerHTML = `
-        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-            <div class="flex items-start justify-between mb-4">
-                <div class="flex items-center">
-                    <div class="text-2xl mr-3">${colors.icon}</div>
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-900">${checkName}</h3>
-                        <span class="inline-block px-2 py-1 text-xs font-medium rounded-full ${colors.bg} ${colors.text} ${colors.border} border">
-                            ${status.toUpperCase()}
-                        </span>
-                    </div>
-                </div>
-                <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600 transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            
-            <div class="mb-6">
-                <h4 class="font-medium text-gray-900 mb-2">Details:</h4>
-                <p class="text-sm text-gray-700 leading-relaxed">${message}</p>
-            </div>
-            
-            ${status === 'fail' || status === 'warning' ? `
-                <div class="mb-6 p-4 ${colors.bg} ${colors.border} border rounded-lg">
-                    <h4 class="font-medium ${colors.text} mb-2">Recommended Actions:</h4>
-                    <div class="text-sm ${colors.text}">
-                        ${getRecommendedActions(checkName, status)}
-                    </div>
-                </div>
-            ` : ''}
-            
-            <div class="flex justify-end space-x-3">
-                <button onclick="this.closest('.fixed').remove()" 
-                        class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                    Close
-                </button>
-            </div>
-        </div>
-    `;
-    
-    // Close modal when clicking overlay
-    modalOverlay.addEventListener('click', function(e) {
-        if (e.target === modalOverlay) {
-            modalOverlay.remove();
-        }
-    });
-    
-    // Add to page
-    document.body.appendChild(modalOverlay);
-}
-
-
-// Get recommended actions for specific checks
-function getRecommendedActions(checkName, status) {
-    const recommendations = {
-        'API Key Configured': 'Go to the General tab and enter your CallTrackingMetrics API key and secret.',
-        'API Connection': 'Check your internet connection and verify your API credentials are correct.',
-        'Account Access': 'Ensure your API key has proper permissions in your CallTrackingMetrics account.',
-        'Contact Form 7': 'Install and activate the Contact Form 7 plugin, or disable CF7 integration in settings.',
-        'Gravity Forms': 'Install and activate Gravity Forms, or disable GF integration in settings.',
-        'PHP Version (7.4+)': 'Contact your hosting provider to upgrade PHP to version 7.4 or higher.',
-        'cURL Extension': 'Contact your hosting provider to enable the cURL PHP extension.',
-        'SSL Support': 'Ensure your server has SSL/TLS support enabled for secure API communications.',
-        'Memory Limit': 'Contact your hosting provider to increase PHP memory limit to 256MB or higher.',
-        'Plugin Version': 'Update the CallTrackingMetrics plugin to the latest version.',
-        'Database Tables': 'Deactivate and reactivate the plugin to recreate missing database tables.',
-        'File Permissions': 'Check that the WordPress uploads directory has proper write permissions.',
-        'Debug Mode': 'Enable debug mode in the Debug tab for better troubleshooting and logging.'
-    };
-    
-    return recommendations[checkName] || 'Please contact support for assistance with this issue.';
-}
-
-// Silent health check function for auto-loading (no toast notifications)
-function runHealthCheckSilent() {
-    console.log('[CTM] Running silent health check...');
-    
-    const formData = new FormData();
-    formData.append('action', 'ctm_health_check');
-    formData.append('nonce', '<?= wp_create_nonce('ctm_health_check') ?>');
-    
-    console.log('[CTM] Sending health check request...');
-    
-    fetch('<?= admin_url('admin-ajax.php') ?>', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => {
-        console.log('[CTM] Health check response status:', response.status);
-        return response.json();
-    })
-    .then(response => {
-        console.log('[CTM] Health check response:', response);
-        if (response.success) {
-            const checks = response.data.checks || [];
-            console.log('[CTM] Processing', checks.length, 'health checks');
-            
-            // Update health indicators silently
-            checks.forEach(check => {
-                // Map check names to indicator IDs
-                const nameToIdMap = {
-                    'API Key': 'check-api-key',
-                    'API Connection': 'check-api-connection',
-                    'Account Access': 'check-account-access',
-                    'Contact Form 7': 'check-cf7',
-                    'Gravity Forms': 'check-gf',
-                    'PHP Version': 'check-php-version',
-                    'cURL Extension': 'check-curl',
-                    'SSL Support': 'check-ssl',
-                    'Memory Limit': 'check-memory',
-                    'Plugin Version': 'check-plugin-version',
-                    'Database Tables': 'check-database-tables',
-                    'File Permissions': 'check-file-permissions',
-                    'Debug Mode': 'check-debug-mode'
-                };
-                
-                const indicatorId = nameToIdMap[check.name];
-                const indicator = document.getElementById(indicatorId);
-                
-                if (indicator) {
-                    indicator.textContent = check.status === 'pass' ? '✅' : 
-                                          check.status === 'warning' ? '⚠️' : '❌';
-                    indicator.className = `health-indicator ${check.status === 'pass' ? 'text-green-600' : 
-                                                           check.status === 'warning' ? 'text-yellow-600' : 'text-red-600'}`;
-                    console.log('[CTM] Updated indicator for', check.name, 'to', check.status);
-                } else {
-                    console.log('[CTM] Indicator not found for', check.name, '(ID:', indicatorId, ')');
-                }
-            });
-            
-            // Update overall health score silently
-            const healthScore = document.getElementById('health-score');
-            if (healthScore) {
-                const passedChecks = checks.filter(c => c.status === 'pass').length;
-                const totalChecks = checks.length;
-                const score = Math.round((passedChecks / totalChecks) * 100);
-                
-                healthScore.textContent = score;
-                healthScore.className = score >= 80 ? 'text-3xl font-bold text-green-600' :
-                                       score >= 60 ? 'text-3xl font-bold text-yellow-600' :
-                                       'text-3xl font-bold text-red-600';
-                console.log('[CTM] Updated health score to', score);
-            } else {
-                console.log('[CTM] Health score element not found');
-            }
-        } else {
-            console.error('[CTM] Health check failed:', response);
-        }
-    })
-    .catch(error => {
-        console.error('[CTM] Health check error:', error);
-    });
-}
-
-// Auto-load health check on page load (silent)
+// Auto-load health check on page load
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('[CTM] DOM Content Loaded - starting silent health check');
-    runHealthCheckSilent();
-    
-    // Check error rate on page load
-    checkErrorRate();
+    runHealthCheck();
 });
-
-// Check error rate and show warning if high
-function checkErrorRate() {
-    const formData = new FormData();
-    formData.append('action', 'ctm_get_error_rate_stats');
-    formData.append('nonce', '<?= wp_create_nonce('ctm_form_logs') ?>');
-    
-    fetch('<?= admin_url('admin-ajax.php') ?>', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            const stats = data.data;
-            const errorRate = stats.error_rate || 0;
-            
-            // Show error rate monitor if error rate is above 10%
-            if (errorRate > 10) {
-                const monitor = document.getElementById('error-rate-monitor');
-                const text = document.getElementById('error-rate-text');
-                
-                if (monitor && text) {
-                    monitor.classList.remove('hidden');
-                    text.textContent = `High error rate detected (${errorRate}%)`;
-                }
-            }
-        }
-    })
-    .catch(error => {
-        console.error('Error checking error rate:', error);
-    });
-}
-
-// Show recent errors modal
-function showRecentErrors() {
-    const formData = new FormData();
-    formData.append('action', 'ctm_get_recent_errors');
-    formData.append('nonce', '<?= wp_create_nonce('ctm_form_logs') ?>');
-    formData.append('limit', '20');
-    
-    fetch('<?= admin_url('admin-ajax.php') ?>', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showErrorsModal(data.data.errors);
-        } else {
-            showDebugMessage('Failed to load recent errors', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error loading recent errors:', error);
-        showDebugMessage('Network error loading errors', 'error');
-    });
-}
-
-// Display errors in a modal
-function showErrorsModal(errors) {
-    // Create modal overlay
-    const modalOverlay = document.createElement('div');
-    modalOverlay.className = 'fixed inset-0 bg-black bg-opacity-60 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4';
-    
-    // Create modal content
-    const modalContent = `
-        <div class="relative mx-auto w-full max-w-4xl shadow-2xl rounded-xl bg-white overflow-hidden" style="max-height: 90vh;">
-            <!-- Header -->
-            <div class="bg-gradient-to-r from-red-50 to-red-100 px-6 py-6 border-b border-red-200">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 bg-red-100 border-2 border-red-200 rounded-xl flex items-center justify-center shadow-sm">
-                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="text-xl font-bold text-gray-900">Recent Errors</h3>
-                            <p class="text-sm text-gray-600">Showing the last ${errors.length} error logs</p>
-                        </div>
-                    </div>
-                    <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-full hover:bg-gray-100">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Content -->
-            <div class="px-6 py-6" style="max-height: calc(100vh - 200px); overflow-y: auto;">
-                ${errors.length === 0 ? `
-                    <div class="text-center py-8">
-                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                        <h4 class="text-lg font-semibold text-gray-900 mb-2">No Recent Errors</h4>
-                        <p class="text-gray-600">Great! No errors have been detected in the recent logs.</p>
-                    </div>
-                ` : `
-                    <div class="space-y-4">
-                        ${errors.map((error, index) => `
-                            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                                <div class="flex items-start justify-between mb-2">
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-2 h-2 bg-red-500 rounded-full"></div>
-                                        <span class="text-sm font-medium text-red-800">Error #${index + 1}</span>
-                                    </div>
-                                    <div class="text-xs text-gray-500">
-                                        ${error.date} at ${error.timestamp}
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <p class="text-sm text-red-700 font-medium">${error.message}</p>
-                                </div>
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs text-gray-600">
-                                    <div>
-                                        <span class="font-medium">User ID:</span> ${error.user_id || 'N/A'}
-                                    </div>
-                                    <div>
-                                        <span class="font-medium">IP Address:</span> ${error.ip_address || 'N/A'}
-                                    </div>
-                                    <div>
-                                        <span class="font-medium">Memory:</span> ${formatBytes(error.memory_usage)}
-                                    </div>
-                                </div>
-                                ${Object.keys(error.context).length > 0 ? `
-                                    <details class="mt-3">
-                                        <summary class="text-xs font-medium text-gray-700 cursor-pointer hover:text-gray-900 flex items-center gap-1">
-                                            <svg class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                            </svg>
-                                            Show Context (${Object.keys(error.context).length} items)
-                                        </summary>
-                                        <div class="mt-2 p-3 bg-gray-100 rounded text-xs font-mono text-gray-700" style="max-height: 200px; overflow-y: auto; overflow-x: auto;">
-                                            <pre class="whitespace-pre-wrap">${JSON.stringify(error.context, null, 2)}</pre>
-                                        </div>
-                                    </details>
-                                ` : ''}
-                            </div>
-                        `).join('')}
-                    </div>
-                `}
-            </div>
-            
-            <!-- Footer -->
-            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                <div class="flex justify-between items-center">
-                    <div class="text-sm text-gray-600">
-                        ${errors.length} error${errors.length !== 1 ? 's' : ''} shown
-                    </div>
-                    <div class="flex gap-3">
-                        <button onclick="this.closest('.fixed').remove()" 
-                                class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                            Close
-                        </button>
-                        <button onclick="clearAllLogs()" 
-                                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                            Clear All Logs
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    modalOverlay.innerHTML = modalContent;
-    
-    // Close modal when clicking overlay
-    modalOverlay.addEventListener('click', function(e) {
-        if (e.target === modalOverlay) {
-            modalOverlay.remove();
-        }
-    });
-    
-    // Add to page
-    document.body.appendChild(modalOverlay);
-}
-
-// Helper function to format bytes
-function formatBytes(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-// Show health score information modal
-function showHealthScoreInfo() {
-    // Create modal overlay
-    const modalOverlay = document.createElement('div');
-    modalOverlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-    modalOverlay.style.zIndex = '9999';
-    
-    // Create modal content
-    modalOverlay.innerHTML = `
-        <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full mx-4 p-8 max-h-[90vh] overflow-y-auto">
-            <div class="flex items-start justify-between mb-8">
-                <div class="flex items-center gap-4">
-                    <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-                        <div class="text-3xl">📊</div>
-                    </div>
-                    <div>
-                        <h3 class="text-2xl font-bold text-gray-900 mb-1">Health Score Calculation</h3>
-                        <p class="text-gray-600">How your plugin health score is calculated</p>
-                    </div>
-                </div>
-                <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-full hover:bg-gray-100">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            
-            <div class="space-y-8">
-                <!-- Score Formula -->
-                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                            </svg>
-                        </div>
-                        <h4 class="text-xl font-bold text-blue-800">Score Formula</h4>
-                    </div>
-                    <div class="text-blue-700">
-                        <div class="bg-blue-100 border border-blue-200 rounded-lg p-4 mb-3">
-                            <p class="font-mono text-lg font-semibold">Health Score = (Passed Checks ÷ Total Checks) × 100</p>
-                        </div>
-                        <p class="text-sm">Example: 11 passed checks out of 14 total = <span class="font-bold text-blue-800">(11 ÷ 14) × 100 = 79%</span></p>
-                    </div>
-                </div>
-
-                <!-- Color Coding -->
-                <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z"></path>
-                            </svg>
-                        </div>
-                        <h4 class="text-xl font-bold text-green-800">Score Color Coding</h4>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="bg-white border border-green-200 rounded-lg p-4 flex items-center gap-3">
-                            <div class="w-6 h-6 bg-green-500 rounded-full shadow-sm"></div>
-                            <div>
-                                <div class="font-bold text-green-800">80-100%</div>
-                                <div class="text-sm text-green-600">Excellent</div>
-                            </div>
-                        </div>
-                        <div class="bg-white border border-yellow-200 rounded-lg p-4 flex items-center gap-3">
-                            <div class="w-6 h-6 bg-yellow-500 rounded-full shadow-sm"></div>
-                            <div>
-                                <div class="font-bold text-yellow-800">60-79%</div>
-                                <div class="text-sm text-yellow-600">Good</div>
-                            </div>
-                        </div>
-                        <div class="bg-white border border-red-200 rounded-lg p-4 flex items-center gap-3">
-                            <div class="w-6 h-6 bg-red-500 rounded-full shadow-sm"></div>
-                            <div>
-                                <div class="font-bold text-red-800">0-59%</div>
-                                <div class="text-sm text-red-600">Needs Attention</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Health Checks Breakdown -->
-                <div>
-                    <div class="flex items-center gap-3 mb-6">
-                        <div class="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                            </svg>
-                        </div>
-                        <h4 class="text-xl font-bold text-gray-800">Health Checks Breakdown</h4>
-                    </div>
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        
-                        <!-- API Configuration -->
-                        <div class="bg-white border border-blue-200 rounded-xl p-5 shadow-sm">
-                            <div class="flex items-center gap-2 mb-4">
-                                <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
-                                    </svg>
-                                </div>
-                                <h5 class="font-bold text-blue-700">API Configuration (3 checks)</h5>
-                            </div>
-                            <div class="space-y-2 text-sm">
-                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                                    <span class="text-gray-700">API Key</span>
-                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ❌ Fail</span>
-                                </div>
-                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                                    <span class="text-gray-700">API Connection</span>
-                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ❌ Fail</span>
-                                </div>
-                                <div class="flex justify-between items-center py-2">
-                                    <span class="text-gray-700">Account Access</span>
-                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ❌ Fail</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Form Integration -->
-                        <div class="bg-white border border-purple-200 rounded-xl p-5 shadow-sm">
-                            <div class="flex items-center gap-2 mb-4">
-                                <div class="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                    </svg>
-                                </div>
-                                <h5 class="font-bold text-purple-700">Form Integration (3 checks)</h5>
-                            </div>
-                            <div class="space-y-2 text-sm">
-                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                                    <span class="text-gray-700">Contact Form 7</span>
-                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ⚠️ Warning</span>
-                                </div>
-                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                                    <span class="text-gray-700">Gravity Forms</span>
-                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ⚠️ Warning</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Server Requirements -->
-                        <div class="bg-white border border-orange-200 rounded-xl p-5 shadow-sm">
-                            <div class="flex items-center gap-2 mb-4">
-                                <div class="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path>
-                                    </svg>
-                                </div>
-                                <h5 class="font-bold text-orange-700">Server Requirements (4 checks)</h5>
-                            </div>
-                            <div class="space-y-2 text-sm">
-                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                                    <span class="text-gray-700">PHP Version</span>
-                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ⚠️ Warning</span>
-                                </div>
-                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                                    <span class="text-gray-700">cURL Extension</span>
-                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ❌ Fail</span>
-                                </div>
-                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                                    <span class="text-gray-700">SSL Support</span>
-                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ❌ Fail</span>
-                                </div>
-                                <div class="flex justify-between items-center py-2">
-                                    <span class="text-gray-700">Memory Limit</span>
-                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ⚠️ Warning</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Plugin Status -->
-                        <div class="bg-white border border-red-200 rounded-xl p-5 shadow-sm">
-                            <div class="flex items-center gap-2 mb-4">
-                                <div class="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m0 0V1a1 1 0 011-1h2a1 1 0 011 1v3M7 4H5a1 1 0 00-1 1v3m0 0v8a2 2 0 002 2h10a2 2 0 002-2V8m0 0V5a1 1 0 00-1-1h-2M7 4h10"></path>
-                                    </svg>
-                                </div>
-                                <h5 class="font-bold text-red-700">Plugin Status (4 checks)</h5>
-                            </div>
-                            <div class="space-y-2 text-sm">
-                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                                    <span class="text-gray-700">Plugin Version</span>
-                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Always Pass</span>
-                                </div>
-                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                                    <span class="text-gray-700">Database Tables</span>
-                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ❌ Fail</span>
-                                </div>
-                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                                    <span class="text-gray-700">File Permissions</span>
-                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ⚠️ Warning</span>
-                                </div>
-                                <div class="flex justify-between items-center py-2">
-                                    <span class="text-gray-700">Debug Mode</span>
-                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">✅ Pass / ⚠️ Warning</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Impact Levels -->
-                <div class="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-6">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-10 h-10 bg-yellow-500 rounded-xl flex items-center justify-center">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                            </svg>
-                        </div>
-                        <h4 class="text-xl font-bold text-yellow-800">Impact Levels</h4>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                        <div class="bg-white border border-red-200 rounded-lg p-4">
-                            <div class="flex items-center gap-2 mb-2">
-                                <div class="w-4 h-4 bg-red-500 rounded-full"></div>
-                                <span class="font-bold text-red-700">High Impact (❌ Fail)</span>
-                            </div>
-                            <p class="text-red-600 text-xs">API Key, API Connection, Account Access, cURL Extension, SSL Support, Database Tables</p>
-                        </div>
-                        <div class="bg-white border border-yellow-200 rounded-lg p-4">
-                            <div class="flex items-center gap-2 mb-2">
-                                <div class="w-4 h-4 bg-yellow-500 rounded-full"></div>
-                                <span class="font-bold text-yellow-700">Medium Impact (⚠️ Warning)</span>
-                            </div>
-                            <p class="text-yellow-600 text-xs">Form Integrations, PHP Version, Memory Limit, File Permissions, Debug Mode</p>
-                        </div>
-                        <div class="bg-white border border-green-200 rounded-lg p-4">
-                            <div class="flex items-center gap-2 mb-2">
-                                <div class="w-4 h-4 bg-green-500 rounded-full"></div>
-                                <span class="font-bold text-green-700">Low Impact (✅ Always Pass)</span>
-                            </div>
-                            <p class="text-green-600 text-xs">Plugin Version</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Improvement Tips -->
-                <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                            </svg>
-                        </div>
-                        <h4 class="text-xl font-bold text-green-800">To Reach 100% Score</h4>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <ul class="space-y-2 text-sm text-green-700">
-                            <li class="flex items-start gap-2">
-                                <div class="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                                <span>Configure API credentials and test connection</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <div class="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                                <span>Install optional form plugins (CF7, Gravity Forms)</span>
-                            </li>
-                        </ul>
-                        <ul class="space-y-2 text-sm text-green-700">
-                            <li class="flex items-start gap-2">
-                                <div class="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                                <span>Enable debug mode for troubleshooting</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <div class="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                                <span>Ensure server meets all requirements (PHP 7.4+, cURL, SSL)</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <div class="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                                <span>Verify file permissions are correct</span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="flex justify-end mt-8">
-                <button onclick="this.closest('.fixed').remove()" 
-                        class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-3 rounded-xl text-sm font-semibold transition-all duration-200 shadow-lg hover:shadow-xl">
-                    Got it!
-                </button>
-            </div>
-        </div>
-    `;
-    
-    // Close modal when clicking overlay
-    modalOverlay.addEventListener('click', function(e) {
-        if (e.target === modalOverlay) {
-            modalOverlay.remove();
-        }
-    });
-    
-    // Add to page
-    document.body.appendChild(modalOverlay);
-}
-
 </script>
  

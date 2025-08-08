@@ -602,9 +602,6 @@ class ApiService
         
         if (!empty($apiKey) && !empty($apiSecret)) {
             $args['headers']['Authorization'] = 'Basic ' . base64_encode($apiKey . ':' . $apiSecret);
-            if ($should_log) {
-                $loggingSystem->logActivity('API Request - Authorization header set', 'api');
-            }
         }
         
         // Handle body encoding
@@ -631,10 +628,6 @@ class ApiService
         $statusCode = \wp_remote_retrieve_response_code($response);
         $body = \wp_remote_retrieve_body($response);
         
-        if ($should_log) {
-            $loggingSystem->logActivity("API Response - Status: {$statusCode}, Body length: " . strlen($body), 'api');
-        }
-        
         if ($statusCode >= 400) {
             $errorMessage = 'HTTP ' . $statusCode . ' error: ' . $body;
             if ($should_log) {
@@ -651,10 +644,6 @@ class ApiService
                 $loggingSystem->logActivity("API Error - Raw response: " . substr($body, 0, 500), 'error');
             }
             throw new \Exception($errorMessage);
-        }
-        
-        if ($should_log) {
-            $loggingSystem->logActivity('API Success - Successfully decoded JSON response', 'api');
         }
         
         return $result;

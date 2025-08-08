@@ -1,4 +1,19 @@
 <?php
+/**
+ * Documentation Tab View
+ * 
+ * This view file displays the documentation tab in the CallTrackingMetrics admin interface, providing user guides, API documentation, and help resources.
+ * 
+ * @package     CallTrackingMetrics
+ * @subpackage  Views
+ * @author      CallTrackingMetrics Team
+ * @copyright   2024 CallTrackingMetrics
+ * @license     GPL-2.0+
+ * @version     2.0.0
+ * @link        https://calltrackingmetrics.com
+ * @since       1.0.0
+ */
+
 // Documentation tab view with main tabs and subtabs
 ?>
 <div class="mb-12">

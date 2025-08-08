@@ -1,4 +1,19 @@
 <?php
+/**
+ * Form Import Tab View
+ * 
+ * This view file displays the form import tab in the CallTrackingMetrics admin interface, allowing users to import and sync forms from CTM.
+ * 
+ * @package     CallTrackingMetrics
+ * @subpackage  Views
+ * @author      CallTrackingMetrics Team
+ * @copyright   2024 CallTrackingMetrics
+ * @license     GPL-2.0+
+ * @version     2.0.0
+ * @link        https://calltrackingmetrics.com
+ * @since       1.0.0
+ */
+
 // Form Import tab view
 $has_api_credentials = !empty($apiKey) && !empty($apiSecret);
 $has_form_plugins = $cf7_available || $gf_available;

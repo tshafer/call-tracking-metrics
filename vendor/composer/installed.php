@@ -226,6 +226,15 @@
             'aliases' => array(),
             'dev_requirement' => true,
         ),
+        'phpstan/phpstan' => array(
+            'pretty_version' => '2.1.x-dev',
+            'version' => '2.1.9999999.9999999-dev',
+            'reference' => '56e6fb7e760128d2b54e86dda95cceae68201278',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../phpstan/phpstan',
+            'aliases' => array(),
+            'dev_requirement' => true,
+        ),
         'phpunit/php-code-coverage' => array(
             'pretty_version' => '10.1.16',
             'version' => '10.1.16.0',
@@ -476,6 +485,17 @@
             'type' => 'library',
             'install_path' => __DIR__ . '/../sebastian/version',
             'aliases' => array(),
+            'dev_requirement' => true,
+        ),
+        'shipmonk/dead-code-detector' => array(
+            'pretty_version' => 'dev-master',
+            'version' => 'dev-master',
+            'reference' => '18a28eb9c3ab1ced99bbe722a6889f1180034c7c',
+            'type' => 'phpstan-extension',
+            'install_path' => __DIR__ . '/../shipmonk/dead-code-detector',
+            'aliases' => array(
+                0 => '9999999-dev',
+            ),
             'dev_requirement' => true,
         ),
         'symfony/deprecation-contracts' => array(

@@ -66,12 +66,34 @@ class FormAjax {
         $this->wpcf7_contact_form = $wpcf7_contact_form ?: (class_exists('WPCF7_ContactForm') ? 'WPCF7_ContactForm' : null);
     }
     
+    /**
+     * Register AJAX handlers
+     * 
+     * Registers all form-related AJAX endpoints with WordPress.
+     * These endpoints handle form retrieval, field mapping, and notice management.
+     * 
+     * @since 1.0.0
+     * @return void
+     */
     public function registerHandlers() {
         \add_action('wp_ajax_ctm_get_forms', [$this, 'ajaxGetForms']);
         \add_action('wp_ajax_ctm_get_fields', [$this, 'ajaxGetFields']);
         \add_action('wp_ajax_ctm_dismiss_notice', [$this, 'ajaxDismissNotice']);
     }
     
+    /**
+     * AJAX handler to get available forms
+     * 
+     * Retrieves a list of available forms based on the requested form type.
+     * Supports both Gravity Forms (gf) and Contact Form 7 (cf7).
+     * 
+     * Expected POST parameters:
+     * - form_type: 'gf' for Gravity Forms, 'cf7' for Contact Form 7
+     * - nonce: Security nonce for verification
+     * 
+     * @since 1.0.0
+     * @return void Outputs JSON response
+     */
     public function ajaxGetForms(): void
     {
         check_ajax_referer('ctm_mapping_nonce', 'nonce');
@@ -91,6 +113,20 @@ class FormAjax {
         wp_send_json_success($forms);
     }
     
+    /**
+     * AJAX handler to get form fields
+     * 
+     * Retrieves the fields for a specific form to enable field mapping.
+     * Returns field ID and label information for the admin interface.
+     * 
+     * Expected POST parameters:
+     * - form_type: 'gf' for Gravity Forms, 'cf7' for Contact Form 7
+     * - form_id: The ID of the form to get fields for
+     * - nonce: Security nonce for verification
+     * 
+     * @since 1.0.0
+     * @return void Outputs JSON response with field data
+     */
     public function ajaxGetFields(): void
     {
         check_ajax_referer('ctm_mapping_nonce', 'nonce');
@@ -119,6 +155,19 @@ class FormAjax {
         wp_send_json_success($fields);
     }
     
+    /**
+     * AJAX handler to dismiss plugin notices
+     * 
+     * Handles dismissal of plugin notices in the admin interface.
+     * Stores the dismissal state to prevent showing the notice again.
+     * 
+     * Expected POST parameters:
+     * - notice_type: 'cf7' or 'gf' to specify which notice to dismiss
+     * - nonce: Security nonce for verification
+     * 
+     * @since 1.0.0
+     * @return void Outputs JSON response
+     */
     public function ajaxDismissNotice(): void
     {
         check_ajax_referer('ctm_dismiss_notice', 'nonce');

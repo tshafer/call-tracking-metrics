@@ -58,18 +58,6 @@ class FormImportAjax
     }
 
     /**
-     * Initialize AJAX handlers
-     * 
-     * @since 2.0.0
-     */
-    public function init(): void
-    {
-        add_action('wp_ajax_ctm_get_available_forms', [$this, 'getAvailableForms']);
-        add_action('wp_ajax_ctm_import_form', [$this, 'importForm']);
-        add_action('wp_ajax_ctm_preview_form', [$this, 'previewForm']);
-    }
-
-    /**
      * Register AJAX handlers
      * 
      * @since 2.0.0

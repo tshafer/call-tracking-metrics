@@ -1,23 +1,35 @@
 <?php
+/**
+ * System AJAX Handler
+ * 
+ * This file contains the SystemAjax class which handles AJAX requests related to
+ * system diagnostics, health checks, performance monitoring, and system information.
+ * 
+ * @package     CallTrackingMetrics
+ * @subpackage  Admin\Ajax
+ * @author      CallTrackingMetrics Team
+ * @copyright   2024 CallTrackingMetrics
+ * @license     GPL-2.0+
+ * @version     2.0.0
+ * @link        https://calltrackingmetrics.com
+ * @since       2.0.0
+ */
+
 namespace CTM\Admin\Ajax;
 
 use CTM\Admin\LoggingSystem;
-use CTM\Admin\SettingsRenderer;
 
 class SystemAjax {
 
     private $loggingSystem;
-    private $renderer;
 
-    public function __construct(LoggingSystem $loggingSystem, SettingsRenderer $renderer)
+    public function __construct(LoggingSystem $loggingSystem)
     {
         $this->loggingSystem = $loggingSystem;
-        $this->renderer = $renderer;
     }
 
     public function registerHandlers() {
         add_action('wp_ajax_ctm_health_check', [$this, 'ajaxHealthCheck']);
-        add_action('wp_ajax_ctm_get_performance_metrics', [$this, 'ajaxGetPerformanceMetrics']);
         add_action('wp_ajax_ctm_analyze_issue', [$this, 'ajaxAnalyzeIssue']);
         add_action('wp_ajax_ctm_email_system_info', [$this, 'ajaxEmailSystemInfo']);
         add_action('wp_ajax_ctm_refresh_system_info', [$this, 'ajaxRefreshSystemInfo']);
@@ -1402,188 +1414,7 @@ class SystemAjax {
         \wp_send_json_success(['checks' => $checks]);
     }
 
-      /**
-     * AJAX: Get Performance Metrics
-     */
-    public function ajaxGetPerformanceMetrics(): void
-    {
-        check_ajax_referer('ctm_get_performance_metrics', 'nonce');
-        
-        global $wpdb;
-        
-        // Get client-side metrics if provided
-        $client_metrics = isset($_POST['client_metrics']) ? json_decode(stripslashes($_POST['client_metrics']), true) : null;
-        
-        // Memory & Processing
-        $memory_limit = \ini_get('memory_limit');
-        $memory_limit_bytes = \wp_convert_hr_to_bytes($memory_limit);
-        $current_usage = memory_get_usage(true);
-        if (is_numeric($memory_limit_bytes) && $memory_limit_bytes > 0 && is_numeric($current_usage)) {
-            $memory_percentage = round(($current_usage / $memory_limit_bytes) * 100, 1) . '%';
-        } else {
-            $memory_percentage = 'N/A';
-        }
-        
-        // Database Performance
-        $total_queries = isset($wpdb->num_queries) ? $wpdb->num_queries : \get_num_queries();
-        
-        // Query time calculation
-        $query_time = 'N/A';
-        if (defined('SAVEQUERIES') && constant('SAVEQUERIES') && isset($wpdb->queries)) {
-            $total_time = 0;
-            foreach ($wpdb->queries as $query) {
-                $total_time += $query[1];
-            }
-            $query_time = round($total_time * 1000, 2) . 'ms';
-        } else {
-            $query_time = 'N/A (Enable SAVEQUERIES)';
-        }
-        
-        // Server load
-        $server_load = 'N/A';
-        if (function_exists('sys_getloadavg')) {
-            $load = sys_getloadavg();
-            $server_load = round($load[0], 2) . ' (1min)';
-        }
-        
-        // Disk space
-        $disk_space = 'N/A';
-        $upload_dir = \wp_upload_dir();
-        if (function_exists('disk_free_space') && isset($upload_dir['basedir'])) {
-            $free_bytes = disk_free_space($upload_dir['basedir']);
-            $disk_space = $free_bytes ? size_format($free_bytes) . ' free' : 'N/A';
-        }
-        
-        // Enhanced TTFB calculation
-        $ttfb = 'N/A';
-        if (isset($_SERVER['REQUEST_TIME_FLOAT'])) {
-            $ttfb = round((microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']) * 1000, 2) . 'ms';
-        }
-        
-        // Process client-side metrics with enhanced debugging and validation
-        $dom_ready = 'N/A (Client-side)';
-        $load_complete = 'N/A (Client-side)';
-        $scripts_loaded = 'N/A (Client-side)';
-        $styles_loaded = 'N/A (Client-side)';
-        $images_loaded = 'N/A (Client-side)';
-        
-        if ($client_metrics && is_array($client_metrics)) {
-            // Use internal logging
-            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
-                $this->loggingSystem->logActivity('Performance: Received client metrics: ' . json_encode($client_metrics), 'debug');
-            }
-            
-            // DOM Content Loaded - more flexible validation
-            if (isset($client_metrics['domContentLoaded'])) {
-                $dom_value = floatval($client_metrics['domContentLoaded']);
-                if ($dom_value > 0 && $dom_value < 60000) { // Reasonable range: 0-60 seconds
-                    $dom_ready = round($dom_value, 2) . 'ms';
-                } else if ($dom_value > 0) {
-                    $dom_ready = round($dom_value, 2) . 'ms (high)';
-                } else {
-                    $dom_ready = 'N/A (invalid timing)';
-                }
-            }
-            
-            // Load Complete
-            if (isset($client_metrics['loadComplete'])) {
-                $load_value = floatval($client_metrics['loadComplete']);
-                if ($load_value > 0 && $load_value < 120000) { // Reasonable range: 0-120 seconds
-                    $load_complete = round($load_value, 2) . 'ms';
-                } else if ($load_value > 0) {
-                    $load_complete = round($load_value, 2) . 'ms (high)';
-                } else {
-                    $load_complete = 'N/A (invalid timing)';
-                }
-            }
-            
-            // Scripts Loaded
-            if (isset($client_metrics['scriptsLoaded'])) {
-                $scripts_count = intval($client_metrics['scriptsLoaded']);
-                if ($scripts_count >= 0) {
-                    $scripts_loaded = $scripts_count . ' scripts';
-                }
-            }
-            
-            // Styles Loaded
-            if (isset($client_metrics['stylesLoaded'])) {
-                $styles_count = intval($client_metrics['stylesLoaded']);
-                if ($styles_count >= 0) {
-                    $styles_loaded = $styles_count . ' stylesheets';
-                }
-            }
-            
-            // Images Loaded
-            if (isset($client_metrics['imagesLoaded'])) {
-                $images_count = intval($client_metrics['imagesLoaded']);
-                if ($images_count >= 0) {
-                    $images_loaded = $images_count . ' images';
-                }
-            }
-        } else {
-            // Use internal logging
-            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
-                $this->loggingSystem->logActivity('Performance: No client metrics received or invalid format', 'debug');
-            }
-        }
-
-        $metrics = [
-            // Memory & Processing
-            'current_memory' => size_format(memory_get_usage(true)),
-            'peak_memory' => size_format(memory_get_peak_usage(true)),
-            'memory_percentage' => $memory_percentage,
-            'memory_limit' => $memory_limit,
-            'execution_time' => round((microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']) * 1000, 2) . 'ms',
-            'time_limit' => ini_get('max_execution_time') . 's',
-            'cpu_usage' => function_exists('sys_getloadavg') ? round(sys_getloadavg()[0], 2) : 'N/A',
-            
-            // Database Performance
-            'current_queries' => \get_num_queries(),
-            'total_queries' => $total_queries,
-            'query_time' => $query_time,
-            'total_query_time' => $query_time,
-            'slow_queries' => $this->getSlowQueries(),
-            'cache_hits' => $this->getCacheHits(),
-            'cache_misses' => $this->getCacheMisses(),
-            'db_version' => $GLOBALS['wpdb']->db_version(),
-            
-            // Page Load Performance (enhanced with client-side data)
-            'page_load_time' => round((microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']) * 1000, 2) . 'ms',
-            'server_response' => isset($_SERVER['REQUEST_TIME_FLOAT']) ? round((microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']) * 1000, 2) . 'ms' : 'N/A',
-            'server_load' => $server_load,
-            'ttfb' => $ttfb,
-            'dom_ready' => $dom_ready,
-            'load_complete' => $load_complete,
-            'scripts_loaded' => $scripts_loaded,
-            'styles_loaded' => $styles_loaded,
-            'images_loaded' => $images_loaded,
-            
-            // WordPress Performance
-            
-            'theme_load_time' => $this->calculateThemeLoadTime(),
-            'plugin_load_time' => $this->calculatePluginLoadTime(),
-            'admin_queries' => is_admin() ? \get_num_queries() : 'N/A',
-            'frontend_queries' => $this->getFrontendQueries(),
-            'cron_jobs' => count(\_get_cron_array()),
-            
-            // Real-time Metrics
-            'current_timestamp' => current_time('Y-m-d H:i:s'),
-            'disk_space' => $disk_space,
-            'disk_usage' => $disk_space,
-            'network_io' => $this->getNetworkIO(),
-            'active_sessions' => $this->getActiveSessions(),
-            'error_rate' => $this->getErrorRate(),
-            'last_updated' => current_time('H:i:s'),
-            
-            // Grid metrics for top section
-            'memory_usage' => size_format(memory_get_usage(true)),
-            'db_queries' => get_num_queries(),
-            'api_calls' => $this->getApiCalls24h(),
-            'api_response_time' => $this->getApiResponseTime()
-        ];
-        
-        wp_send_json_success($metrics);
-    }
+  
 
 
 

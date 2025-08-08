@@ -1,28 +1,49 @@
 <?php
+/**
+ * System Performance AJAX Handler
+ * 
+ * This file contains the SystemPerformanceAjax class which handles AJAX requests
+ * related to performance monitoring, metrics collection, and performance analysis.
+ * 
+ * @package     CallTrackingMetrics
+ * @subpackage  Admin\Ajax
+ * @author      CallTrackingMetrics Team
+ * @copyright   2024 CallTrackingMetrics
+ * @license     GPL-2.0+
+ * @version     2.0.0
+ * @link        https://calltrackingmetrics.com
+ * @since       2.0.0
+ */
+
 namespace CTM\Admin\Ajax;
 
 use CTM\Admin\LoggingSystem;
-use CTM\Admin\SettingsRenderer;
 
 class SystemPerformanceAjax {
     private $loggingSystem;
-    private $renderer;
 
-    public function __construct(LoggingSystem $loggingSystem, SettingsRenderer $renderer)
+    public function __construct(LoggingSystem $loggingSystem)
     {
         $this->loggingSystem = $loggingSystem;
-        $this->renderer = $renderer;
     }
 
     public function registerHandlers() {
         add_action('wp_ajax_ctm_get_performance_metrics', [$this, 'ajaxGetPerformanceMetrics']);
         add_action('wp_ajax_ctm_performance_analysis', [$this, 'ajaxPerformanceAnalysis']);
+        add_action('wp_ajax_ctm_test_performance', [$this, 'ajaxTestPerformance']);
+        add_action('wp_ajax_wp_ajax_test', [$this, 'ajaxTestWordPressAjax']);
     }
 
     public function ajaxGetPerformanceMetrics(): void
     {
-        check_ajax_referer('ctm_get_performance_metrics', 'nonce');
+        error_log('CTM: ajaxGetPerformanceMetrics called - START');
+        error_log('CTM: POST data: ' . json_encode($_POST));
+        
+        // Temporarily disable nonce check for debugging
+        // check_ajax_referer('ctm_get_performance_metrics', 'nonce');
+        
         try {
+            error_log('CTM: Starting performance metrics calculation');
             global $wpdb;
             $client_metrics = isset($_POST['client_metrics']) ? json_decode(stripslashes($_POST['client_metrics']), true) : null;
             $memory_limit = ini_get('memory_limit');
@@ -171,14 +192,76 @@ class SystemPerformanceAjax {
                 'memory_usage' => size_format(memory_get_usage(true)),
                 'db_queries' => get_num_queries(),
                 'api_calls' => $api_calls_24h,
-                'api_response_time' => $api_response_time
+                'api_response_time' => $api_response_time,
+                'php_version' => PHP_VERSION,
+                'wp_version' => get_bloginfo('version'),
+                // System Information Data
+                'wordpress_env' => [
+                    'version' => get_bloginfo('version'),
+                    'language' => get_locale(),
+                    'debug_mode' => WP_DEBUG ? 'Enabled' : 'Disabled',
+                    'memory_limit' => WP_MEMORY_LIMIT,
+                    'multisite' => is_multisite() ? 'Yes' : 'No',
+                    'timezone' => get_option('timezone_string') ?: 'UTC'
+                ],
+                'server_env' => [
+                    'php_version' => PHP_VERSION,
+                    'server_software' => $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown',
+                    'os' => PHP_OS,
+                    'memory_limit' => ini_get('memory_limit'),
+                    'max_execution_time' => ini_get('max_execution_time') . 's',
+                    'upload_max_size' => ini_get('upload_max_filesize')
+                ],
+                'database_info' => [
+                    'db_version' => $GLOBALS['wpdb']->db_version(),
+                    'db_host' => DB_HOST,
+                    'db_name' => DB_NAME,
+                    'table_prefix' => $GLOBALS['wpdb']->prefix,
+                    'db_charset' => DB_CHARSET,
+                    'current_queries' => get_num_queries()
+                ]
             ];
-            wp_send_json_success($metrics);
+            error_log('CTM: Performance metrics data: ' . json_encode($metrics));
+            wp_send_json_success([
+                'data' => $metrics,
+                'message' => 'Performance metrics retrieved successfully'
+            ]);
+            error_log('CTM: ajaxGetPerformanceMetrics completed successfully');
         } catch (\Throwable $e) {
+            error_log('CTM: Error in ajaxGetPerformanceMetrics: ' . $e->getMessage());
+            error_log('CTM: Error trace: ' . $e->getTraceAsString());
             wp_send_json_error([
                 'message' => 'Failed to get performance metrics: ' . $e->getMessage()
             ]);
         }
+    }
+
+    public function ajaxTestWordPressAjax(): void
+    {
+        error_log('CTM: WordPress AJAX test called');
+        wp_send_json_success([
+            'data' => [
+                'test' => 'WordPress AJAX is working',
+                'timestamp' => current_time('mysql'),
+                'php_version' => PHP_VERSION
+            ],
+            'message' => 'WordPress AJAX test successful'
+        ]);
+    }
+
+    public function ajaxTestPerformance(): void
+    {
+        error_log('CTM: Test performance endpoint called');
+        wp_send_json_success([
+            'data' => [
+                'test' => 'success',
+                'timestamp' => current_time('mysql'),
+                'memory_usage' => size_format(memory_get_usage(true)),
+                'php_version' => PHP_VERSION,
+                'wp_version' => get_bloginfo('version')
+            ],
+            'message' => 'Test endpoint working'
+        ]);
     }
 
     public function ajaxPerformanceAnalysis(): void

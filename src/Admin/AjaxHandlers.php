@@ -152,11 +152,11 @@ class AjaxHandlers
         $this->loggingSystem = $loggingSystem ?: new LoggingSystem();
         $this->renderer = $renderer ?: new SettingsRenderer();
         $this->formAjax = $formAjax ?: new FormAjax();
-        $this->logAjax = $logAjax ?: new LogAjax($this->loggingSystem, $this->renderer);
+        $this->logAjax = $logAjax ?: new LogAjax($this->loggingSystem);
         $this->apiAjax = $apiAjax ?: new ApiAjax();
-        $this->systemAjax = $systemAjax ?: new SystemAjax($this->loggingSystem, $this->renderer);
-        $this->systemSecurityAjax = $systemSecurityAjax ?: new SystemSecurityAjax($this->loggingSystem, $this->renderer);
-        $this->systemPerformanceAjax = $systemPerformanceAjax ?: new SystemPerformanceAjax($this->loggingSystem, $this->renderer);
+        $this->systemAjax = $systemAjax ?: new SystemAjax($this->loggingSystem);
+        $this->systemSecurityAjax = $systemSecurityAjax ?: new SystemSecurityAjax($this->loggingSystem);
+        $this->systemPerformanceAjax = $systemPerformanceAjax ?: new SystemPerformanceAjax($this->loggingSystem);
         $this->formImportAjax = $formImportAjax ?: new FormImportAjax(
             new FormImportService(
                 new ApiService(ctm_get_api_url()),

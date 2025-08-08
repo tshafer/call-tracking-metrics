@@ -734,6 +734,7 @@ class LoggingSystem
 
     /**
      * Static version of logActivity for activation hook
+     * Uses database logging instead of file-based logging
      */
     private static function logActivityStatic(string $message, string $type = 'info', array $context = []): void
     {
@@ -754,50 +755,9 @@ class LoggingSystem
             'memory_peak' => memory_get_peak_usage(true)
         ];
 
-        self::writeToLogStatic($log_entry);
-    }
-
-    /**
-     * Static version of writeToLog for activation hook
-     */
-    private static function writeToLogStatic(array $log_entry): void
-    {
-        $log_date = date('Y-m-d');
-        $daily_logs = \get_option("ctm_daily_log_{$log_date}", []);
-        
-        if (!is_array($daily_logs)) {
-            $daily_logs = [];
-        }
-        
-        $daily_logs[] = $log_entry;
-        
-        // Keep only last 500 entries per day to prevent memory issues
-        if (count($daily_logs) > 500) {
-            $daily_logs = array_slice($daily_logs, -500);
-        }
-        
-        \update_option("ctm_daily_log_{$log_date}", $daily_logs);
-        
-        // Update log index
-        self::updateLogIndexStatic($log_date);
-    }
-
-    /**
-     * Static version of updateLogIndex for activation hook
-     */
-    private static function updateLogIndexStatic(string $log_date): void
-    {
-        $log_index = \get_option('ctm_log_index', []);
-        if (!is_array($log_index)) {
-            $log_index = [];
-        }
-        
-        if (!in_array($log_date, $log_index)) {
-            $log_index[] = $log_date;
-            // Keep index sorted
-            sort($log_index);
-            \update_option('ctm_log_index', $log_index);
-        }
+        // Use database logging instead of file-based logging
+        $instance = new self();
+        $instance->writeToLog($log_entry);
     }
 
     /**

@@ -1,17 +1,30 @@
 <?php
+/**
+ * System Security AJAX Handler
+ * 
+ * This file contains the SystemSecurityAjax class which handles AJAX requests
+ * related to security scanning, vulnerability detection, and security analysis.
+ * 
+ * @package     CallTrackingMetrics
+ * @subpackage  Admin\Ajax
+ * @author      CallTrackingMetrics Team
+ * @copyright   2024 CallTrackingMetrics
+ * @license     GPL-2.0+
+ * @version     2.0.0
+ * @link        https://calltrackingmetrics.com
+ * @since       2.0.0
+ */
+
 namespace CTM\Admin\Ajax;
 
 use CTM\Admin\LoggingSystem;
-use CTM\Admin\SettingsRenderer;
 
 class SystemSecurityAjax {
     private $loggingSystem;
-    private $renderer;
 
-    public function __construct(LoggingSystem $loggingSystem, SettingsRenderer $renderer)
+    public function __construct(LoggingSystem $loggingSystem)
     {
         $this->loggingSystem = $loggingSystem;
-        $this->renderer = $renderer;
     }
 
     public function registerHandlers() {

@@ -10,55 +10,10 @@ $available_dates = $available_dates ?? [];
 $log_stats = $log_stats ?? [];
 ?>
 
-<div class="space-y-8">
-    <!-- Daily Logs Overview Section -->
-    <div class="bg-gradient-to-r from-teal-50 to-cyan-50 p-6 rounded-lg border border-teal-200">
-        <div class="flex items-center mb-4">
-            <div class="bg-teal-100 p-2 rounded-lg mr-3">
-                <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-            </div>
-            <h3 class="text-xl font-semibold text-teal-700"><?php _e('Daily Logs', 'call-tracking-metrics'); ?></h3>
-        </div>
-        <p class="mb-4"><?php _e('View, filter, and manage daily debug logs. Each day\'s log shows all plugin activity, errors, warnings, and more. You can email logs, clear them, or view detailed context for each entry.', 'call-tracking-metrics'); ?></p>
-        <ul class="list-disc pl-6 mb-4 space-y-2">
-            <li class="flex items-start">
-                <span class="mr-2">📅</span>
-                <?php _e('Browse logs by date', 'call-tracking-metrics'); ?>
-            </li>
-            <li class="flex items-start">
-                <span class="mr-2">📊</span>
-                <?php _e('See error, warning, and info counts', 'call-tracking-metrics'); ?>
-            </li>
-            <li class="flex items-start">
-                <span class="mr-2">🔍</span>
-                <?php _e('View detailed log entries and context', 'call-tracking-metrics'); ?>
-            </li>
-            <li class="flex items-start">
-                <span class="mr-2">📧</span>
-                <?php _e('Email logs for support or archiving', 'call-tracking-metrics'); ?>
-            </li>
-            <li class="flex items-start">
-                <span class="mr-2">🗑️</span>
-                <?php _e('Clear logs for specific days', 'call-tracking-metrics'); ?>
-            </li>
-        </ul>
-        
-        <!-- Performance Stats -->
-        <?php if (!empty($log_stats) && isset($log_stats['total_available_days'])): ?>
-            <div class="bg-white bg-opacity-50 rounded-lg p-3 mt-4">
-                <p class="text-sm text-teal-700">
-                    <strong><?php _e('Performance Note:', 'call-tracking-metrics'); ?></strong> 
-                    <?php printf(__('Showing latest 5 days of %d total available days. Use "Load More" to view older logs.', 'call-tracking-metrics'), $log_stats['total_available_days']); ?>
-                </p>
-            </div>
-        <?php endif; ?>
-    </div>
-
+<div class="space-y-6">
     <!-- Daily Logs Content Section -->
-    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
-        <h3 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
             <svg class="inline-block w-6 h-6 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
             </svg>
@@ -90,6 +45,7 @@ $log_stats = $log_stats ?? [];
                     $warning_count = 0;
                     $info_count = 0;
                     $debug_count = 0;
+                    $total_size = 0;
                     
                     foreach ($sample_logs as $entry) {
                         switch ($entry['type']) {
@@ -106,12 +62,24 @@ $log_stats = $log_stats ?? [];
                                 $debug_count++;
                                 break;
                         }
+                        
+                        // Calculate size of this entry (approximate)
+                        $entry_size = strlen(json_encode($entry));
+                        $total_size += $entry_size;
                     }
                     
                     // Show total count if we sampled
                     $total_count = count($logs);
                     $sampled_count = count($sample_logs);
                     $count_display = $sampled_count < $total_count ? "{$sampled_count}+ of {$total_count}" : $total_count;
+                    
+                    // Estimate total size if we sampled
+                    if ($sampled_count < $total_count) {
+                        $total_size = ($total_size / $sampled_count) * $total_count; // Estimate
+                    }
+                    
+                    // Format size for display
+                    $size_display = function_exists('size_format') ? size_format($total_size) : round($total_size / 1024, 1) . ' KB';
                     ?>
                     <div class="bg-gradient-to-r from-white to-gray-50 border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-200 hover:border-blue-200">
                         <div class="flex items-center justify-between mb-4">
@@ -158,6 +126,12 @@ $log_stats = $log_stats ?? [];
                                         </svg>
                                         <?= $count_display ?> total
                                     </span>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">
+                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+                                        </svg>
+                                        <?= $size_display ?>
+                                    </span>
                                 </div>
                             </div>
                             
@@ -171,12 +145,7 @@ $log_stats = $log_stats ?? [];
                                     <?php _e('View Details', 'call-tracking-metrics'); ?>
                                 </button>
                                 
-                                <button class="ctm-email-log inline-flex items-center px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors duration-200 text-sm font-medium" data-date="<?= $date ?>">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                                    </svg>
-                                    <?php _e('Email Log', 'call-tracking-metrics'); ?>
-                                </button>
+
                                 
                                 <button type="button" class="ctm-clear-log inline-flex items-center px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors duration-200 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed" data-date="<?= $date ?>" id="clear-single-<?= $date ?>-btn">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -256,6 +225,7 @@ $log_stats = $log_stats ?? [];
                                     </div>
                                 <?php endif; ?>
                             </div>
+                        </div>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -275,90 +245,6 @@ $log_stats = $log_stats ?? [];
     </div>
 </div>
 
-<!-- Email Log Modal -->
-<div id="email-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-    <div class="bg-white w-full h-full max-w-none max-h-none m-0 rounded-none shadow-none flex flex-col">
-        <!-- Header -->
-        <div class="flex items-center justify-between p-6 border-b border-gray-200 bg-gray-50">
-            <h3 class="text-2xl font-semibold text-gray-900"><?php _e('Email Debug Log', 'call-tracking-metrics'); ?></h3>
-            <button onclick="hideEmailForm()" class="text-gray-400 hover:text-gray-600 transition-colors p-2">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </button>
-        </div>
-        
-        <!-- Content -->
-        <div class="flex-1 p-6 overflow-y-auto">
-            <form id="email-log-form" onsubmit="submitEmailLog(event)" class="h-full flex flex-col">
-                <input type="hidden" id="email-log-date" name="log_date" value="">
-                
-                <!-- Email Form -->
-                <div class="space-y-6 mb-6">
-                    <div class="space-y-2">
-                        <label for="email-log-to" class="block text-lg font-medium text-gray-700"><?php _e('Send to', 'call-tracking-metrics'); ?></label>
-                        <input type="email" id="email-log-to" name="to" class="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" required>
-                    </div>
-                    
-                    <!-- Additional Options -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="space-y-2">
-                            <label for="email-log-subject" class="block text-lg font-medium text-gray-700"><?php _e('Subject (Optional)', 'call-tracking-metrics'); ?></label>
-                            <input type="text" id="email-log-subject" name="subject" class="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="<?php _e('Debug Log Report', 'call-tracking-metrics'); ?>">
-                        </div>
-                        <div class="space-y-2">
-                            <label for="email-log-format" class="block text-lg font-medium text-gray-700"><?php _e('Format', 'call-tracking-metrics'); ?></label>
-                            <select id="email-log-format" name="format" class="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                                <option value="html"><?php _e('HTML (Formatted)', 'call-tracking-metrics'); ?></option>
-                                <option value="text"><?php _e('Plain Text', 'call-tracking-metrics'); ?></option>
-                                <option value="json"><?php _e('JSON (Raw Data)', 'call-tracking-metrics'); ?></option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <!-- Include Options -->
-                    <div class="space-y-3">
-                        <label class="block text-lg font-medium text-gray-700"><?php _e('Include', 'call-tracking-metrics'); ?></label>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <label class="flex items-center space-x-3">
-                                <input type="checkbox" name="include_errors" value="1" checked class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                                <span class="text-gray-700"><?php _e('Errors', 'call-tracking-metrics'); ?></span>
-                            </label>
-                            <label class="flex items-center space-x-3">
-                                <input type="checkbox" name="include_warnings" value="1" checked class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                                <span class="text-gray-700"><?php _e('Warnings', 'call-tracking-metrics'); ?></span>
-                            </label>
-                            <label class="flex items-center space-x-3">
-                                <input type="checkbox" name="include_info" value="1" checked class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                                <span class="text-gray-700"><?php _e('Info', 'call-tracking-metrics'); ?></span>
-                            </label>
-                            <label class="flex items-center space-x-3">
-                                <input type="checkbox" name="include_debug" value="1" class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                                <span class="text-gray-700"><?php _e('Debug', 'call-tracking-metrics'); ?></span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Action Buttons -->
-                <div class="flex justify-end space-x-4 pt-6 border-t border-gray-200 mt-auto">
-                    <button type="button" onclick="hideEmailForm()" class="bg-gray-600 hover:bg-gray-700 text-white px-8 py-3 rounded-lg flex items-center gap-3 transition-colors text-lg">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                        <?php _e('Cancel', 'call-tracking-metrics'); ?>
-                    </button>
-                    <button type="submit" id="email-log-send-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg flex items-center gap-3 transition-colors text-lg">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 00-2-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                        </svg>
-                        <?php _e('Send Debug Log', 'call-tracking-metrics'); ?>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
 <script>
     let currentLoadedDays = <?= count($available_dates) ?>;
@@ -372,10 +258,6 @@ $log_stats = $log_stats ?? [];
                 toggleLogView(date);
             }
             
-            if (e.target.classList.contains('ctm-email-log')) {
-                const date = e.target.dataset.date;
-                showEmailForm(date);
-            }
             
             if (e.target.classList.contains('ctm-clear-log')) {
                 const date = e.target.dataset.date;
@@ -693,12 +575,7 @@ $log_stats = $log_stats ?? [];
                             <?php _e('View Details', 'call-tracking-metrics'); ?>
                         </button>
                         
-                        <button class="ctm-email-log inline-flex items-center px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors duration-200 text-sm font-medium" data-date="${date}">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                            </svg>
-                            <?php _e('Email Log', 'call-tracking-metrics'); ?>
-                        </button>
+
                         
                         <button type="button" class="ctm-clear-log inline-flex items-center px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors duration-200 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed" data-date="${date}" id="clear-single-${date}-btn">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -727,93 +604,7 @@ $log_stats = $log_stats ?? [];
         `;
     }
 
-    function showEmailForm(date) {
-        document.getElementById('email-log-date').value = date;
-        document.getElementById('email-log-to').value = '<?= esc_js(get_option('admin_email')) ?>';
-        document.getElementById('email-modal').classList.remove('hidden');
-    }
 
-    function hideEmailForm() {
-        document.getElementById('email-modal').classList.add('hidden');
-    }
-
-    function submitEmailLog(e) {
-        e.preventDefault();
-        console.log('Email form submitted');
-        
-        const btn = document.getElementById('email-log-send-btn');
-        const originalText = btn.textContent;
-        btn.disabled = true;
-        btn.textContent = 'Sending...';
-
-        const date = document.getElementById('email-log-date').value;
-        const email_to = document.getElementById('email-log-to').value;
-
-        console.log('Email form data:', { date, email_to });
-
-        // Validate inputs
-        if (!date) {
-            ctmShowToast('No log date provided', 'error');
-            btn.disabled = false;
-            btn.textContent = originalText;
-            return;
-        }
-
-        if (!email_to || !email_to.includes('@')) {
-            ctmShowToast('Please enter a valid email address', 'error');
-            btn.disabled = false;
-            btn.textContent = originalText;
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('action', 'ctm_email_daily_log');
-        formData.append('nonce', '<?= wp_create_nonce('ctm_email_daily_log') ?>');
-        formData.append('log_date', date);
-        formData.append('email_to', email_to);
-
-        console.log('Sending email request:', {
-            action: 'ctm_email_daily_log',
-            log_date: date,
-            email_to: email_to,
-            nonce: '<?= wp_create_nonce('ctm_email_daily_log') ?>'
-        });
-
-        fetch('<?= admin_url('admin-ajax.php') ?>', {
-            method: 'POST',
-            body: formData
-        })
-        .then(function(response) {
-            console.log('Email response status:', response.status);
-            console.log('Email response headers:', response.headers);
-            return response.json();
-        })
-        .then(function(data) {
-            console.log('Email response data:', data);
-            if (data.success) {
-                ctmShowToast(data.data.message, 'success');
-                hideEmailForm();
-            } else {
-                console.error('Email failed:', data.data);
-                ctmShowToast(data.data.message || 'Failed to email log', 'error');
-            }
-        })
-        .catch(function(error) {
-            console.error('Email error:', error);
-            ctmShowToast('Network error while emailing log: ' + error.message, 'error');
-        })
-        .finally(function() {
-            btn.disabled = false;
-            btn.textContent = originalText;
-        });
-    }
-
-    // Close modal when clicking outside
-    document.getElementById('email-modal')?.addEventListener('click', function(e) {
-        if (e.target === this) {
-            hideEmailForm();
-        }
-    });
 
 
     function clearDebugLogs(logType, logDate = '') {
@@ -836,12 +627,38 @@ $log_stats = $log_stats ?? [];
         
         // Prepare form data
         const formData = new FormData();
-        formData.append('action', 'ctm_clear_logs');
-        formData.append('log_type', logType);
-        if (logDate) {
-            formData.append('log_date', logDate);
+        if (logType === 'debug_all') {
+            formData.append('action', 'ctm_clear_all_logs');
+            formData.append('nonce', '<?= wp_create_nonce('ctm_clear_all_logs') ?>');
+        } else {
+            // For single day clearing, we need to use a different approach
+            // Since there's no AJAX handler, we'll submit a regular form
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = window.location.href;
+            
+            const clearInput = document.createElement('input');
+            clearInput.type = 'hidden';
+            clearInput.name = 'clear_single_log';
+            clearInput.value = '1';
+            form.appendChild(clearInput);
+            
+            const dateInput = document.createElement('input');
+            dateInput.type = 'hidden';
+            dateInput.name = 'log_date';
+            dateInput.value = logDate;
+            form.appendChild(dateInput);
+            
+            const nonceInput = document.createElement('input');
+            nonceInput.type = 'hidden';
+            nonceInput.name = '_wpnonce';
+            nonceInput.value = '<?= wp_create_nonce('ctm_admin_action') ?>';
+            form.appendChild(nonceInput);
+            
+            document.body.appendChild(form);
+            form.submit();
+            return;
         }
-        formData.append('nonce', '<?= wp_create_nonce('ctm_clear_logs') ?>');
         
         // Send AJAX request
         fetch('<?= admin_url('admin-ajax.php') ?>', {
@@ -895,6 +712,4 @@ $log_stats = $log_stats ?? [];
             }
         });
     }
-
-
 </script>

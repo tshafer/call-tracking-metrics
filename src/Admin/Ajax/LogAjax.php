@@ -1,16 +1,29 @@
 <?php
+/**
+ * Log AJAX Handler
+ * 
+ * This file contains the LogAjax class which handles AJAX requests related to
+ * logging operations including log retrieval, clearing logs, and log management.
+ * 
+ * @package     CallTrackingMetrics
+ * @subpackage  Admin\Ajax
+ * @author      CallTrackingMetrics Team
+ * @copyright   2024 CallTrackingMetrics
+ * @license     GPL-2.0+
+ * @version     2.0.0
+ * @link        https://calltrackingmetrics.com
+ * @since       1.0.0
+ */
+
 namespace CTM\Admin\Ajax;
 
 use CTM\Admin\LoggingSystem;
-use CTM\Admin\SettingsRenderer;
 
 class LogAjax {
     private LoggingSystem $loggingSystem;
-    private SettingsRenderer $renderer;
 
-    public function __construct(LoggingSystem $loggingSystem, SettingsRenderer $renderer) {
+    public function __construct(LoggingSystem $loggingSystem) {
         $this->loggingSystem = $loggingSystem;
-        $this->renderer = $renderer;
     }
 
     public function registerHandlers() {
