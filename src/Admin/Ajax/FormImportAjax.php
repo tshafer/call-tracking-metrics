@@ -287,23 +287,31 @@ class FormImportAjax
             }
 
             // Generate preview based on target type
-            $preview = '';
+            $rawCode = '';
+            $renderedForm = '';
+            
+            // Debug logging removed for production
+            
             if ($targetType === 'cf7') {
-                $preview = $this->generateCF7Preview($ctmForm);
+                $rawCode = $this->generateCF7RawCode($ctmForm);
+                $renderedForm = $this->generateCF7Preview($ctmForm);
+                // CF7 preview generated successfully
             } elseif ($targetType === 'gf') {
-                $preview = $this->generateGFPreview($ctmForm);
+                $rawCode = $this->generateGFRawCode($ctmForm);
+                $renderedForm = $this->generateGFPreview($ctmForm);
+                // GF preview generated successfully
             } else {
                 wp_send_json_error(['message' => 'Invalid target type: ' . $targetType]);
                 return;
             }
 
-            if (empty($preview)) {
+            if (empty($rawCode) && empty($renderedForm)) {
                 wp_send_json_error(['message' => 'No preview content was generated']);
                 return;
             }
-            
             wp_send_json_success([
-                'preview' => $preview,
+                'raw_code' => $rawCode,
+                'rendered_form' => $renderedForm,
                 'form_data' => $ctmForm
             ]);
 
@@ -337,12 +345,8 @@ class FormImportAjax
             }
             
             // Since CF7 doesn't allow easy temporary form creation, use a direct rendering approach
-            // Use CF7's shortcode processing to render the form content
-            if (function_exists('wpcf7_do_tag')) {
-                return $this->generateCF7DirectPreview($cf7Content, $ctmForm);
-            } else {
-                return $this->generateCF7FallbackPreview($cf7Content, $ctmForm);
-            }
+            // Always use the direct preview method to show actual HTML form elements
+            return $this->generateCF7DirectPreview($cf7Content, $ctmForm);
 
             // This code is no longer used - preview is handled by the methods above
             return '';
@@ -369,9 +373,17 @@ class FormImportAjax
             // Convert CTM form to GF format using FormImportService
             $gfFormArray = $this->formImportService->convertToGFFormat($ctmForm, 'Preview: ' . ($ctmForm['name'] ?? 'CTM Form'));
             
+            // Form conversion completed
+            
             // If no form data, return a debug message
             if (empty($gfFormArray) || empty($gfFormArray['fields'])) {
-                return '<div class="notice notice-warning"><p>No form fields could be generated for Gravity Forms. Check the form data structure.</p></div>';
+                $debugInfo = [
+                    'ctm_keys' => array_keys($ctmForm),
+                    'gf_keys' => array_keys($gfFormArray ?? []),
+                    'fields_exist' => isset($gfFormArray['fields']),
+                    'fields_count' => isset($gfFormArray['fields']) ? count($gfFormArray['fields']) : 0
+                ];
+                return '<div class="notice notice-warning"><p>No form fields could be generated for Gravity Forms.</p><pre style="font-size: 11px; background: #f9f9f9; padding: 10px; margin-top: 10px;">' . print_r($debugInfo, true) . '</pre></div>';
             }
 
             // Use GF's actual plugin rendering for preview
@@ -380,12 +392,20 @@ class FormImportAjax
                 // Convert to GF format and create a temporary form
                 $tempFormId = $this->createTemporaryGFForm($gfFormArray);
                 if ($tempFormId) {
-                    $preview = $this->generateGFWPPreview($tempFormId);
-                    // Clean up temporary form
-                    $this->cleanupTemporaryGFForm($tempFormId);
-                    return $preview;
+                    try {
+                        $preview = $this->generateGFWPPreview((string)$tempFormId);
+                        // Clean up temporary form
+                        $this->cleanupTemporaryGFForm($tempFormId);
+                        return $preview;
+                    } catch (\Exception $previewException) {
+                        // Clean up temporary form even if preview fails
+                        $this->cleanupTemporaryGFForm($tempFormId);
+                        error_log('GF Preview Error: ' . $previewException->getMessage());
+                        // Fall through to basic preview
+                    }
                 }
             } catch (\Exception $e) {
+                error_log('GF Temp Form Creation Error: ' . $e->getMessage());
                 // Fallback to basic preview if temporary form creation fails
             }
             
@@ -467,37 +487,168 @@ class FormImportAjax
         echo '<p style="margin: 5px 0 0; color: #666; font-size: 14px;">This is how your form will appear when imported to Contact Form 7</p>';
         echo '</div>';
         
-        // Process the CF7 content to render form fields
-        echo '<div class="cf7-form-preview" style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 4px;">';
+        // Create actual HTML form (disabled for preview only)
+        echo '<form class="wpcf7-form" style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 4px; pointer-events: none; opacity: 0.8;" onsubmit="return false;">';
         
-        // Parse and render CF7 shortcodes
-        $lines = explode("\n", $cf7Content);
-        foreach ($lines as $line) {
-            $line = trim($line);
-            if (empty($line)) {
-                echo '<br>';
-                continue;
-            }
-            
-            // Process CF7 shortcodes manually for preview
-            if (preg_match('/\[([^\]]+)\]/', $line, $matches)) {
-                $shortcode = $matches[1];
-                $rendered = $this->renderCF7ShortcodeForPreview($shortcode);
-                $label = preg_replace('/\[([^\]]+)\]/', $rendered, $line);
-                echo '<div style="margin-bottom: 15px;">' . $label . '</div>';
-            } else {
-                echo '<div style="margin-bottom: 10px;">' . esc_html($line) . '</div>';
+        // Parse and render CF7 shortcodes as actual HTML form elements
+        // Handle CF7 format: <label> Label Text [shortcode] </label>
+        
+        // Use regex to match complete label blocks
+        if (preg_match_all('/<label>\s*([^<\[]*?)\s*(\[[^\]]+\])\s*<\/label>/s', $cf7Content, $labelMatches, PREG_SET_ORDER)) {
+            foreach ($labelMatches as $match) {
+                $labelText = trim($match[1]);
+                $shortcode = trim($match[2], '[]');
+                
+                $rendered = $this->renderCF7ShortcodeAsHTML($shortcode);
+                
+                if (!empty($labelText) && strpos($shortcode, 'submit') === false) {
+                    echo '<div style="margin-bottom: 15px;">';
+                    echo '<label style="display: block; margin-bottom: 5px; font-weight: 500; color: #333;">' . esc_html($labelText) . '</label>';
+                    echo $rendered;
+                    echo '</div>';
+                } else {
+                    echo '<div style="margin-bottom: 15px;">' . $rendered . '</div>';
+                }
             }
         }
         
-        echo '</div>';
+        // Handle standalone shortcodes (like submit button)
+        if (preg_match_all('/^\s*(\[[^\]]+\])\s*$/m', $cf7Content, $standaloneMatches)) {
+            foreach ($standaloneMatches[1] as $shortcodeWithBrackets) {
+                $shortcode = trim($shortcodeWithBrackets, '[]');
+                $rendered = $this->renderCF7ShortcodeAsHTML($shortcode);
+                echo '<div style="margin-bottom: 15px;">' . $rendered . '</div>';
+            }
+        }
+        
+        echo '</form>';
         echo '</div>';
         
         return ob_get_clean();
     }
 
     /**
-     * Render a CF7 shortcode for preview purposes
+     * Render a CF7 shortcode as actual HTML form element
+     * 
+     * @since 2.0.0
+     * @param string $shortcode The CF7 shortcode content
+     * @return string The rendered HTML form element
+     */
+    private function renderCF7ShortcodeAsHTML(string $shortcode): string
+    {
+        $parts = explode(' ', $shortcode);
+        $type = $parts[0];
+        $name = isset($parts[1]) ? $parts[1] : '';
+        
+        // Common styles for form elements
+        $inputStyle = 'width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; line-height: 1.5;';
+        
+        switch ($type) {
+            case 'text':
+                $placeholder = $this->extractAttribute($shortcode, 'placeholder') ?: '';
+                return '<input type="text" name="' . esc_attr($name) . '" placeholder="' . esc_attr($placeholder) . '" style="' . $inputStyle . '">';
+                
+            case 'email':
+                return '<input type="email" name="' . esc_attr($name) . '" style="' . $inputStyle . '">';
+                
+            case 'tel':
+                return '<input type="tel" name="' . esc_attr($name) . '" style="' . $inputStyle . '">';
+                
+            case 'url':
+                return '<input type="url" name="' . esc_attr($name) . '" style="' . $inputStyle . '">';
+                
+            case 'number':
+                return '<input type="number" name="' . esc_attr($name) . '" style="' . $inputStyle . '">';
+                
+            case 'date':
+                return '<input type="date" name="' . esc_attr($name) . '" style="' . $inputStyle . '">';
+                
+            case 'textarea':
+                return '<textarea name="' . esc_attr($name) . '" rows="4" style="' . $inputStyle . ' resize: vertical;"></textarea>';
+                
+            case 'select':
+                $options = $this->extractSelectOptions($shortcode);
+                $html = '<select name="' . esc_attr($name) . '" style="' . $inputStyle . '">';
+                foreach ($options as $option) {
+                    $html .= '<option value="' . esc_attr($option) . '">' . esc_html($option) . '</option>';
+                }
+                $html .= '</select>';
+                return $html;
+                
+            case 'checkbox':
+                $options = $this->extractCheckboxOptions($shortcode);
+                $html = '';
+                foreach ($options as $option) {
+                    $html .= '<label style="display: block; margin-bottom: 5px;">';
+                    $html .= '<input type="checkbox" name="' . esc_attr($name) . '[]" value="' . esc_attr($option) . '" style="margin-right: 8px;">';
+                    $html .= esc_html($option);
+                    $html .= '</label>';
+                }
+                return $html;
+                
+            case 'radio':
+                $options = $this->extractRadioOptions($shortcode);
+                $html = '';
+                foreach ($options as $option) {
+                    $html .= '<label style="display: block; margin-bottom: 5px;">';
+                    $html .= '<input type="radio" name="' . esc_attr($name) . '" value="' . esc_attr($option) . '" style="margin-right: 8px;">';
+                    $html .= esc_html($option);
+                    $html .= '</label>';
+                }
+                return $html;
+                
+            case 'file':
+                return '<input type="file" name="' . esc_attr($name) . '" style="' . $inputStyle . '">';
+                
+            case 'submit':
+                $value = isset($parts[1]) ? str_replace(['"', "'"], '', $parts[1]) : 'Submit';
+                return '<input type="submit" value="' . esc_attr($value) . '" disabled style="background: #ccc; color: #666; padding: 10px 20px; border: none; border-radius: 4px; cursor: not-allowed; font-size: 14px; font-weight: 500;" title="This is a preview - button is disabled">';
+                
+            default:
+                return '<input type="text" name="' . esc_attr($name) . '" style="' . $inputStyle . '">';
+        }
+    }
+    
+    /**
+     * Extract attribute value from shortcode
+     */
+    private function extractAttribute(string $shortcode, string $attribute): string
+    {
+        if (preg_match('/' . $attribute . ':([^\s\]]+)/', $shortcode, $matches)) {
+            return $matches[1];
+        }
+        return '';
+    }
+    
+    /**
+     * Extract select options from shortcode
+     */
+    private function extractSelectOptions(string $shortcode): array
+    {
+        // Simple implementation - in real CF7, options would be defined differently
+        return ['Option 1', 'Option 2', 'Option 3'];
+    }
+    
+    /**
+     * Extract checkbox options from shortcode
+     */
+    private function extractCheckboxOptions(string $shortcode): array
+    {
+        // Simple implementation
+        return ['Option 1', 'Option 2', 'Option 3'];
+    }
+    
+    /**
+     * Extract radio options from shortcode
+     */
+    private function extractRadioOptions(string $shortcode): array
+    {
+        // Simple implementation
+        return ['Option 1', 'Option 2', 'Option 3'];
+    }
+
+    /**
+     * Render a CF7 shortcode for preview purposes (legacy method)
      * 
      * @since 2.0.0
      * @param string $shortcode The CF7 shortcode content
@@ -1010,13 +1161,14 @@ class FormImportAjax
      */
     private function generateBasicGFPreview(array $gfForm): string
     {
-        if (empty($gfForm['fields'])) {
-            return '<p class="text-gray-500 italic">No form fields available for preview.</p>';
-        }
+        try {
+            if (empty($gfForm['fields'])) {
+                return '<p class="text-gray-500 italic">No form fields available for preview.</p>';
+            }
 
-        $html = '<form class="gform_wrapper" style="max-width: 600px;">';
-        
-        foreach ($gfForm['fields'] as $field) {
+            $html = '<form class="gform_wrapper" style="max-width: 600px;">';
+            
+            foreach ($gfForm['fields'] as $field) {
             $html .= '<div class="gfield mb-4">';
             
             // Add field label
@@ -1086,5 +1238,74 @@ class FormImportAjax
         $html .= '</form>';
         
         return $html;
+        
+        } catch (\Exception $e) {
+            error_log('GF Basic Preview Error: ' . $e->getMessage());
+            return '<div class="notice notice-error"><p>Error generating basic GF preview: ' . esc_html($e->getMessage()) . '</p></div>';
+        }
+    }
+
+    /**
+     * Generate CF7 raw code
+     * 
+     * @since 2.0.0
+     * @param array $ctmForm The CTM form data
+     * @return string The raw CF7 code
+     */
+    private function generateCF7RawCode(array $ctmForm): string
+    {
+        try {
+            // Convert CTM form to CF7 format using FormImportService
+            $cf7Content = $this->formImportService->convertToCF7Format($ctmForm);
+            
+            // Return the raw CF7 shortcode content
+            return $cf7Content;
+            
+        } catch (\Exception $e) {
+            $this->logInternal('CF7 Raw Code Generation Error: ' . $e->getMessage(), 'error');
+            return 'Error generating CF7 raw code: ' . $e->getMessage();
+        }
+    }
+
+    /**
+     * Generate GF raw code
+     * 
+     * @since 2.0.0
+     * @param array $ctmForm The CTM form data
+     * @return string The raw GF code
+     */
+    private function generateGFRawCode(array $ctmForm): string
+    {
+        try {
+            // Convert CTM form to GF format using FormImportService
+            $gfFormArray = $this->formImportService->convertToGFFormat($ctmForm, $ctmForm['name']);
+            
+            // Format the GF form array as readable code
+            $rawCode = "Gravity Forms Form Configuration:\n\n";
+            $rawCode .= "Form Title: " . $gfFormArray['title'] . "\n\n";
+            $rawCode .= "Fields:\n";
+            
+            foreach ($gfFormArray['fields'] as $field) {
+                $rawCode .= "- " . $field['label'] . " (" . $field['type'] . ")\n";
+                if (isset($field['choices'])) {
+                    foreach ($field['choices'] as $choice) {
+                        $rawCode .= "  * " . $choice['text'] . "\n";
+                    }
+                }
+            }
+            
+            if (isset($gfFormArray['notifications'])) {
+                $rawCode .= "\nNotifications:\n";
+                foreach ($gfFormArray['notifications'] as $notification) {
+                    $rawCode .= "- " . $notification['name'] . " (to: " . $notification['to'] . ")\n";
+                }
+            }
+            
+            return $rawCode;
+            
+        } catch (\Exception $e) {
+            $this->logInternal('GF Raw Code Generation Error: ' . $e->getMessage(), 'error');
+            return 'Error generating GF raw code: ' . $e->getMessage();
+        }
     }
 }

@@ -540,6 +540,9 @@
   .hidden {
     display: none;
   }
+  .hidden\! {
+    display: none !important;
+  }
   .inline {
     display: inline;
   }
@@ -609,8 +612,17 @@
   .max-h-\[95vh\] {
     max-height: 95vh;
   }
+  .max-h-\[calc\(90vh-120px\)\] {
+    max-height: calc(90vh - 120px);
+  }
+  .max-h-\[calc\(95vh-160px\)\] {
+    max-height: calc(95vh - 160px);
+  }
   .max-h-none {
     max-height: none;
+  }
+  .min-h-\[44px\] {
+    min-height: 44px;
   }
   .min-h-\[100px\] {
     min-height: 100px;
@@ -903,6 +915,13 @@
       margin-inline-end: calc(calc(var(--spacing) * 4) * calc(1 - var(--tw-space-x-reverse)));
     }
   }
+  .space-x-8 {
+    :where(& > :not(:last-child)) {
+      --tw-space-x-reverse: 0;
+      margin-inline-start: calc(calc(var(--spacing) * 8) * var(--tw-space-x-reverse));
+      margin-inline-end: calc(calc(var(--spacing) * 8) * calc(1 - var(--tw-space-x-reverse)));
+    }
+  }
   .truncate {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1123,6 +1142,9 @@
   }
   .bg-gray-600 {
     background-color: var(--color-gray-600);
+  }
+  .bg-gray-900 {
+    background-color: var(--color-gray-900);
   }
   .bg-green-50 {
     background-color: var(--color-green-50);

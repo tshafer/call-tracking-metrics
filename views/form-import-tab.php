@@ -83,21 +83,21 @@ $has_form_plugins = $cf7_available || $gf_available;
 
                 <!-- Step 2: Select Form and Target -->
                 <div id="ctm-form-selection" class="hidden">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4"><?php _e('Step 2: Select Form and Import Target', 'call-tracking-metrics'); ?></h3>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-6"><?php _e('Step 2: Select Form and Import Target', 'call-tracking-metrics'); ?></h3>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                         <!-- Form Selection -->
                         <div>
-                            <label class="block mb-2 text-gray-600 font-medium"><?php _e('Select Form to Import', 'call-tracking-metrics'); ?></label>
-                            <select id="ctm-form-select" class="block w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-base">
+                            <label class="block mb-3 text-gray-600 font-medium"><?php _e('Select Form to Import', 'call-tracking-metrics'); ?></label>
+                            <select id="ctm-form-select" class="block w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-base min-h-[44px]">
                                 <option value=""><?php _e('Choose a form...', 'call-tracking-metrics'); ?></option>
                             </select>
                         </div>
 
                         <!-- Target Type Selection -->
                         <div>
-                            <label class="block mb-2 text-gray-600 font-medium"><?php _e('Import to', 'call-tracking-metrics'); ?></label>
-                            <select id="ctm-target-type" class="block w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-base">
+                            <label class="block mb-3 text-gray-600 font-medium"><?php _e('Import to', 'call-tracking-metrics'); ?></label>
+                            <select id="ctm-target-type" class="block w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-base min-h-[44px]">
                                 <option value=""><?php _e('Select target...', 'call-tracking-metrics'); ?></option>
                                 <?php if ($cf7_available): ?>
                                     <option value="cf7"><?php _e('Contact Form 7', 'call-tracking-metrics'); ?></option>
@@ -110,18 +110,18 @@ $has_form_plugins = $cf7_available || $gf_available;
                     </div>
 
                     <!-- Form Title (Hidden until form and target selected) -->
-                    <div id="ctm-form-title-section" class="mt-6 hidden">
-                        <label class="block mb-2 text-gray-600 font-medium"><?php _e('Form Title', 'call-tracking-metrics'); ?></label>
-                        <input type="text" id="ctm-form-title" class="block w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-base" 
+                    <div id="ctm-form-title-section" class="mt-8 hidden">
+                        <label class="block mb-3 text-gray-600 font-medium"><?php _e('Form Title', 'call-tracking-metrics'); ?></label>
+                        <input type="text" id="ctm-form-title" class="block w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-base min-h-[44px]" 
                                placeholder="<?php _e('Enter a title for the imported form...', 'call-tracking-metrics'); ?>">
                     </div>
 
                     <!-- Action Buttons (Hidden until form and target selected) -->
-                    <div id="ctm-action-buttons" class="flex gap-4 mt-6 hidden">
-                        <button type="button" id="ctm-preview-form" class="bg-blue-500 hover:bg-blue-600 text-white font-medium px-4 py-2 rounded-lg shadow transition">
-                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                    <div id="ctm-action-buttons" class="flex gap-4 mt-8 hidden">
+                        <button type="button" id="ctm-preview-form" class="bg-blue-500 hover:bg-blue-600 text-white font-medium px-6 py-3 rounded-lg shadow transition">
+                            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
                             </svg>
                             <?php _e('Preview Form', 'call-tracking-metrics'); ?>
                         </button>
@@ -132,40 +132,9 @@ $has_form_plugins = $cf7_available || $gf_available;
                             <?php _e('Import Form', 'call-tracking-metrics'); ?>
                         </button>
                     </div>
-
-                    <!-- Inline Preview Area -->
-                    <div id="ctm-preview-area" class="hidden mt-6 border-t border-gray-200 pt-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <h4 class="text-lg font-semibold text-gray-800 flex items-center">
-                                <svg class="w-5 h-5 text-blue-600 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                </svg>
-                                <?php _e('Form Preview', 'call-tracking-metrics'); ?>
-                            </h4>
-                            <button type="button" id="ctm-close-preview" class="text-gray-400 hover:text-gray-600 transition-colors">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                </svg>
-                            </button>
-                        </div>
-                        
-                        <!-- Preview Loading -->
-                        <div id="ctm-preview-loading" class="hidden">
-                            <div class="flex flex-col items-center justify-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                                <svg class="animate-spin h-8 w-8 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                <p class="text-gray-600 font-medium"><?php _e('Generating form preview...', 'call-tracking-metrics'); ?></p>
-                                <p class="text-gray-500 text-sm mt-1"><?php _e('This may take a few seconds', 'call-tracking-metrics'); ?></p>
-                            </div>
-                        </div>
-                        
-                        <!-- Preview Content -->
-                        <div id="ctm-preview-content" class="bg-white border border-gray-200 rounded-lg p-6"></div>
-                    </div>
                 </div>
+
+
 
                 <!-- Import Status -->
                 <div id="ctm-import-status" class="hidden">
@@ -225,6 +194,75 @@ $has_form_plugins = $cf7_available || $gf_available;
     </div>
 </div>
 
+<!-- Preview Modal - Outside of space-y-8 container to avoid spacing issues -->
+<div id="ctm-preview-modal" class="fixed inset-0 bg-black bg-opacity-60 items-center justify-center hidden" style="z-index: 999999;">
+    <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-hidden mx-4 my-4">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+            <div class="flex items-center">
+                <svg class="w-6 h-6 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                </svg>
+                <h3 class="text-xl font-semibold text-gray-800">Form Preview</h3>
+            </div>
+            <button type="button" id="ctm-close-modal" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Modal Content -->
+        <div class="p-6 overflow-y-auto max-h-[calc(95vh-160px)]">
+            <!-- Loading State -->
+            <div id="ctm-modal-loading" class="hidden">
+                <div class="flex flex-col items-center justify-center py-12">
+                    <svg class="animate-spin h-8 w-8 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p class="text-gray-600 font-medium">Generating form preview...</p>
+                    <p class="text-gray-500 text-sm mt-1">This may take a few seconds</p>
+                </div>
+            </div>
+
+            <!-- Preview Content -->
+            <div id="ctm-modal-content" class="hidden">
+                <!-- Tabs -->
+                <div class="border-b border-gray-200 mb-6">
+                    <nav class="flex space-x-8">
+                        <button type="button" id="ctm-tab-raw" class="ctm-tab-button py-2 px-1 border-b-2 border-blue-500 text-blue-600 font-medium text-sm">
+                            Raw Code
+                        </button>
+                        <button type="button" id="ctm-tab-rendered" class="ctm-tab-button py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium text-sm">
+                            Rendered Form
+                        </button>
+                    </nav>
+                </div>
+
+                <!-- Raw Code Tab -->
+                <div id="ctm-tab-raw-content" class="ctm-tab-content">
+                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                        <h4 class="text-sm font-medium text-gray-700 mb-2">Raw Form Code</h4>
+                        <p class="text-xs text-gray-500 mb-3">This is the raw code that will be generated for the form.</p>
+                    </div>
+                    <div id="ctm-raw-code" class="bg-gray-50 border border-gray-200 rounded p-3 font-mono text-xs overflow-x-auto text-gray-800 whitespace-pre-wrap"></div>
+                </div>
+
+                <!-- Rendered Form Tab -->
+                <div id="ctm-tab-rendered-content" class="ctm-tab-content hidden">
+                    <div class="bg-blue-50 rounded-lg p-4 mb-4">
+                        <h4 class="text-sm font-medium text-blue-700 mb-2">Rendered Form Preview</h4>
+                        <p class="text-xs text-blue-600 mb-3">This is how the form will appear after import.</p>
+                    </div>
+                    <div id="ctm-rendered-form" class="bg-white border border-gray-200 rounded-lg p-6"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 jQuery(document).ready(function($) {
     let availableForms = [];
@@ -275,8 +313,16 @@ jQuery(document).ready(function($) {
             let optionText = form.name;
             let optionClass = '';
             
-            // Check if form is already imported
-            if (form.import_status) {
+            // Check if form is already imported to any targets
+            if (form.import_status && Array.isArray(form.import_status)) {
+                const importTypes = form.import_status.map(importItem => {
+                    return importItem.type === 'cf7' ? 'Contact Form 7' : 'Gravity Forms';
+                });
+                const uniqueTypes = [...new Set(importTypes)];
+                optionText += ` ✓ (Imported to: ${uniqueTypes.join(', ')})`;
+                optionClass = 'imported-form';
+            } else if (form.import_status) {
+                // Handle legacy single import status
                 const importType = form.import_status.type === 'cf7' ? 'Contact Form 7' : 'Gravity Forms';
                 optionText += ` ✓ (Already imported to ${importType})`;
                 optionClass = 'imported-form';
@@ -311,20 +357,36 @@ jQuery(document).ready(function($) {
                 if (formData && formData.name) {
                     $('#ctm-form-title').val(formData.name);
                     
-                    // Show import status notice if form is already imported
+                    // Check if form is already imported to the selected target
+                    let alreadyImportedToTarget = false;
+                    let existingImport = null;
+                    
                     if (formData.import_status) {
-                        const importType = formData.import_status.type === 'cf7' ? 'Contact Form 7' : 'Gravity Forms';
+                        if (Array.isArray(formData.import_status)) {
+                            // Multiple imports - check if target type is already imported
+                            existingImport = formData.import_status.find(importItem => importItem.type === targetType);
+                            alreadyImportedToTarget = !!existingImport;
+                        } else {
+                            // Legacy single import - check if it matches current target
+                            alreadyImportedToTarget = formData.import_status.type === targetType;
+                            existingImport = alreadyImportedToTarget ? formData.import_status : null;
+                        }
+                    }
+                    
+                    // Show import status notice if form is already imported to this target
+                    if (alreadyImportedToTarget && existingImport) {
+                        const importType = existingImport.type === 'cf7' ? 'Contact Form 7' : 'Gravity Forms';
                         const notice = $(`
-                            <div class="ctm-import-status-notice bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                            <div class="ctm-import-status-notice bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
                                 <div class="flex items-start">
-                                    <svg class="w-5 h-5 text-blue-400 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-5 h-5 text-blue-400 mr-4 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                     </svg>
                                     <div>
-                                        <h4 class="text-blue-800 font-medium mb-1">Form Already Imported</h4>
-                                        <p class="text-blue-700 text-sm mb-3">This form has already been imported to ${importType} as "${formData.import_status.form_title}".</p>
-                                        <a href="${formData.import_status.edit_url}" target="_blank" class="inline-flex items-center px-3 py-1 text-sm font-medium text-blue-600 bg-blue-100 rounded-md hover:bg-blue-200 transition-colors">
-                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <h4 class="text-blue-800 font-medium mb-2 !mt-0">Form Already Imported to ${importType}</h4>
+                                        <p class="text-blue-700 text-sm mb-4">This form has already been imported to ${importType} as "${existingImport.form_title}".</p>
+                                        <a href="${existingImport.edit_url}" target="_blank" class="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-100 rounded-md hover:bg-blue-200 transition-colors">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                             </svg>
                                             Edit Existing Form
@@ -334,6 +396,26 @@ jQuery(document).ready(function($) {
                             </div>
                         `);
                         formTitleSection.before(notice);
+                    } else if (formData.import_status && Array.isArray(formData.import_status) && formData.import_status.length > 0) {
+                        // Show notice that form is imported to other targets but not this one
+                        const otherImports = formData.import_status.filter(importItem => importItem.type !== targetType);
+                        if (otherImports.length > 0) {
+                            const otherTypes = otherImports.map(importItem => importItem.type === 'cf7' ? 'Contact Form 7' : 'Gravity Forms');
+                            const notice = $(`
+                                <div class="ctm-import-status-notice bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+                                    <div class="flex items-start">
+                                        <svg class="w-5 h-5 text-green-400 mr-4 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        <div>
+                                            <h4 class="text-green-800 font-medium mb-2">Form Available for Additional Import</h4>
+                                            <p class="text-green-700 text-sm mb-4">This form is already imported to: ${otherTypes.join(', ')}. You can import it to ${targetType === 'cf7' ? 'Contact Form 7' : 'Gravity Forms'} as well.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            `);
+                            formTitleSection.before(notice);
+                        }
                     }
                 }
             }
@@ -346,16 +428,20 @@ jQuery(document).ready(function($) {
 
     // Clear all form state when selections change
     function clearFormState() {
-        console.log('Clearing form state...');
         
-        // Hide and clear preview area
-        const previewArea = $('#ctm-preview-area');
-        const previewContent = $('#ctm-preview-content');
-        const previewLoading = $('#ctm-preview-loading');
+        // Only clear modal if it's not currently open
+        const modal = $('#ctm-preview-modal');
+        if (!modal.hasClass('hidden')) {
+            return;
+        }
         
-        previewArea.addClass('hidden');
-        previewContent.addClass('hidden').html('');
-        previewLoading.addClass('hidden');
+        const modalContent = $('#ctm-modal-content');
+        const modalLoading = $('#ctm-modal-loading');
+        
+        modal.addClass('hidden').removeClass('flex');
+        $('body').removeClass('overflow-hidden');
+        modalContent.addClass('hidden').html('');
+        modalLoading.addClass('hidden');
         
         // Clear form title
         $('#ctm-form-title').val('');
@@ -367,18 +453,18 @@ jQuery(document).ready(function($) {
         // Re-enable preview button if it was disabled
         $('#ctm-preview-form').prop('disabled', false).text('<?php _e('Preview Form', 'call-tracking-metrics'); ?>');
         
-        console.log('Form state cleared');
     }
 
     // Listen for changes in form and target selection
     $('#ctm-form-select, #ctm-target-type').on('change', checkFormSelections);
 
     // Preview form (optional, non-blocking)
-    $('#ctm-preview-form').on('click', function() {
+    $('#ctm-preview-form').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
         const formId = $('#ctm-form-select').val();
         const targetType = $('#ctm-target-type').val();
-        
-        console.log('Preview form clicked:', { formId, targetType });
         
         if (!formId || !targetType) {
             showMessage('error', 'Please select both a form and target type.');
@@ -386,16 +472,24 @@ jQuery(document).ready(function($) {
         }
         
         const button = $(this);
-        const previewArea = $('#ctm-preview-area');
-        const previewLoading = $('#ctm-preview-loading');
-        const previewContent = $('#ctm-preview-content');
+        const modal = $('#ctm-preview-modal');
+        const modalLoading = $('#ctm-modal-loading');
+        const modalContent = $('#ctm-modal-content');
         
-        // Show preview area and loading state
-        previewArea.removeClass('hidden');
-        previewLoading.removeClass('hidden');
-        previewContent.addClass('hidden');
+        // Show modal and loading state
+        modal.removeClass('hidden').css('display', 'flex');
+        $('body').addClass('overflow-hidden');
+        modalLoading.removeClass('hidden');
+        modalContent.addClass('hidden');
         button.prop('disabled', true).text('Generating...');
         
+        // Check if modal exists
+        if (modal.length === 0) {
+            alert('Modal element not found!');
+            return;
+        }
+
+        // Make AJAX request to generate preview
         $.ajax({
             url: ajaxurl,
             type: 'POST',
@@ -405,51 +499,160 @@ jQuery(document).ready(function($) {
                 ctm_form_id: formId,
                 target_type: targetType
             },
+           
             success: function(response) {
-                console.log('Preview AJAX success:', response);
-                
                 // Check if response has the expected structure
                 if (!response || typeof response !== 'object') {
-                    console.error('Invalid response format:', response);
-                    previewArea.addClass('hidden');
+                    modal.addClass('hidden').css('display', 'none');
+                    $('body').removeClass('overflow-hidden');
                     showMessage('error', 'Invalid response from server');
                     return;
                 }
                 
-                if (response.success && response.data && response.data.preview) {
-                    console.log('Preview HTML length:', response.data.preview.length);
-                    console.log('Preview HTML:', response.data.preview);
-                    previewContent.html(response.data.preview);
-                    previewLoading.addClass('hidden');
-                    previewContent.removeClass('hidden');
+                if (response.success && response.data && (response.data.raw_code || response.data.rendered_form)) {
                     
-                    // Debug: Check if content was actually added
-                    console.log('Preview content after setting HTML:', previewContent.html().length);
+                    // Extract raw code and rendered form
+                    const rawCode = response.data.raw_code || 'No raw code available';
+                    const renderedForm = response.data.rendered_form || 'No rendered form available';
+                    
+                    
+                    modalLoading.addClass('hidden');
+                    modalContent.removeClass('hidden');
+                    
+                    // Create the modal content structure dynamically
+                    modalContent.html(`
+                        <!-- Tabs -->
+                        <div class="border-b border-gray-200 mb-6">
+                            <nav class="flex space-x-8">
+                                <button type="button" id="ctm-tab-raw" class="ctm-tab-button py-2 px-1 border-b-2 border-blue-500 text-blue-600 font-medium text-sm">
+                                    Raw Code
+                                </button>
+                                <button type="button" id="ctm-tab-rendered" class="ctm-tab-button py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium text-sm">
+                                    Rendered Form
+                                </button>
+                            </nav>
+                        </div>
+
+                        <!-- Raw Code Tab -->
+                        <div id="ctm-tab-raw-content" class="ctm-tab-content">
+                            <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                                <h4 class="text-sm font-medium text-gray-700 mb-2">Raw Form Code</h4>
+                                <p class="text-xs text-gray-500 mb-3">This is the raw code that will be generated for the form.</p>
+                            </div>
+                            <div id="ctm-raw-code" class="bg-gray-50 border border-gray-200 rounded p-3 font-mono text-xs overflow-x-auto text-gray-800 whitespace-pre-wrap"></div>
+                        </div>
+
+                        <!-- Rendered Form Tab -->
+                        <div id="ctm-tab-rendered-content" class="ctm-tab-content hidden">
+                            <div class="bg-blue-50 rounded-lg p-4 mb-4">
+                                <h4 class="text-sm font-medium text-blue-700 mb-2">Rendered Form Preview</h4>
+                                <p class="text-xs text-blue-600 mb-3">This is how the form will appear after import. Note: This is a static preview - interactive features will work after import.</p>
+                            </div>
+                            <div id="ctm-rendered-form" class="bg-white border border-gray-200 rounded-lg p-6"></div>
+                        </div>
+                    `);
+                    
+                    // Set the content, sanitizing the rendered form to prevent script errors
+                    $('#ctm-raw-code').text(rawCode);
+                    
+                    // Clean the rendered form HTML to remove problematic scripts
+                    let cleanedRenderedForm = renderedForm;
+                    
+                    // Remove Gravity Forms scripts that cause errors in admin context
+                    cleanedRenderedForm = cleanedRenderedForm.replace(/<script[^>]*gform[^>]*>[\s\S]*?<\/script>/gi, '');
+                    cleanedRenderedForm = cleanedRenderedForm.replace(/gform\.initializeOnLoaded[^;]*;?/gi, '');
+                    
+                    // Remove Contact Form 7 scripts that might cause similar issues
+                    cleanedRenderedForm = cleanedRenderedForm.replace(/<script[^>]*wpcf7[^>]*>[\s\S]*?<\/script>/gi, '');
+                    
+                    // Remove any other inline scripts that might cause issues
+                    cleanedRenderedForm = cleanedRenderedForm.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+                    
+                    $('#ctm-rendered-form').html(cleanedRenderedForm);
+                    
+            
+                    // Re-bind tab switching for dynamically created content
+                    $('.ctm-tab-button').off('click').on('click', function() {
+                        const targetTab = $(this).attr('id');
+                        
+                        // Update tab button styles
+                        $('.ctm-tab-button').removeClass('border-blue-500 text-blue-600').addClass('border-transparent text-gray-500 hover:text-gray-700');
+                        $(this).removeClass('border-transparent text-gray-500 hover:text-gray-700').addClass('border-blue-500 text-blue-600');
+                        
+                        // Show/hide tab content
+                        $('.ctm-tab-content').addClass('hidden');
+                        if (targetTab === 'ctm-tab-raw') {
+                            $('#ctm-tab-raw-content').removeClass('hidden');
+                        } else if (targetTab === 'ctm-tab-rendered') {
+                            $('#ctm-tab-rendered-content').removeClass('hidden');
+                        }
+                    });
+                    
                 } else {
-                    // Handle error cases with safe property access
+                    // Handle error cases - show error in modal instead of closing it
+                    
                     const errorMessage = (response.data && response.data.message) 
                         ? response.data.message 
                         : (response.message || 'Unknown error occurred');
                     
-                    console.log('Preview failed:', errorMessage);
-                    previewArea.addClass('hidden');
-                    showMessage('error', errorMessage);
+                    // Show error content in the modal instead of closing it
+                    modalLoading.addClass('hidden');
+                    modalContent.removeClass('hidden');
+                    
+                    // Display error in both tabs
+                    $('#ctm-raw-code').text('Error: ' + errorMessage);
+                    $('#ctm-rendered-form').html('<div class="bg-red-50 border border-red-200 rounded-lg p-4"><div class="text-red-800 font-medium">Preview Error</div><div class="text-red-700 text-sm mt-2">' + errorMessage + '</div><div class="text-red-600 text-xs mt-2">Full response: ' + JSON.stringify(response, null, 2) + '</div></div>');
                 }
             },
             error: function(xhr, status, error) {
-                console.log('Preview AJAX error:', { xhr, status, error });
-                previewArea.addClass('hidden');
+                modal.addClass('hidden').css('display', 'none');
+                $('body').removeClass('overflow-hidden');
                 showMessage('error', 'Failed to generate preview. Please try again.');
             },
             complete: function() {
-                button.prop('disabled', false).text('<?php _e('Preview Form', 'call-tracking-metrics'); ?>');
+                button.prop('disabled', false).html('<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg><?php _e('Preview Form', 'call-tracking-metrics'); ?>');
             }
         });
+        
+        return; // Skip the old AJAX call below
     });
 
-    // Close preview
-    $('#ctm-close-preview').on('click', function() {
-        $('#ctm-preview-area').addClass('hidden');
+    // Close modal
+    $('#ctm-close-modal').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $('#ctm-preview-modal').addClass('hidden').css('display', 'none');
+        $('body').removeClass('overflow-hidden');
+    });
+
+    // Close modal when clicking outside
+    $('#ctm-preview-modal').on('click', function(e) {
+        if (e.target === this) {    
+            $(this).addClass('hidden').css('display', 'none');
+            $('body').removeClass('overflow-hidden');
+        }
+    });
+
+    // Prevent modal from closing when clicking inside the modal content
+    $('#ctm-preview-modal .bg-white').on('click', function(e) {
+        e.stopPropagation();
+    });
+
+    // Tab switching
+    $('.ctm-tab-button').on('click', function() {
+        const targetTab = $(this).attr('id');
+        
+        // Update tab button styles
+        $('.ctm-tab-button').removeClass('border-blue-500 text-blue-600').addClass('border-transparent text-gray-500 hover:text-gray-700');
+        $(this).removeClass('border-transparent text-gray-500 hover:text-gray-700').addClass('border-blue-500 text-blue-600');
+        
+        // Show/hide tab content
+        $('.ctm-tab-content').addClass('hidden');
+        if (targetTab === 'ctm-tab-raw') {
+            $('#ctm-tab-raw-content').removeClass('hidden');
+        } else if (targetTab === 'ctm-tab-rendered') {
+            $('#ctm-tab-rendered-content').removeClass('hidden');
+        }
     });
 
     // Import form
@@ -692,12 +895,12 @@ jQuery(document).ready(function($) {
 }
 
 .form-field {
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
 }
 
 .form-field label {
     display: block;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
     font-weight: 500;
     color: #374151;
 }
@@ -706,22 +909,25 @@ jQuery(document).ready(function($) {
 .form-field textarea,
 .form-field select {
     width: 100%;
-    padding: 0.75rem;
+    padding: 0.875rem;
     border: 1px solid #d1d5db;
     border-radius: 0.5rem;
     background-color: #f9fafb;
     color: #6b7280;
+    min-height: 44px;
+    line-height: 1.4;
 }
 
 .form-field button {
     background-color: #3b82f6;
     color: white;
-    padding: 0.75rem 1.5rem;
+    padding: 0.875rem 1.5rem;
     border: none;
     border-radius: 0.5rem;
     font-weight: 500;
     cursor: not-allowed;
     opacity: 0.6;
+    min-height: 44px;
 }
 
 /* Styling for imported forms in select dropdown */
@@ -734,5 +940,194 @@ jQuery(document).ready(function($) {
 #ctm-form-select option.imported-form {
     background-color: #f0f9ff;
     color: #0369a1;
+}
+
+/* Improved dropdown styling */
+#ctm-form-select, #ctm-target-type {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+#ctm-form-select option, #ctm-target-type option {
+    padding: 8px 12px;
+    white-space: normal;
+    word-wrap: break-word;
+    min-height: 44px;
+    line-height: 1.4;
+}
+
+/* Better spacing for form elements */
+.form-field {
+    margin-bottom: 1.5rem;
+}
+
+.form-field label {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-weight: 500;
+    color: #374151;
+}
+
+.form-field input,
+.form-field textarea,
+.form-field select {
+    width: 100%;
+    padding: 0.875rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    background-color: #f9fafb;
+    color: #6b7280;
+    min-height: 44px;
+    line-height: 1.4;
+}
+
+.form-field button {
+    background-color: #3b82f6;
+    color: white;
+    padding: 0.875rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    cursor: not-allowed;
+    opacity: 0.6;
+    min-height: 44px;
+}
+
+/* Improved spacing for status notices */
+.ctm-import-status-notice {
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+}
+
+.ctm-import-status-notice h4 {
+    margin-bottom: 0.75rem;
+    font-size: 1.125rem;
+}
+
+.ctm-import-status-notice p {
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.ctm-import-status-notice a,
+.ctm-import-status-notice button {
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+/* Better spacing for action buttons */
+#ctm-action-buttons {
+    margin-top: 2rem;
+    gap: 1rem;
+}
+
+#ctm-action-buttons button {
+    padding: 0.875rem 1.5rem;
+    min-height: 44px;
+    font-weight: 500;
+}
+
+/* Improved preview area spacing */
+#ctm-preview-area {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+#ctm-preview-area h4 {
+    margin-bottom: 1rem;
+    font-size: 1.125rem;
+}
+
+/* Better spacing for import status */
+#ctm-import-status {
+    margin-top: 1.5rem;
+}
+
+#ctm-import-loading,
+#ctm-import-success,
+#ctm-import-error {
+    padding: 1rem 1.5rem;
+    border-radius: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+/* Modal styling */
+#ctm-preview-modal {
+    backdrop-filter: blur(4px);
+    display: flex !important;
+}
+
+#ctm-preview-modal.hidden {
+    display: none !important;
+}
+
+#ctm-preview-modal .bg-white {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Tab styling */
+.ctm-tab-button {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.ctm-tab-button:hover {
+    color: #374151;
+}
+
+.ctm-tab-content {
+    transition: opacity 0.3s ease;
+}
+
+/* Code display styling */
+#ctm-raw-code {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Rendered form styling */
+#ctm-rendered-form {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+#ctm-rendered-form .wpcf7-form {
+    max-width: none;
+}
+
+#ctm-rendered-form .gform_wrapper {
+    max-width: none;
+}
+
+/* Modal content scrolling */
+#ctm-preview-modal .overflow-y-auto {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e0 #f7fafc;
+}
+
+#ctm-preview-modal .overflow-y-auto::-webkit-scrollbar {
+    width: 6px;
+}
+
+#ctm-preview-modal .overflow-y-auto::-webkit-scrollbar-track {
+    background: #f7fafc;
+    border-radius: 3px;
+}
+
+#ctm-preview-modal .overflow-y-auto::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 3px;
+}
+
+#ctm-preview-modal .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
 }
 </style> 

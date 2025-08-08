@@ -127,6 +127,10 @@
                                 <span class="mr-2">📊</span>
                                 <?php _e('Form submissions will automatically appear in your CallTrackingMetrics dashboard.', 'call-tracking-metrics'); ?>
                             </li>
+                            <li class="flex items-start">
+                                <span class="mr-2">🔄</span>
+                                <?php _e('Forms can be imported to multiple targets simultaneously (Contact Form 7 and Gravity Forms).', 'call-tracking-metrics'); ?>
+                            </li>
                         </ul>
                     </div>
 
@@ -190,6 +194,10 @@
                             <div>
                                 <h4 class="font-semibold text-teal-800 mb-2"><?php _e('Q: How do I manage log files?', 'call-tracking-metrics'); ?></h4>
                                 <p class="text-sm text-gray-700"><?php _e('A: In the Debug tab, use the Log Settings section to configure retention periods, auto-cleanup, and view daily logs.', 'call-tracking-metrics'); ?></p>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-teal-800 mb-2"><?php _e('Q: Can I import the same form to multiple targets?', 'call-tracking-metrics'); ?></h4>
+                                <p class="text-sm text-gray-700"><?php _e('A: Yes! You can import the same CallTrackingMetrics form to both Contact Form 7 and Gravity Forms. The system will track all imports and show you which targets each form has been imported to.', 'call-tracking-metrics'); ?></p>
                             </div>
                         </div>
                     </div>

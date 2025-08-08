@@ -2024,4 +2024,118 @@ class FormImportServiceTest extends TestCase
         $this->assertNotNull($cf7Result);
         $this->assertIsArray($cf7Result);
     }
+
+    public function testMultipleImportCapability()
+    {
+        // Mock WordPress functions for CF7
+        \Brain\Monkey\Functions\when('wp_insert_post')->justReturn(123);
+        \Brain\Monkey\Functions\when('get_option')->justReturn('test@example.com');
+        \Brain\Monkey\Functions\when('class_exists')->justReturn(true);
+        
+        // Mock get_post_meta to return the CTM form ID for the specific form ID
+        \Brain\Monkey\Functions\when('get_post_meta')->alias(function($post_id, $key, $single = true) {
+            if ($key === '_ctm_form_id' && $post_id == 123) {
+                return 'test_form_id';
+            }
+            return '';
+        });
+        
+        // Create mock WPCF7_ContactForm class
+        if (!class_exists('WPCF7_ContactForm')) {
+            eval('class WPCF7_ContactForm {
+                public static function find() {
+                    $form1 = new stdClass();
+                    $form1->id = function() { return 123; };
+                    $form1->title = function() { return "Test Form CF7"; };
+                    return [$form1];
+                }
+            }');
+        }
+        
+        // Create mock GFAPI class
+        if (!class_exists('GFAPI')) {
+            eval('class GFAPI {
+                public static function get_forms() {
+                    return [
+                        [
+                            "id" => 456,
+                            "title" => "Test Form GF"
+                        ]
+                    ];
+                }
+            }');
+        }
+        
+        // Mock gform_get_meta to return the CTM form ID for the specific form ID
+        \Brain\Monkey\Functions\when('gform_get_meta')->alias(function($form_id, $key) {
+            if ($key === '_ctm_form_id' && $form_id == 456) {
+                return 'test_form_id';
+            }
+            return '';
+        });
+        
+        \Brain\Monkey\Functions\when('admin_url')->justReturn('http://example.com/wp-admin/');
+        
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        // Test that getImportedFormInfo returns multiple imports
+        $importInfo = $formImportService->getImportedFormInfo('test_form_id');
+        
+        $this->assertNotNull($importInfo);
+        $this->assertIsArray($importInfo);
+        $this->assertCount(2, $importInfo); // Should have both CF7 and GF imports
+        
+        // Check CF7 import
+        $cf7Import = $importInfo[0];
+        $this->assertEquals('cf7', $cf7Import['type']);
+        $this->assertEquals(123, $cf7Import['form_id']);
+        $this->assertEquals('Test Form CF7', $cf7Import['form_title']);
+        $this->assertStringContainsString('wpcf7', $cf7Import['edit_url']);
+        
+        // Check GF import
+        $gfImport = $importInfo[1];
+        $this->assertEquals('gf', $gfImport['type']);
+        $this->assertEquals(456, $gfImport['form_id']);
+        $this->assertEquals('Test Form GF', $gfImport['form_title']);
+        $this->assertStringContainsString('gf_edit_forms', $gfImport['edit_url']);
+    }
+
+    public function testGetImportedFormInfoReturnsNullWhenNoImports()
+    {
+        // Mock WordPress functions to return no forms
+        \Brain\Monkey\Functions\when('class_exists')->justReturn(true);
+        
+        // Create mock WPCF7_ContactForm class that returns empty array
+        if (!class_exists('WPCF7_ContactForm')) {
+            eval('class WPCF7_ContactForm {
+                public static function find() {
+                    return [];
+                }
+            }');
+        }
+        
+        // Create mock GFAPI class that returns empty array
+        if (!class_exists('GFAPI')) {
+            eval('class GFAPI {
+                public static function get_forms() {
+                    return [];
+                }
+            }');
+        }
+        
+        $apiService = new ApiService('https://api.calltrackingmetrics.com');
+        $cf7Service = new CF7Service();
+        $gfService = new GFService();
+        
+        $formImportService = new FormImportService($apiService, $cf7Service, $gfService);
+        
+        // Test that getImportedFormInfo returns null when no imports exist
+        $importInfo = $formImportService->getImportedFormInfo('non_existent_form_id');
+        
+        $this->assertNull($importInfo);
+    }
 } 

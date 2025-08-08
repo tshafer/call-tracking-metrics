@@ -1165,13 +1165,15 @@ class FormImportService
      */
     public function getImportedFormInfo(string $ctmFormId): ?array
     {
+        $imports = [];
+
         // Check Contact Form 7
         if (class_exists('WPCF7_ContactForm')) {
             $cf7Forms = \WPCF7_ContactForm::find(['posts_per_page' => -1]);
             foreach ($cf7Forms as $form) {
                 $importedCtmId = get_post_meta($form->id(), '_ctm_form_id', true);
                 if ($importedCtmId === $ctmFormId) {
-                    return [
+                    $imports[] = [
                         'type' => 'cf7',
                         'form_id' => $form->id(),
                         'form_title' => $form->title(),
@@ -1188,7 +1190,7 @@ class FormImportService
             foreach ($gfForms as $form) {
                 $importedCtmId = gform_get_meta($form['id'], '_ctm_form_id');
                 if ($importedCtmId === $ctmFormId) {
-                    return [
+                    $imports[] = [
                         'type' => 'gf',
                         'form_id' => $form['id'],
                         'form_title' => $form['title'],
@@ -1199,6 +1201,6 @@ class FormImportService
             }
         }
 
-        return null;
+        return !empty($imports) ? $imports : null;
     }
 } 
