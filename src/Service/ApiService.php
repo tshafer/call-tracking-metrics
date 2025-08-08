@@ -666,15 +666,7 @@ class ApiService
      * @param string $apiSecret The API secret to validate
      * @return bool True if credentials are valid, false otherwise
      */
-    public function validateCredentials(string $apiKey, string $apiSecret): bool
-    {
-        try {
-            $accountInfo = $this->getAccountInfo($apiKey, $apiSecret);
-            return $accountInfo !== null && isset($accountInfo['account']);
-        } catch (\Exception $e) {
-            return false;
-        }
-    }
+
 
     /**
      * Get API service health status
@@ -685,22 +677,7 @@ class ApiService
      * @since 1.0.0
      * @return bool True if API is accessible, false otherwise
      */
-    public function checkApiHealth(): bool
-    {
-        try {
-            // Make a simple request without authentication to check connectivity
-            $response = wp_remote_get($this->baseUrl . '/api/v1/ping', [
-                'timeout' => 10,
-                'headers' => [
-                    'User-Agent' => $this->userAgent,
-                ],
-            ]);
-            
-            return !is_wp_error($response) && \wp_remote_retrieve_response_code($response) < 400;
-        } catch (\Exception $e) {
-            return false;
-        }
-    }
+
 
     /**
      * Set custom timeout for API requests

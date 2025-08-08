@@ -189,12 +189,6 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
                         </svg>
                         <span><?php _e('Test Connection', 'call-tracking-metrics'); ?></span>
                     </button>
-                    <button id="ctm-toggle-auto-test" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        <span><?php _e('Auto-Test: OFF', 'call-tracking-metrics'); ?></span>
-                    </button>
                 </div>
                 
                 <!-- Progress Bar -->
@@ -395,9 +389,6 @@ jQuery(document).ready(function($) {
         return; // Not on API tab, exit early
     }
     
-    let autoTestEnabled = true;
-    let countdownTimer = null;
-    let countdownValue = 10;
     let isTestInProgress = false;
     
     // Update status indicators
@@ -417,27 +408,10 @@ jQuery(document).ready(function($) {
         lastTest.text('Last test: ' + new Date().toLocaleTimeString());
     }
     
-    // Start countdown
-    function startCountdown() {
-        if (!autoTestEnabled || isTestInProgress) return;
-        countdownValue = 600; // 10 minutes in seconds
-        const countdown = $('#ctm-countdown');
-        clearInterval(countdownTimer);
-        countdownTimer = setInterval(() => {
-            const mins = Math.floor(countdownValue / 60);
-            const secs = countdownValue % 60;
-            countdown.text(`Next test in ${mins}:${secs.toString().padStart(2, '0')}`);
-            countdownValue--;
-            if (countdownValue < 0) {
-                clearInterval(countdownTimer);
-                countdown.text('Testing...');
-                performApiTest(true); // Auto test
-            }
-        }, 1000);
-    }
+
     
     // Perform API test
-    function performApiTest(isAutoTest = false) {
+    function performApiTest() {
         if (isTestInProgress) return;
         
         isTestInProgress = true;
@@ -446,21 +420,13 @@ jQuery(document).ready(function($) {
         const progressContainer = $('#ctm-progress-container');
         const progressBar = $('#ctm-progress-bar');
         const progressPercent = $('#ctm-progress-percent');
-        const countdown = $('#ctm-countdown');
         
-        // Update button state (only if manual test)
-        if (!isAutoTest) {
-            button.prop('disabled', true).html('<svg class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Testing...');
-        }
+        // Update button state
+        button.prop('disabled', true).html('<svg class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Testing...');
         
-        // Show testing status
-        countdown.text('Testing...');
-        
-        // Add test log if not auto test
-        if (!isAutoTest) {
-            appendLog('info', 'Starting API connection test...');
-            progressContainer.removeClass('hidden');
-        }
+        // Add test log
+        appendLog('info', 'Starting API connection test...');
+        progressContainer.removeClass('hidden');
         
         // AJAX call to test API
         $.ajax({
@@ -476,102 +442,62 @@ jQuery(document).ready(function($) {
                 if (response.success) {
                     updateStatus(true);
                     
-                    // Show detailed logs only for manual tests
-                    if (!isAutoTest) {
-                        progressBar.css('width', '100%');
-                        progressPercent.text('100%');
-                        
-                        let logHtml = '';
-                        if (response.data.logs) {
-                            response.data.logs.forEach(log => {
-                                let bgClass = 'bg-gray-50';
-                                let textClass = 'text-gray-700';
-                                let icon = '•';
-                                
-                                if (log.includes('✓') || log.includes('Success')) {
-                                    bgClass = 'bg-green-50 border-l-4 border-green-500';
-                                    textClass = 'text-green-700';
-                                    icon = '✓';
-                                } else if (log.includes('✗') || log.includes('Error')) {
-                                    bgClass = 'bg-red-50 border-l-4 border-red-500';
-                                    textClass = 'text-red-700';
-                                    icon = '✗';
-                                } else if (log.includes('→') || log.includes('Sending')) {
-                                    bgClass = 'bg-blue-50 border-l-4 border-blue-500';
-                                    textClass = 'text-blue-700';
-                                    icon = '→';
-                                }
-                                
-                                logHtml += `<div class="mb-2 p-2 rounded ${bgClass}"><span class="${textClass}">${icon} ${log}</span></div>`;
-                            });
-                        }
-                        logs.html(logHtml);
-                        
-                        // Show duration if available
-                        if (response.data.duration) {
-                            logs.append(`<div class="mt-3 p-2 bg-gray-100 rounded text-center"><span class="text-gray-600">Total test duration: ${response.data.duration}ms</span></div>`);
-                        }
-                    } else {
-                        // For auto tests, just add a simple success log
-                        const timestamp = new Date().toLocaleTimeString();
-                        appendLog('success', `✓ [${timestamp}] Auto-test successful`);
+                    progressBar.css('width', '100%');
+                    progressPercent.text('100%');
+                    
+                    let logHtml = '';
+                    if (response.data.logs) {
+                        response.data.logs.forEach(log => {
+                            let bgClass = 'bg-gray-50';
+                            let textClass = 'text-gray-700';
+                            let icon = '•';
+                            
+                            if (log.includes('✓') || log.includes('Success')) {
+                                bgClass = 'bg-green-50 border-l-4 border-green-500';
+                                textClass = 'text-green-700';
+                                icon = '✓';
+                            } else if (log.includes('✗') || log.includes('Error')) {
+                                bgClass = 'bg-red-50 border-l-4 border-red-500';
+                                textClass = 'text-red-700';
+                                icon = '✗';
+                            } else if (log.includes('→') || log.includes('Sending')) {
+                                bgClass = 'bg-blue-50 border-l-4 border-blue-500';
+                                textClass = 'text-blue-700';
+                                icon = '→';
+                            }
+                            
+                            logHtml += `<div class="mb-2 p-2 rounded ${bgClass}"><span class="${textClass}">${icon} ${log}</span></div>`;
+                        });
                     }
+                    logs.html(logHtml);
+                    
+                    // Show duration if available
+                    if (response.data.duration) {
+                        logs.append(`<div class="mt-3 p-2 bg-gray-100 rounded text-center"><span class="text-gray-600">Total test duration: ${response.data.duration}ms</span></div>`);
+                    }
+                    
                     displayAccountSummary(response.data.account_info.account, response.data.account_details?.account, response.data.capabilities);
                     displayTechnicalDetails(response.data);
                     displayPerformanceMetrics(response.data.performance, response.data.connection_quality);
                 } else {
                     updateStatus(false, response.data || 'Test failed');
-                    
-                    if (!isAutoTest) {
-                        appendLog('error', `❌ ${response.data || 'Test failed'}`);
-                    } else {
-                        const timestamp = new Date().toLocaleTimeString();
-                        appendLog('error', `✗ [${timestamp}] Auto-test failed`);
-                    }
+                    appendLog('error', `❌ ${response.data || 'Test failed'}`);
                 }
             },
             error: function() {
                 updateStatus(false, 'AJAX request failed');
-                
-                if (!isAutoTest) {
-                    appendLog('error', '❌ AJAX request failed');
-                } else {
-                    const timestamp = new Date().toLocaleTimeString();
-                    appendLog('error', `✗ [${timestamp}] Auto-test failed`);
-                }
+                appendLog('error', '❌ AJAX request failed');
             },
             complete: function() {
                 isTestInProgress = false;
-                
-                if (!isAutoTest) {
-                    button.prop('disabled', false).html('<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>Test Now');
-                }
-                
-                // Restart countdown
-                setTimeout(() => {
-                    startCountdown();
-                }, 1000);
+                button.prop('disabled', false).html('<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>Test Now');
             }
         });
     }
     
     // Event handlers
     $('#ctm-test-api-btn').on('click', function() {
-        performApiTest(false);
-    });
-    
-    $('#ctm-toggle-auto-test').on('click', function() {
-        const button = $(this);
-        autoTestEnabled = !autoTestEnabled;
-        
-        if (autoTestEnabled) {
-            button.removeClass('bg-gray-600 hover:bg-gray-700').addClass('bg-green-600 hover:bg-green-700').html('<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Auto-Test: ON');
-            startCountdown();
-        } else {
-            button.removeClass('bg-green-600 hover:bg-green-700').addClass('bg-gray-600 hover:bg-gray-700').html('<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Auto-Test: OFF');
-            clearInterval(countdownTimer);
-            $('#ctm-countdown').text('Auto-test disabled');
-        }
+        performApiTest();
     });
     
     // Clear Logs Button
@@ -655,8 +581,7 @@ jQuery(document).ready(function($) {
         appendLog('success', `✓ [${new Date().toLocaleTimeString()}] API connection verified`);
     }
     
-    // Start auto-testing
-    startCountdown(); // Start countdown immediately on page load
+
     
     function appendLog(type, message) {
         const logs = $('#ctm-test-logs');
