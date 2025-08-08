@@ -24,7 +24,7 @@
  * @wordpress-plugin
  * Plugin Name:       CallTrackingMetrics
  * Plugin URI:        https://calltrackingmetrics.com
- * Description:       A call tracking solution for WordPress - tracks errors, analytics, security, performance and more
+ * Description:       A call tracking solution for WordPress.
  * Version:           2.0
  * Author:            CallTrackingMetrics Team
  * License:           GPL-2.0+

@@ -26,7 +26,7 @@ msgstr ""
 
 #. Description of the plugin
 #: ctm.php
-msgid "A call tracking solution for WordPress - tracks errors, analytics, security, performance and more"
+msgid "A call tracking solution for WordPress
 msgstr ""
 
 #. Author of the plugin
