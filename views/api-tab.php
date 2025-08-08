@@ -162,7 +162,7 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
         </div>
 
         <!-- Connection Monitor Card - Full Width -->
-        <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden mb-6">
             <div class="px-6 py-4 border-b border-gray-200">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-3">
@@ -175,7 +175,6 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
                         <span id="ctm-status-badge" class="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full"><?php _e('Connected', 'call-tracking-metrics'); ?></span>
                     </div>
                     <div class="text-right">
-                        <div id="ctm-countdown" class="text-sm font-medium text-gray-900"><?php _e('Next test in 10m', 'call-tracking-metrics'); ?></div>
                         <div id="ctm-last-test" class="text-xs text-gray-500"><?= date('g:i:s A') ?></div>
                     </div>
                 </div>
@@ -203,7 +202,7 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
                 </div>
                 
                 <!-- Test Logs -->
-                <div id="ctm-test-logs" class="bg-gray-50 border border-gray-200 rounded-lg p-4 h-48 overflow-y-auto font-mono text-sm">
+                <div id="ctm-test-logs" class="bg-gray-50 border border-gray-200 rounded-lg p-4 h-48 overflow-y-auto font-mono text-sm mt-4">
                     <div class="text-gray-500 italic"><?php _e('Click "Test Connection" to see real-time logs...', 'call-tracking-metrics'); ?></div>
                 </div>
             </div>
@@ -628,37 +627,37 @@ jQuery(document).ready(function($) {
         const accountDetails = $('#ctm-account-details');
         accountSummary.removeClass('hidden');
         let summaryHTML = '';
-        summaryHTML += `<div class="bg-white p-2 rounded border"><strong>Name:</strong> ${account.name || 'N/A'}</div>`;
-        summaryHTML += `<div class="bg-white p-2 rounded border"><strong>Account ID:</strong> <code class="bg-gray-100 px-1 rounded">${account.id || 'N/A'}</code></div>`;
+        summaryHTML += `<div class="bg-gray-50 p-3 rounded border border-gray-200 text-sm"><span class="font-medium text-gray-700">Name:</span> <span class="text-gray-900">${account.name || 'N/A'}</span></div>`;
+        summaryHTML += `<div class="bg-gray-50 p-3 rounded border border-gray-200 text-sm"><span class="font-medium text-gray-700">Account ID:</span> <code class="bg-gray-100 px-2 py-1 rounded text-xs font-mono">${account.id || 'N/A'}</code></div>`;
         if (account.email) {
-            summaryHTML += `<div class="bg-white p-2 rounded border"><strong>Email:</strong> ${account.email}</div>`;
+            summaryHTML += `<div class="bg-gray-50 p-3 rounded border border-gray-200 text-sm"><span class="font-medium text-gray-700">Email:</span> <span class="text-gray-900">${account.email}</span></div>`;
         }
         if (capabilities) {
             const accessIcon = capabilities.account_access ? '✓' : '✗';
             const detailsIcon = capabilities.details_access ? '✓' : '✗';
-            summaryHTML += `<div class="bg-white p-2 rounded border"><strong>API Access:</strong> <span class="text-green-600">${accessIcon}</span> Account, <span class="${capabilities.details_access ? 'text-green-600' : 'text-yellow-600'}">${detailsIcon}</span> Details</div>`;
-            summaryHTML += `<div class="bg-white p-2 rounded border"><strong>API Version:</strong> ${capabilities.api_version}</div>`;
+            summaryHTML += `<div class="bg-gray-50 p-3 rounded border border-gray-200 text-sm"><span class="font-medium text-gray-700">API Access:</span> <span class="text-green-600">${accessIcon}</span> Account, <span class="${capabilities.details_access ? 'text-green-600' : 'text-yellow-600'}">${detailsIcon}</span> Details</div>`;
+            summaryHTML += `<div class="bg-gray-50 p-3 rounded border border-gray-200 text-sm"><span class="font-medium text-gray-700">API Version:</span> <span class="text-gray-900">${capabilities.api_version}</span></div>`;
         }
         if (details) {
             if (details.status) {
                 const statusColor = details.status === 'active' ? 'text-green-600' : 'text-yellow-600';
-                summaryHTML += `<div class="bg-white p-2 rounded border"><strong>Status:</strong> <span class="${statusColor} font-semibold">${details.status}</span></div>`;
+                summaryHTML += `<div class="bg-gray-50 p-3 rounded border border-gray-200 text-sm"><span class="font-medium text-gray-700">Status:</span> <span class="${statusColor} font-semibold">${details.status}</span></div>`;
             }
             if (details.timezone) {
-                summaryHTML += `<div class="bg-white p-2 rounded border"><strong>Timezone:</strong> ${details.timezone}</div>`;
+                summaryHTML += `<div class="bg-gray-50 p-3 rounded border border-gray-200 text-sm"><span class="font-medium text-gray-700">Timezone:</span> <span class="text-gray-900">${details.timezone}</span></div>`;
             }
             if (details.created_at) {
                 const date = new Date(details.created_at).toLocaleDateString();
-                summaryHTML += `<div class="bg-white p-2 rounded border"><strong>Created:</strong> ${date}</div>`;
+                summaryHTML += `<div class="bg-gray-50 p-3 rounded border border-gray-200 text-sm"><span class="font-medium text-gray-700">Created:</span> <span class="text-gray-900">${date}</span></div>`;
             }
             if (details.phone) {
-                summaryHTML += `<div class="bg-white p-2 rounded border"><strong>Phone:</strong> ${details.phone}</div>`;
+                summaryHTML += `<div class="bg-gray-50 p-3 rounded border border-gray-200 text-sm"><span class="font-medium text-gray-700">Phone:</span> <span class="text-gray-900">${details.phone}</span></div>`;
             }
             if (details.website) {
-                summaryHTML += `<div class="bg-white p-2 rounded border"><strong>Website:</strong> <a href="${details.website}" target="_blank" class="text-blue-600 underline">${details.website}</a></div>`;
+                summaryHTML += `<div class="bg-gray-50 p-3 rounded border border-gray-200 text-sm"><span class="font-medium text-gray-700">Website:</span> <a href="${details.website}" target="_blank" class="text-blue-600 underline">${details.website}</a></div>`;
             }
             if (details.plan || details.subscription) {
-                summaryHTML += `<div class="bg-white p-2 rounded border"><strong>Plan:</strong> ${details.plan || details.subscription || 'Not specified'}</div>`;
+                summaryHTML += `<div class="bg-gray-50 p-3 rounded border border-gray-200 text-sm"><span class="font-medium text-gray-700">Plan:</span> <span class="text-gray-900">${details.plan || details.subscription || 'Not specified'}</span></div>`;
             }
         }
         accountDetails.html(summaryHTML);
@@ -675,7 +674,7 @@ jQuery(document).ready(function($) {
         // Request Metadata Section
         if (data.metadata) {
             detailsHTML += `
-                <div class="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
                     <div class="flex items-center space-x-2 mb-3">
                         <div class="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
                             <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -684,29 +683,29 @@ jQuery(document).ready(function($) {
                         </div>
                         <h4 class="text-sm font-semibold text-gray-900">Request Metadata</h4>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Request ID:</span>
-                            <span class="font-mono font-medium text-gray-900">${data.metadata.request_id?.substring(0, 8) || 'N/A'}</span>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600 font-medium">Request ID:</span>
+                            <span class="font-mono font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded text-xs">${data.metadata.request_id?.substring(0, 8) || 'N/A'}</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">WordPress:</span>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600 font-medium">WordPress:</span>
                             <span class="font-medium text-gray-900">${data.metadata.wordpress_version || 'N/A'}</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Plugin:</span>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600 font-medium">Plugin:</span>
                             <span class="font-medium text-gray-900">${data.metadata.plugin_version || 'N/A'}</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Timestamp:</span>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600 font-medium">Timestamp:</span>
                             <span class="font-medium text-gray-900">${data.metadata.timestamp || 'N/A'}</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">PHP:</span>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600 font-medium">PHP:</span>
                             <span class="font-medium text-gray-900">${data.metadata.php_version || 'N/A'}</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Auth Method:</span>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600 font-medium">Auth Method:</span>
                             <span class="font-medium text-gray-900">${data.metadata.auth_method || 'N/A'}</span>
                         </div>
                     </div>
@@ -717,7 +716,7 @@ jQuery(document).ready(function($) {
         // Performance Metrics Section
         if (data.performance) {
             detailsHTML += `
-                <div class="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
                     <div class="flex items-center space-x-2 mb-3">
                         <div class="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
                             <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -726,21 +725,21 @@ jQuery(document).ready(function($) {
                         </div>
                         <h4 class="text-sm font-semibold text-gray-900">Performance Metrics</h4>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Total Time:</span>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600 font-medium">Total Time:</span>
                             <span class="font-medium text-gray-900">${data.performance.total_execution_time}ms</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Details Response:</span>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600 font-medium">Details Response:</span>
                             <span class="font-medium text-gray-900">${data.performance.details_response_time || 'N/A'}ms</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">API Response:</span>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600 font-medium">API Response:</span>
                             <span class="font-medium text-gray-900">${data.performance.api_response_time}ms</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Network Overhead:</span>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600 font-medium">Network Overhead:</span>
                             <span class="font-medium text-gray-900">${data.performance.network_overhead?.toFixed(1) || 'N/A'}ms</span>
                         </div>
                     </div>
@@ -751,7 +750,7 @@ jQuery(document).ready(function($) {
         // API Endpoints Section
         if (data.metadata) {
             detailsHTML += `
-                <div class="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
                     <div class="flex items-center space-x-2 mb-3">
                         <div class="w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center">
                             <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -760,19 +759,19 @@ jQuery(document).ready(function($) {
                         </div>
                         <h4 class="text-sm font-semibold text-gray-900">API Endpoints</h4>
                     </div>
-                    <div class="space-y-2 text-xs">
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Base URL:</span>
-                            <span class="font-mono font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded">${data.metadata.api_endpoint || 'N/A'}</span>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600 font-medium">Base URL:</span>
+                            <span class="font-mono font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded text-xs">${data.metadata.api_endpoint || 'N/A'}</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Account:</span>
-                            <span class="font-mono font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded">${data.metadata.account_endpoint || 'N/A'}</span>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600 font-medium">Account:</span>
+                            <span class="font-mono font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded text-xs">${data.metadata.account_endpoint || 'N/A'}</span>
                         </div>
                         ${data.metadata.details_endpoint ? `
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Details:</span>
-                            <span class="font-mono font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded">${data.metadata.details_endpoint}</span>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600 font-medium">Details:</span>
+                            <span class="font-mono font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded text-xs">${data.metadata.details_endpoint}</span>
                         </div>
                         ` : ''}
                     </div>
@@ -788,7 +787,7 @@ jQuery(document).ready(function($) {
                                       quality.color === 'yellow' ? 'bg-yellow-100 text-yellow-800' : 
                                       'bg-red-100 text-red-800';
             detailsHTML += `
-                <div class="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
                     <div class="flex items-center space-x-2 mb-3">
                         <div class="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
                             <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -797,9 +796,9 @@ jQuery(document).ready(function($) {
                         </div>
                         <h4 class="text-sm font-semibold text-gray-900">Connection Quality</h4>
                     </div>
-                    <div class="flex items-center space-x-2 text-xs">
-                        <span class="px-2 py-1 rounded ${qualityBadgeColor} font-medium">${quality.rating.toUpperCase()}</span>
-                        <span class="text-gray-600">${quality.total_time}ms total response time</span>
+                    <div class="flex items-center space-x-3 text-sm">
+                        <span class="px-3 py-1 rounded ${qualityBadgeColor} font-medium text-xs">${quality.rating.toUpperCase()}</span>
+                        <span class="text-gray-600 font-medium">${quality.total_time}ms total response time</span>
                     </div>
                 </div>
             `;
