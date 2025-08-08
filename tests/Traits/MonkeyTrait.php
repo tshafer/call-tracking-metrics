@@ -130,6 +130,15 @@ trait MonkeyTrait
         // $mock('wp_send_json_success', fn() => \Brain\Monkey\Functions\when('wp_send_json_success')->justReturn(null));
         // $mock('wp_send_json_error', fn() => \Brain\Monkey\Functions\when('wp_send_json_error')->justReturn(null));
         $mock('update_option', fn() => \Brain\Monkey\Functions\when('update_option')->justReturn(true));
+        $mock('get_transient', fn() => \Brain\Monkey\Functions\when('get_transient')->alias(function($key) {
+            // Return false by default (no transient found)
+            if ($key === 'ctm_last_connection_status') {
+                return 'connected'; // Mock connected status for tests
+            }
+            return false;
+        }));
+        $mock('set_transient', fn() => \Brain\Monkey\Functions\when('set_transient')->justReturn(true));
+        $mock('delete_transient', fn() => \Brain\Monkey\Functions\when('delete_transient')->justReturn(true));
         $mock('sanitize_email', fn() => \Brain\Monkey\Functions\when('sanitize_email')->alias(fn($v) => $v));
         $mock('is_email', fn() => \Brain\Monkey\Functions\when('is_email')->justReturn(true));
         $mock('esc_html', fn() => \Brain\Monkey\Functions\when('esc_html')->alias(fn($v) => $v));

@@ -289,7 +289,7 @@ class AdminFormsTabRenderingTest extends TestCase
 
         // Check for JavaScript event handlers
         $this->assertStringContainsString('ctm-preview-wp-form', $content);
-        $this->assertStringContainsString('ctm_preview_wp_form', $content);
+        $this->assertStringContainsString('CTMPreview.showWPPreview', $content);
         $this->assertStringContainsString('ctm-update-form', $content);
         $this->assertStringContainsString('ctm_update_form', $content);
         $this->assertStringContainsString('jQuery(document).ready', $content);

@@ -6,8 +6,7 @@ $apiStatus = $apiStatus ?? 'not_connected';
 $apiKey = $apiKey ?? '';
 $apiSecret = $apiSecret ?? '';
 
-$apiKey = 'a558177d58fba59529de6c72c3c749defd033718';
-$apiSecret = '4272ece96eb1d0b7066efc3ed90e436001db';
+// API credentials are passed from the controller, no hardcoding needed
 ?>
 <form method="post" action="" class="space-y-6">
     <?php wp_nonce_field('ctm_save_settings', 'ctm_settings_nonce'); ?>

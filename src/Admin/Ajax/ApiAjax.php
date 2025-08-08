@@ -363,6 +363,9 @@ class ApiAjax {
         }
         update_option('ctm_api_key', $apiKey);
         update_option('ctm_api_secret', $apiSecret);
+        
+        // Clear connection status cache so new credentials are tested immediately
+        delete_transient('ctm_last_connection_status');
         // Fetch account info and tracking script
         $apiService = new \CTM\Service\ApiService(\ctm_get_api_url());
         $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
@@ -407,6 +410,9 @@ class ApiAjax {
         delete_option('ctm_api_secret');
         delete_option('ctm_api_auth_account');
         delete_option('call_track_account_script');
+        
+        // Clear connection status cache
+        delete_transient('ctm_last_connection_status');
         wp_send_json_success(['message' => 'API credentials cleared.']);
     }
 } 

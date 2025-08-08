@@ -1260,8 +1260,9 @@ add_action('admin_init', function() {
             }
         });
         // Optionally, disable integrations if version is not met
-        update_option('ctm_api_gf_enabled', false);
-        update_option('ctm_api_cf7_enabled', false);
+        // Temporarily disabled to prevent potential timeout issues
+        // update_option('ctm_api_gf_enabled', false);
+        // update_option('ctm_api_cf7_enabled', false);
     }
 });
 

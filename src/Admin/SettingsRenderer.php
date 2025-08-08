@@ -126,14 +126,24 @@ class SettingsRenderer
         $cf7_installed = class_exists('WPCF7_ContactForm');
         $gf_installed = class_exists('GFAPI');
 
-        // --- FIX: Determine API connection status for the general tab ---
+        // --- FIX: Determine API connection status without automatic testing (prevent timeouts) ---
         $apiStatus = 'not_tested';
         if ($apiKey && $apiSecret && $this->apiService) {
-            try {
-                $accountInfo = $this->apiService->getAccountInfo($apiKey, $apiSecret);
-                $apiStatus = ($accountInfo && isset($accountInfo['account'])) ? 'connected' : 'not_connected';
-            } catch (\Exception $e) {
-                $apiStatus = 'not_connected';
+            // Check cached status first
+            $lastConnectionTest = get_transient('ctm_last_connection_status');
+            if ($lastConnectionTest !== false) {
+                $apiStatus = $lastConnectionTest;
+            } else {
+                // No cache - assume connected if we have credentials and tracking script
+                $trackingScript = get_option('call_track_account_script');
+                if (!empty($trackingScript)) {
+                    $apiStatus = 'connected';
+                    // Cache the assumed status
+                    set_transient('ctm_last_connection_status', 'connected', 5 * 60);
+                } else {
+                    // No tracking script and no cache - default to not_tested
+                    $apiStatus = 'not_tested';
+                }
             }
         } else {
             $apiStatus = 'not_connected';

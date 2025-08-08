@@ -224,8 +224,9 @@ class Options
         // Register all AJAX endpoint handlers
         $this->ajaxHandlers->registerHandlers();
 
-        // Get the tracking script from the API
-        $this->getTrackingScriptFromApi();
+        // Only get the tracking script from the API if we're specifically processing a form submission
+        // This prevents automatic API calls on every admin page load
+        // $this->getTrackingScriptFromApi();
         
         // Enqueue JavaScript and CSS assets for field mapping
         // Removed field mapping assets as per edit hint
@@ -255,21 +256,24 @@ class Options
             $apiSecret = get_option('ctm_api_secret');
             $apiStatus = 'not_tested';
             
-            // Test API connection if credentials are available (with timeout)
+            // Determine API status without automatic testing to prevent page load delays
+            // Note: Automatic testing completely disabled to prevent timeout issues
             if ($apiKey && $apiSecret) {
-                try {
-                    // Set a timeout for API calls to prevent 502 errors
-                    set_time_limit(10); // 10 second timeout
-                    $apiService = new \CTM\Service\ApiService(\ctm_get_api_url());
-                    $apiService->setTimeout(10); // Reduce timeout for settings page
-                    $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
-                    $apiStatus = ($accountInfo && isset($accountInfo['account'])) ? 'connected' : 'not_connected';
-                } catch (\Exception $e) {
-                    // Log the error but don't break the page
-                    if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
-                        $this->loggingSystem->logActivity('API connection test failed: ' . $e->getMessage(), 'error');
+                // Check if we have a cached connection status
+                $lastConnectionTest = get_transient('ctm_last_connection_status');
+                if ($lastConnectionTest !== false) {
+                    $apiStatus = $lastConnectionTest;
+                } else {
+                    // No cache - assume connected if we have credentials and tracking script
+                    $trackingScript = get_option('call_track_account_script');
+                    if (!empty($trackingScript)) {
+                        $apiStatus = 'connected';
+                        // Cache the assumed status
+                        set_transient('ctm_last_connection_status', 'connected', 5 * 60);
+                    } else {
+                        // No tracking script and no cache - default to not_tested
+                        $apiStatus = 'not_tested';
                     }
-                    $apiStatus = 'not_connected';
                 }
             }
             
@@ -576,6 +580,11 @@ class Options
         update_option('ctm_dashboard_enabled', $dashboardEnabled);
         update_option('ctm_auto_inject_tracking_script', $autoInjectTracking);
         update_option('ctm_debug_enabled', $debugEnabled);
+        
+        // Fetch tracking script from API if new API credentials were provided
+        if (isset($_POST['ctm_api_key']) && isset($_POST['ctm_api_secret']) && !empty($apiKey) && !empty($apiSecret)) {
+            $this->getTrackingScriptFromApi();
+        }
         
         // Debug: Log what was saved
         if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {

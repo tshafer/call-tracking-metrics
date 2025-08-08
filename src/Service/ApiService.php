@@ -59,6 +59,14 @@ class ApiService
     private string $userAgent;
 
     /**
+     * Whether to suppress logging for automatic connection checks
+     * 
+     * @since 2.0.0
+     * @var bool
+     */
+    private bool $silentMode = false;
+
+    /**
      * Initialize the API service
      * 
      * Sets up the base URL and user agent for API communication.
@@ -74,6 +82,19 @@ class ApiService
     }
 
     /**
+     * Set silent mode to suppress logging for automatic connection checks
+     * 
+     * @since 2.0.0
+     * @param bool $silent Whether to suppress logging
+     * @return self
+     */
+    public function setSilentMode(bool $silent = true): self
+    {
+        $this->silentMode = $silent;
+        return $this;
+    }
+
+    /**
      * Internal logging helper to prevent server log pollution
      * 
      * @since 2.0.0
@@ -82,6 +103,11 @@ class ApiService
      */
     private function logInternal(string $message, string $type = 'debug'): void
     {
+        // Skip logging if in silent mode (for automatic connection checks)
+        if ($this->silentMode) {
+            return;
+        }
+        
         if (class_exists('\CTM\Admin\LoggingSystem')) {
             $loggingSystem = new \CTM\Admin\LoggingSystem();
             if ($loggingSystem->isDebugEnabled()) {
@@ -583,8 +609,8 @@ class ApiService
             $loggingSystem = new \CTM\Admin\LoggingSystem();
         }
         
-        // Only log if debug mode is enabled and logging system is available
-        $should_log = $loggingSystem && $loggingSystem->isDebugEnabled();
+        // Only log if debug mode is enabled, logging system is available, and not in silent mode
+        $should_log = $loggingSystem && $loggingSystem->isDebugEnabled() && !$this->silentMode;
         
         if ($should_log) {
             // Group API calls by URL and method
@@ -844,5 +870,61 @@ class ApiService
         }
         
         return $path;
+    }
+
+    /**
+     * Validate API credentials
+     * 
+     * @since 2.0.0
+     * @param string $apiKey The API key
+     * @param string $apiSecret The API secret
+     * @return bool True if credentials are valid, false otherwise
+     */
+    public function validateCredentials(string $apiKey, string $apiSecret): bool
+    {
+        try {
+            $response = wp_remote_request($this->baseUrl . '/accounts', [
+                'method' => 'GET',
+                'timeout' => $this->timeout,
+                'headers' => [
+                    'Authorization' => 'Basic ' . base64_encode($apiKey . ':' . $apiSecret),
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json'
+                ]
+            ]);
+
+            if (is_wp_error($response)) {
+                return false;
+            }
+
+            $status_code = wp_remote_retrieve_response_code($response);
+            return $status_code === 200;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Check API health status
+     * 
+     * @since 2.0.0
+     * @return bool True if API is healthy, false otherwise
+     */
+    public function checkApiHealth(): bool
+    {
+        try {
+            $response = wp_remote_get($this->baseUrl . '/ping', [
+                'timeout' => $this->timeout
+            ]);
+
+            if (is_wp_error($response)) {
+                return false;
+            }
+
+            $status_code = wp_remote_retrieve_response_code($response);
+            return $status_code === 200;
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 } 

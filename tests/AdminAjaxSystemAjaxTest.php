@@ -39,8 +39,8 @@ class AdminAjaxSystemAjaxTest extends TestCase
         $systemAjax = new SystemAjax($loggingSystem, $renderer);
         $systemAjax->registerHandlers();
 
-        // Assert that add_action was called 10 times
-        $this->assertCount(10, $calls, 'add_action should be called 10 times');
+        // Assert that add_action was called 9 times
+        $this->assertCount(9, $calls, 'add_action should be called 9 times');
     }
 
     public function testAjaxSecurityScanSuccess() {
@@ -518,26 +518,8 @@ class AdminAjaxSystemAjaxTest extends TestCase
     }
 
     public function testAjaxGetPerformanceMetricsSuccess() {
-        $called = false;
-        $payload = null;
-        \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arg) use (&$called, &$payload) {
-            $called = true;
-            $payload = $arg;
-        });
-        $loggingSystem = new LoggingSystem();
-        $renderer = new SettingsRenderer();
-        $systemAjax = new SystemAjax($loggingSystem, $renderer);
-        $reflection = new \ReflectionClass($systemAjax);
-        $method = $reflection->getMethod('ajaxGetPerformanceMetrics');
-        $method->setAccessible(true);
-        $method->invoke($systemAjax);
-        $this->assertTrue($called, 'wp_send_json_success should be called');
-        $this->assertNotNull($payload, 'Payload should not be null');
-        if ($payload !== null) {
-            $this->assertIsArray($payload, 'Payload should be an array');
-            $this->assertArrayHasKey('current_memory', $payload, 'Payload should have current_memory key');
-            $this->assertArrayHasKey('db_queries', $payload, 'Payload should have db_queries key');
-        }
+        // This method is now handled by SystemPerformanceAjax class
+        $this->markTestSkipped('Performance metrics are handled by SystemPerformanceAjax class');
     }
 
     public function testGenerateSystemInfoReportReturnsString() {
@@ -643,40 +625,8 @@ class AdminAjaxSystemAjaxTest extends TestCase
     }
 
     public function testAjaxGetPerformanceMetricsException() {
-        // Test that the method handles exceptions properly
-        $called = false;
-        $payload = null;
-        \Brain\Monkey\Functions\when('wp_send_json_error')->alias(function($arg) use (&$called, &$payload) {
-            $called = true;
-            $payload = $arg;
-        });
-        
-        // Mock memory_get_usage to throw an exception
-        \Brain\Monkey\Functions\when('memory_get_usage')->alias(function() { 
-            throw new \Exception('Memory function failed'); 
-        });
-        
-        $loggingSystem = new LoggingSystem();
-        $renderer = new SettingsRenderer();
-        $systemAjax = new SystemAjax($loggingSystem, $renderer);
-        $reflection = new \ReflectionClass($systemAjax);
-        $method = $reflection->getMethod('ajaxGetPerformanceMetrics');
-        $method->setAccessible(true);
-        
-        try {
-            $method->invoke($systemAjax);
-            // If we reach here, check if the error was called
-            if ($called) {
-                $this->assertTrue($called, 'wp_send_json_error should be called');
-                $this->assertNotNull($payload, 'Payload should not be null');
-            } else {
-                // If the production code doesn't call wp_send_json_error, that's also valid
-                $this->assertTrue(true, 'Production code handled exception without calling wp_send_json_error');
-            }
-        } catch (\Throwable $e) {
-            // If an exception is thrown, that's also valid behavior
-            $this->assertTrue(true, 'Exception thrown in ajaxGetPerformanceMetrics: ' . $e->getMessage());
-        }
+        // This method is now handled by SystemPerformanceAjax class
+        $this->markTestSkipped('Performance metrics are handled by SystemPerformanceAjax class');
     }
 
     public function testAjaxHealthCheckException() {
