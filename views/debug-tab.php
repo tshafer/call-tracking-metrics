@@ -26,14 +26,17 @@ if ($debugEnabled) {
             if (!empty($logs)) {
                 $total_entries += count($logs);
                 
-                // Only count first 100 entries per day for performance
+                // Count all entries for accurate type counts
+                foreach ($logs as $log_entry) {
+                    $type = $log_entry['type'] ?? 'unknown';
+                    $type_counts[$type] = ($type_counts[$type] ?? 0) + 1;
+                }
+                
+                // Only sample first 100 entries for size calculation (performance)
                 $sample_logs = array_slice($logs, 0, 100);
                 $sample_size = 0;
                 
                 foreach ($sample_logs as $log_entry) {
-                    $type = $log_entry['type'] ?? 'unknown';
-                    $type_counts[$type] = ($type_counts[$type] ?? 0) + 1;
-                    
                     // Calculate approximate size of this entry
                     $sample_size += strlen(json_encode($log_entry));
                 }
@@ -76,7 +79,6 @@ if ($debugEnabled) {
         <?php include plugin_dir_path(__FILE__) . 'debug-includes/health-check.php'; ?>
         <?php include plugin_dir_path(__FILE__) . 'debug-includes/performance-monitor.php'; ?>
         <?php include plugin_dir_path(__FILE__) . 'debug-includes/log-settings.php'; ?>
-        <?php include plugin_dir_path(__FILE__) . 'debug-includes/daily-logs.php'; ?>
     </div>
 
     

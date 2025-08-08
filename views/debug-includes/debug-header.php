@@ -65,6 +65,13 @@ $log_stats = $log_stats ?? ['total_days' => 0, 'total_entries' => 0, 'total_size
                 <span class="font-semibold text-gray-900"><?= $log_stats['type_counts']['debug'] ?? 0 ?></span>
                 <span class="text-gray-500"><?php _e('Debug', 'call-tracking-metrics'); ?></span>
             </div>
+            <div class="flex items-center gap-1">
+                <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                </svg>
+                <span class="font-semibold text-gray-900"><?= $log_stats['type_counts']['api'] ?? 0 ?></span>
+                <span class="text-gray-500"><?php _e('API', 'call-tracking-metrics'); ?></span>
+            </div>
         </div>
     </div>
 </div> 
