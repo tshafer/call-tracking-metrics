@@ -7,27 +7,26 @@ $auto_cleanup = get_option('ctm_log_auto_cleanup', true);
 $email_notifications = get_option('ctm_log_email_notifications', false);
 $notification_email = get_option('ctm_log_notification_email', get_option('admin_email'));
 
-// Get log statistics and available dates - OPTIMIZED for performance
+// Get log statistics and available dates - OPTIMIZED for performance using new database system
 $log_stats = ['total_days' => 0, 'total_entries' => 0, 'total_size' => 0, 'type_counts' => []];
 $available_dates = [];
 
 if ($debugEnabled) {
-    // Get log index directly from WordPress options
-    $log_index = get_option('ctm_log_index', []);
-    if (is_array($log_index)) {
+    // Use the new LoggingSystem to get available dates
+    if (isset($loggingSystem) && $loggingSystem) {
+        $all_dates = $loggingSystem->getAvailableLogDates();
+        
         // Only show last 5 days initially for performance
-        $available_dates = array_slice(array_reverse($log_index), 0, 5);
+        $available_dates = array_slice($all_dates, 0, 5);
         
         // Calculate statistics only for displayed dates to improve performance
         $total_entries = 0;
-        $total_size = 0;
         $type_counts = [];
         
         foreach ($available_dates as $date) {
-            $logs = get_option("ctm_daily_log_{$date}", []);
-            if (is_array($logs)) {
+            $logs = $loggingSystem->getLogsForDate($date);
+            if (!empty($logs)) {
                 $total_entries += count($logs);
-                $total_size += strlen(serialize($logs));
                 
                 // Only count first 100 entries per day for performance
                 $sample_logs = array_slice($logs, 0, 100);
@@ -39,13 +38,13 @@ if ($debugEnabled) {
         }
         
         $log_stats = [
-            'total_days' => count($log_index),
+            'total_days' => count($all_dates),
             'total_entries' => $total_entries,
-            'total_size' => $total_size,
+            'total_size' => 0, // Size calculation not needed for database
             'type_counts' => $type_counts,
-            'oldest_log' => !empty($log_index) ? end($log_index) : null,
-            'newest_log' => !empty($log_index) ? reset($log_index) : null,
-            'total_available_days' => count($log_index)
+            'oldest_log' => !empty($all_dates) ? end($all_dates) : null,
+            'newest_log' => !empty($all_dates) ? reset($all_dates) : null,
+            'total_available_days' => count($all_dates)
         ];
     }
 }

@@ -41,14 +41,16 @@ class ApiServiceTest extends TestCase
         $this->assertNull($result, 'Should return null for invalid credentials');
     }
 
-    public function testSubmitFormReactorReturnsNullOnFailure()
+    public function testSubmitFormReactorReturnsErrorOnFailure()
     {
         \Brain\Monkey\Functions\when('wp_remote_request')->alias(function() {
             throw new \Exception('Simulated failure');
         });
         $formData = ['test' => 'data'];
         $result = $this->apiService->submitFormReactor($formData, 'invalid', 'invalid');
-        $this->assertNull($result, 'Should return null for failed submission');
+        $this->assertIsArray($result, 'Should return error array for failed submission');
+        $this->assertEquals('error', $result['status']);
+        $this->assertStringContainsString('API communication failed', $result['reason']);
     }
 
     // Example: test a successful API response
@@ -139,7 +141,7 @@ class ApiServiceTest extends TestCase
         $this->assertTrue($result['success']);
     }
 
-    public function testSubmitFormReactorReturnsNullOn400()
+    public function testSubmitFormReactorReturnsErrorOn400()
     {
         \Brain\Monkey\Functions\when('wp_remote_request')->justReturn([
             'response' => ['code' => 400],
@@ -148,17 +150,20 @@ class ApiServiceTest extends TestCase
         \Brain\Monkey\Functions\when('wp_remote_retrieve_body')->justReturn(json_encode(['error' => 'Bad request']));
         \Brain\Monkey\Functions\when('wp_remote_retrieve_response_code')->justReturn(400);
         $result = $this->apiService->submitFormReactor(['foo' => 'bar'], 'valid', 'valid');
-        $this->assertNull($result, 'Should return null on 400');
+        $this->assertIsArray($result, 'Should return error array on 400');
+        $this->assertEquals('error', $result['status']);
+        $this->assertStringContainsString('API communication failed', $result['reason']);
     }
 
-    public function testSubmitFormReactorReturnsNullOnException()
+    public function testSubmitFormReactorReturnsErrorOnException()
     {
         \Brain\Monkey\Functions\when('wp_remote_request')->alias(function() {
             throw new \Exception('Simulated exception');
         });
         $result = $this->apiService->submitFormReactor(['foo' => 'bar'], 'valid', 'valid');
-        $this->assertNull($result, 'Should return null on exception');
-
+        $this->assertIsArray($result, 'Should return error array on exception');
+        $this->assertEquals('error', $result['status']);
+        $this->assertStringContainsString('API communication failed', $result['reason']);
     }
 
     public function testSubmitFormReactorReturnsThrottlingError()
@@ -170,7 +175,9 @@ class ApiServiceTest extends TestCase
         \Brain\Monkey\Functions\when('wp_remote_retrieve_body')->justReturn(json_encode(['status' => 'error', 'reason' => 'Rate limit exceeded']));
         \Brain\Monkey\Functions\when('wp_remote_retrieve_response_code')->justReturn(429);
         $result = $this->apiService->submitFormReactor(['foo' => 'bar'], 'valid', 'valid');
-        $this->assertNull($result, 'Should return null for throttling error');
+        $this->assertIsArray($result, 'Should return error array for throttling error');
+        $this->assertEquals('error', $result['status']);
+        $this->assertStringContainsString('API communication failed', $result['reason']);
     }
 
     public function testGetFormsReturnsNullWhenAccountInfoFails()

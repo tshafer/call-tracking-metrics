@@ -32,40 +32,8 @@ namespace CTM\Service;
  * 
  * @since 1.0.0
  */
-class CF7Service
+class CF7Service extends BaseFormService
 {
-    /**
-     * Logging System instance
-     * 
-     * @since 2.0.0
-     * @var \CTM\Admin\LoggingSystem|null
-     */
-    private $loggingSystem;
-
-    /**
-     * Initialize the CF7 service
-     * 
-     * @since 2.0.0
-     * @param \CTM\Admin\LoggingSystem|null $loggingSystem The logging system
-     */
-    public function __construct($loggingSystem = null)
-    {
-        $this->loggingSystem = $loggingSystem;
-    }
-
-    /**
-     * Internal logging helper to prevent server log pollution
-     * 
-     * @since 2.0.0
-     * @param string $message The message to log
-     * @param string $type The log type (error, debug, api, etc.)
-     */
-    private function logInternal(string $message, string $type = 'debug'): void
-    {
-        if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
-            $this->loggingSystem->logActivity($message, $type);
-        }
-    }
 
     /**
      * Process Contact Form 7 submission for CTM API
@@ -139,6 +107,8 @@ class CF7Service
             
             // Build the payload for CTM API with required fields
             $payload = [
+                'form_type'         => 'contact_form_7',
+                'form_id'           => $formId,
                 'phone_number'      => $phoneNumber,
                 'country_code'      => $countryCode,
                 'type'              => 'API',
@@ -155,6 +125,7 @@ class CF7Service
                 'visitor_sid'       => $_COOKIE['__ctmid'] ?? '',
                 'domain'            => $_SERVER['HTTP_HOST'] ?? '',
                 'raw_data'          => $data,
+                'fields'            => $mappedFields,
             ];
             
             // Add callback_number and delay_calling_by if present
@@ -182,15 +153,11 @@ class CF7Service
             }
             
             // Add referrer information if available
-            if (!empty($_SERVER['HTTP_REFERER'])) {
-                $payload['referrer'] = $_SERVER['HTTP_REFERER'];
-            }
+            $payload = $this->addReferrerToPayload($payload);
             
             // Add UTM parameters if present
-            $utmParams = $this->extractUtmParameters();
-            if (!empty($utmParams)) {
-                $payload['utm_parameters'] = $utmParams;
-            }
+            $utmParams = $this->extractUtmFromUrl();
+            $payload = $this->addUtmToPayload($payload, $utmParams);
             
             return $payload;
             
@@ -403,7 +370,7 @@ class CF7Service
      * @param string $cf7Type The original CF7 field type
      * @return string The normalized field type
      */
-    private function normalizeFieldType(string $cf7Type): string
+    protected function normalizeFieldType(string $cf7Type): string
     {
         $typeMap = [
             'text' => 'text',
@@ -431,87 +398,44 @@ class CF7Service
      * 
      * @since 1.0.0
      * @param mixed $value The raw field value
+     * @param string $fieldType The type of field (email, phone, url, etc.)
      * @return string The sanitized field value
      */
-    private function sanitizeFieldValue($value): string
+    protected function sanitizeFieldValue($value, string $fieldType = 'text'): string
     {
         // Handle array values (checkboxes, multi-select)
         if (is_array($value)) {
             $value = implode(', ', array_filter($value));
         }
         
-        // Convert to string and sanitize
+        // Convert to string
         $value = (string) $value;
-        $value = sanitize_text_field($value);
-        $value = trim($value);
         
-        return $value;
-    }
-
-
-    /**
-     * Get the client's IP address
-     * 
-     * Attempts to determine the real client IP address, accounting
-     * for proxies and load balancers.
-     * 
-     * @since 1.0.0
-     * @return string The client IP address
-     */
-    private function getClientIpAddress(): string
-    {
-        // Check for various IP headers in order of preference
-        $ipHeaders = [
-            'HTTP_CF_CONNECTING_IP',     // Cloudflare
-            'HTTP_CLIENT_IP',            // Proxy
-            'HTTP_X_FORWARDED_FOR',      // Load balancer/proxy
-            'HTTP_X_FORWARDED',          // Proxy
-            'HTTP_X_CLUSTER_CLIENT_IP',  // Cluster
-            'HTTP_FORWARDED_FOR',        // Proxy
-            'HTTP_FORWARDED',            // Proxy
-            'REMOTE_ADDR'                // Standard
-        ];
-        
-        foreach ($ipHeaders as $header) {
-            if (!empty($_SERVER[$header])) {
-                $ip = $_SERVER[$header];
-                
-                // Handle comma-separated IPs (X-Forwarded-For can contain multiple IPs)
-                if (strpos($ip, ',') !== false) {
-                    $ip = trim(explode(',', $ip)[0]);
-                }
-                
-                // Validate IP address
-                if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
-                    return $ip;
-                }
-            }
+        // Field-specific sanitization
+        switch ($fieldType) {
+            case 'email':
+                $value = sanitize_email($value);
+                break;
+            case 'website':
+            case 'url':
+                $value = esc_url_raw($value);
+                break;
+            case 'phone':
+                // Remove non-numeric characters except + and common phone formatting
+                $value = preg_replace('/[^0-9+\s\-\(\)\.]/', '', $value);
+                break;
+            case 'number':
+                $value = is_numeric($value) ? $value : '';
+                break;
+            default:
+                $value = sanitize_text_field($value);
         }
         
-        return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        return trim($value);
     }
 
-    /**
-     * Extract UTM parameters from the current request
-     * 
-     * Captures marketing campaign parameters for tracking purposes.
-     * 
-     * @since 1.0.0
-     * @return array Array of UTM parameters
-     */
-    private function extractUtmParameters(): array
-    {
-        $utmParams = [];
-        $utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
-        
-        foreach ($utmKeys as $key) {
-            if (!empty($_GET[$key])) {
-                $utmParams[$key] = sanitize_text_field($_GET[$key]);
-            }
-        }
-        
-        return $utmParams;
-    }
+
+
 
     /**
      * Check if a form has a phone number field

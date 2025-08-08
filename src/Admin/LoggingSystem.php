@@ -42,26 +42,47 @@ class LoggingSystem
     }
 
     /**
-     * Write log entry to daily log file
+     * Write log entry to database table
      */
     private function writeToLog(array $log_entry): void
     {
-        $log_date = date('Y-m-d');
-        $daily_logs = \get_option("ctm_daily_log_{$log_date}", []);
-        
-        if (!is_array($daily_logs)) {
-            $daily_logs = [];
+        // Ensure table exists before writing
+        if (!$this->ensureTableExists()) {
+            error_log('CTM Log: Failed to create or access log table');
+            return;
         }
         
-        $daily_logs[] = $log_entry;
+        global $wpdb;
+        $table_name = $this->getLogTableName();
         
-        // Check log size limits and cleanup if needed
-        $this->enforceLogSizeLimits($log_date, $daily_logs);
+        // Prepare data for database insertion
+        $data = [
+            'timestamp' => $log_entry['timestamp'],
+            'type' => $log_entry['type'],
+            'message' => $log_entry['message'],
+            'context' => !empty($log_entry['context']) ? json_encode($log_entry['context']) : null,
+            'user_id' => $log_entry['user_id'] ?: null,
+            'ip_address' => $log_entry['ip_address'] ?: null,
+            'user_agent' => $log_entry['user_agent'] ?: null,
+            'memory_usage' => $log_entry['memory_usage'] ?: null,
+            'memory_peak' => $log_entry['memory_peak'] ?: null,
+            'form_type' => $log_entry['form_type'] ?? null,
+            'form_id' => $log_entry['form_id'] ?? null
+        ];
         
-        \update_option("ctm_daily_log_{$log_date}", $daily_logs);
+        // Insert into database
+        $result = $wpdb->insert($table_name, $data);
         
-        // Update log index
-        $this->updateLogIndex($log_date);
+        if ($result === false) {
+            // Fallback to error log if database insert fails
+            error_log('CTM Log: Failed to insert log entry into database: ' . $wpdb->last_error);
+            return;
+        }
+        
+        // Cleanup old logs periodically (every 100th insert to avoid performance impact)
+        if (rand(1, 100) === 1) {
+            $this->cleanupOldLogs();
+        }
     }
 
     /**
@@ -262,12 +283,25 @@ class LoggingSystem
     }
 
     /**
-     * Get all available log dates
+     * Get available log dates
      */
     public function getAvailableLogDates(): array
     {
-        $log_index = \get_option('ctm_log_index', []);
-        return is_array($log_index) ? array_reverse($log_index) : [];
+        // Ensure table exists before querying
+        if (!$this->ensureTableExists()) {
+            return [];
+        }
+        
+        global $wpdb;
+        $table_name = $this->getLogTableName();
+        
+        $sql = "SELECT DISTINCT DATE(timestamp) as log_date 
+                FROM $table_name 
+                ORDER BY log_date DESC";
+        
+        $results = $wpdb->get_col($sql);
+        
+        return $results ?: [];
     }
 
     /**
@@ -275,8 +309,45 @@ class LoggingSystem
      */
     public function getLogsForDate(string $date): array
     {
-        $logs = \get_option("ctm_daily_log_{$date}", []);
-        return is_array($logs) ? $logs : [];
+        // Ensure table exists before querying
+        if (!$this->ensureTableExists()) {
+            return [];
+        }
+        
+        global $wpdb;
+        $table_name = $this->getLogTableName();
+        
+        $sql = $wpdb->prepare(
+            "SELECT * FROM $table_name 
+             WHERE DATE(timestamp) = %s 
+             ORDER BY timestamp DESC",
+            $date
+        );
+        
+        $results = $wpdb->get_results($sql, ARRAY_A);
+        
+        if (empty($results)) {
+            return [];
+        }
+        
+        // Process results to match expected format
+        $logs = [];
+        foreach ($results as $row) {
+            $log_entry = [
+                'timestamp' => $row['timestamp'],
+                'type' => $row['type'],
+                'message' => $row['message'],
+                'context' => !empty($row['context']) ? json_decode($row['context'], true) : [],
+                'user_id' => $row['user_id'],
+                'ip_address' => $row['ip_address'],
+                'user_agent' => $row['user_agent'],
+                'memory_usage' => $row['memory_usage'],
+                'memory_peak' => $row['memory_peak']
+            ];
+            $logs[] = $log_entry;
+        }
+        
+        return $logs;
     }
 
     /**
@@ -284,16 +355,26 @@ class LoggingSystem
      */
     public function clearDayLog(string $date): void
     {
-        \delete_option("ctm_daily_log_{$date}");
-        
-        // Update log index
-        $log_index = \get_option('ctm_log_index', []);
-        if (is_array($log_index)) {
-            $log_index = array_filter($log_index, function($d) use ($date) {
-                return $d !== $date;
-            });
-            \update_option('ctm_log_index', array_values($log_index));
+        // Ensure table exists before clearing
+        if (!$this->ensureTableExists()) {
+            return;
         }
+        
+        global $wpdb;
+        $table_name = $this->getLogTableName();
+        
+        $sql = $wpdb->prepare(
+            "DELETE FROM $table_name WHERE DATE(timestamp) = %s",
+            $date
+        );
+        
+        $wpdb->query($sql);
+        
+        // Log the cleanup action
+        $this->logActivity("Cleared logs for date: $date", 'system', [
+            'cleared_date' => $date,
+            'rows_affected' => $wpdb->rows_affected
+        ]);
     }
 
     /**
@@ -301,41 +382,24 @@ class LoggingSystem
      */
     public function clearAllLogs(): void
     {
-        // Check memory usage before clearing
-        $memory_limit = ini_get('memory_limit');
-        $current_memory = memory_get_usage(true);
-        $memory_limit_bytes = $this->parseMemoryLimit($memory_limit);
-        
-        // If we're using more than 90% of available memory, use a more aggressive approach
-        if ($memory_limit_bytes && ($current_memory / $memory_limit_bytes) > 0.9) {
-            $this->clearAllLogsAggressive();
+        // Ensure table exists before clearing
+        if (!$this->ensureTableExists()) {
             return;
         }
         
-        $log_index = \get_option('ctm_log_index', []);
-        if (is_array($log_index)) {
-            $count = 0;
-            $max_per_batch = 10; // Process in batches
-            
-            foreach ($log_index as $date) {
-                $count++;
-                \delete_option("ctm_daily_log_{$date}");
-                
-                // Check memory usage every batch
-                if ($count % $max_per_batch === 0) {
-                    if ($memory_limit_bytes && memory_get_usage(true) > ($memory_limit_bytes * 0.95)) {
-                        // Don't log this to prevent recursion
-                        break;
-                    }
-                }
-            }
-        }
+        global $wpdb;
+        $table_name = $this->getLogTableName();
         
-        \delete_option('ctm_log_index');
-        \delete_option('ctm_debug_log'); // Clear old format logs too
+        // Get count before deletion for logging
+        $count = $wpdb->get_var("SELECT COUNT(*) FROM $table_name");
         
-        // Clear form logs in batches
-        $this->clearAllFormLogs();
+        // Clear all logs
+        $wpdb->query("DELETE FROM $table_name");
+        
+        // Log the cleanup action
+        $this->logActivity("Cleared all logs", 'system', [
+            'rows_affected' => $count
+        ]);
     }
     
     /**
@@ -435,33 +499,40 @@ class LoggingSystem
     }
 
     /**
-     * Auto-cleanup old logs based on retention settings
+     * Clean up old logs based on retention settings
      */
     private function cleanupOldLogs(): void
     {
-        if (!\get_option('ctm_log_auto_cleanup', true)) {
+        // Ensure table exists before cleanup
+        if (!$this->ensureTableExists()) {
             return;
         }
-
+        
         $retention_days = (int) \get_option('ctm_log_retention_days', 7);
         $cutoff_date = date('Y-m-d', strtotime("-{$retention_days} days"));
         
-        $log_index = \get_option('ctm_log_index', []);
-        if (!is_array($log_index)) {
-            return;
-        }
-
-        $updated = false;
-        foreach ($log_index as $key => $date) {
-            if ($date < $cutoff_date) {
-                \delete_option("ctm_daily_log_{$date}");
-                unset($log_index[$key]);
-                $updated = true;
-            }
-        }
-
-        if ($updated) {
-            \update_option('ctm_log_index', array_values($log_index));
+        global $wpdb;
+        $table_name = $this->getLogTableName();
+        
+        // Get count before deletion for logging
+        $count = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM $table_name WHERE DATE(timestamp) < %s",
+            $cutoff_date
+        ));
+        
+        if ($count > 0) {
+            // Delete old logs
+            $wpdb->query($wpdb->prepare(
+                "DELETE FROM $table_name WHERE DATE(timestamp) < %s",
+                $cutoff_date
+            ));
+            
+            // Log the cleanup action
+            $this->logActivity("Cleaned up old logs", 'system', [
+                'retention_days' => $retention_days,
+                'cutoff_date' => $cutoff_date,
+                'rows_deleted' => $count
+            ]);
         }
     }
 
@@ -527,10 +598,13 @@ class LoggingSystem
     }
 
     /**
-     * Handle plugin activation - set up logging defaults
+     * Handle plugin activation - create database table and set defaults
      */
     public static function onPluginActivation(): void
     {
+        // Create the log entries table
+        self::createLogTable();
+        
         // Set default log settings if not already set
         if (\get_option('ctm_log_retention_days') === false) {
             \update_option('ctm_log_retention_days', 7);
@@ -557,6 +631,83 @@ class LoggingSystem
             'php_version' => PHP_VERSION,
             'memory_limit' => ini_get('memory_limit')
         ]);
+    }
+
+    /**
+     * Create the log entries table
+     */
+    public static function createLogTable(): void
+    {
+        global $wpdb;
+        
+        $table_name = $wpdb->prefix . 'ctm_log_entries';
+        $charset_collate = $wpdb->get_charset_collate();
+        
+        $sql = "CREATE TABLE $table_name (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            timestamp datetime NOT NULL,
+            type varchar(20) NOT NULL DEFAULT 'info',
+            message text NOT NULL,
+            context longtext,
+            user_id bigint(20) unsigned DEFAULT NULL,
+            ip_address varchar(45) DEFAULT NULL,
+            user_agent text DEFAULT NULL,
+            memory_usage bigint(20) unsigned DEFAULT NULL,
+            memory_peak bigint(20) unsigned DEFAULT NULL,
+            form_type varchar(50) DEFAULT NULL,
+            form_id bigint(20) unsigned DEFAULT NULL,
+            created_at datetime DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY idx_timestamp (timestamp),
+            KEY idx_type (type),
+            KEY idx_user_id (user_id),
+            KEY idx_form_type_id (form_type, form_id),
+            KEY idx_created_at (created_at)
+        ) $charset_collate;";
+        
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        dbDelta($sql);
+        
+        // Add version option to track table schema
+        \update_option('ctm_log_table_version', '1.0');
+    }
+
+    /**
+     * Get the log entries table name
+     */
+    private function getLogTableName(): string
+    {
+        global $wpdb;
+        return $wpdb->prefix . 'ctm_log_entries';
+    }
+
+    /**
+     * Ensure the log table exists before performing operations
+     */
+    private function ensureTableExists(): bool
+    {
+        global $wpdb;
+        
+        $table_name = $this->getLogTableName();
+        
+        // Check if table exists
+        $table_exists = $wpdb->get_var($wpdb->prepare(
+            "SHOW TABLES LIKE %s",
+            $table_name
+        )) === $table_name;
+        
+        if (!$table_exists) {
+            // Create the table
+            self::createLogTable();
+            
+            // Check again if it was created successfully
+            $table_exists = $wpdb->get_var($wpdb->prepare(
+                "SHOW TABLES LIKE %s",
+                $table_name
+            )) === $table_name;
+        }
+        
+        return $table_exists;
     }
 
     /**

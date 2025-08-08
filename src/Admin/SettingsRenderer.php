@@ -298,7 +298,7 @@ class SettingsRenderer
         $this->renderView('debug-tab', compact(
             'debugEnabled', 'retentionDays', 'autoCleanup', 
             'emailNotifications', 'notificationEmail', 'logStats'
-        ));
+        ) + ['loggingSystem' => $this->loggingSystem]);
         
         return ob_get_clean();
     }

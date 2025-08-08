@@ -222,6 +222,12 @@ class CallTrackingMetrics
         
         // Initialize form logs AJAX handlers
         $this->initializeFormLogsAjax();
+        
+        // Initialize form usage AJAX handlers
+        $this->initializeFormUsageAjax();
+        
+        // Initialize log loading AJAX handlers
+        $this->initializeLogLoadingAjax();
 
         // Register core WordPress hooks
         $this->registerCoreHooks();
@@ -780,6 +786,30 @@ class CallTrackingMetrics
     }
 
     /**
+     * Initialize form usage AJAX handlers
+     * 
+     * @since 2.0.0
+     * @return void
+     */
+    private function initializeFormUsageAjax(): void
+    {
+        // Initialize the FormUsageAjax handler
+        new \CTM\Admin\Ajax\FormUsageAjax();
+    }
+
+    /**
+     * Initialize log loading AJAX handlers
+     * 
+     * @since 2.0.0
+     * @return void
+     */
+    private function initializeLogLoadingAjax(): void
+    {
+        add_action('wp_ajax_ctm_load_more_logs', [$this, 'ajaxLoadMoreLogs']);
+        add_action('wp_ajax_ctm_load_more_days', [$this, 'ajaxLoadMoreDays']);
+    }
+
+    /**
      * AJAX handler for getting form-specific logs
      * 
      * @since 2.0.0
@@ -847,6 +877,115 @@ class CallTrackingMetrics
             wp_send_json_success($stats);
         } catch (\Exception $e) {
             wp_send_json_error(['message' => 'Failed to get form log statistics: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * AJAX handler for loading more logs
+     * 
+     * @since 2.0.0
+     * @return void
+     */
+    public function ajaxLoadMoreLogs(): void
+    {
+        check_ajax_referer('ctm_load_more_logs', 'nonce');
+
+        $date = sanitize_text_field($_POST['date'] ?? '');
+        $offset = (int) ($_POST['offset'] ?? 0);
+        $limit = (int) ($_POST['limit'] ?? 20);
+
+        if (empty($date)) {
+            wp_send_json_error(['message' => 'Date is required']);
+            return;
+        }
+
+        try {
+            // Get logs for the specific date using the new database method
+            $logs = $this->loggingSystem->getLogsForDate($date);
+            
+            if (empty($logs)) {
+                wp_send_json_error(['message' => 'No logs found for this date']);
+                return;
+            }
+
+            // Get the subset of logs based on offset and limit
+            $total_count = count($logs);
+            $entries = array_slice($logs, $offset, $limit);
+            $has_more = ($offset + $limit) < $total_count;
+
+            wp_send_json_success([
+                'entries' => $entries,
+                'total' => $total_count,
+                'has_more' => $has_more,
+                'offset' => $offset + $limit
+            ]);
+        } catch (\Exception $e) {
+            wp_send_json_error(['message' => 'Failed to load more logs: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * AJAX handler for loading more days
+     * 
+     * @since 2.0.0
+     * @return void
+     */
+    public function ajaxLoadMoreDays(): void
+    {
+        check_ajax_referer('ctm_load_more_days', 'nonce');
+        $offset = (int) ($_POST['offset'] ?? 0);
+        $limit = (int) ($_POST['limit'] ?? 5);
+        
+        try {
+            // Get available dates using the new database method
+            $available_dates = $this->loggingSystem->getAvailableLogDates();
+            if (empty($available_dates)) {
+                wp_send_json_error(['message' => 'No log dates found']);
+                return;
+            }
+            
+            $total_days = count($available_dates);
+            $requested_dates = array_slice($available_dates, $offset, $limit);
+            $has_more = ($offset + $limit) < $total_days;
+            
+            $days = [];
+            foreach ($requested_dates as $date) {
+                $logs = $this->loggingSystem->getLogsForDate($date);
+                if (empty($logs)) continue;
+                
+                $error_count = 0;
+                $warning_count = 0;
+                $info_count = 0;
+                $debug_count = 0;
+                
+                foreach ($logs as $entry) {
+                    switch ($entry['type']) {
+                        case 'error': $error_count++; break;
+                        case 'warning': $warning_count++; break;
+                        case 'info': $info_count++; break;
+                        case 'debug': $debug_count++; break;
+                    }
+                }
+                
+                $days[] = [
+                    'date' => $date,
+                    'logs' => $logs,
+                    'error_count' => $error_count,
+                    'warning_count' => $warning_count,
+                    'info_count' => $info_count,
+                    'debug_count' => $debug_count,
+                    'total_count' => count($logs)
+                ];
+            }
+            
+            wp_send_json_success([
+                'days' => $days,
+                'total_days' => $total_days,
+                'has_more' => $has_more,
+                'offset' => $offset + $limit
+            ]);
+        } catch (\Exception $e) {
+            wp_send_json_error(['message' => 'Failed to load more days: ' . $e->getMessage()]);
         }
     }
 

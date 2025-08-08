@@ -163,7 +163,7 @@ function truncate_ctm_id($id, $max_length = 20) {
                         
                         <div class="space-y-3">
                             <!-- Primary Actions Row -->
-                            <div class="grid grid-cols-2 gap-2">
+                            <div class="grid grid-cols-3 gap-2">
                                 <!-- Preview Form -->
                                 <button type="button" 
                                         class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 rounded-md hover:bg-gray-100 hover:text-gray-700 transition-colors ctm-preview-wp-form"
@@ -175,6 +175,19 @@ function truncate_ctm_id($id, $max_length = 20) {
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                     </svg>
                                     <?php _e('Preview', 'call-tracking-metrics'); ?>
+                                </button>
+                                
+                                <!-- Form Usage -->
+                                <button type="button" 
+                                        class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100 hover:text-indigo-700 transition-colors ctm-form-usage"
+                                        data-form-id="<?php echo esc_attr($form['id']); ?>" 
+                                        data-form-type="cf7"
+                                        data-form-title="<?php echo esc_attr($form['title']); ?>"
+                                        data-force-refresh="true">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
+                                    <?php _e('Usage', 'call-tracking-metrics'); ?>
                                 </button>
                                 
                                 <!-- Edit in WordPress -->
@@ -334,7 +347,7 @@ function truncate_ctm_id($id, $max_length = 20) {
                         
                         <div class="space-y-3">
                             <!-- Primary Actions Row -->
-                            <div class="grid grid-cols-2 gap-2">
+                            <div class="grid grid-cols-3 gap-2">
                                 <!-- Preview Form -->
                                 <button type="button" 
                                         class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 rounded-md hover:bg-gray-100 hover:text-gray-700 transition-colors ctm-preview-wp-form"
@@ -346,6 +359,19 @@ function truncate_ctm_id($id, $max_length = 20) {
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                     </svg>
                                     <?php _e('Preview', 'call-tracking-metrics'); ?>
+                                </button>
+                                
+                                <!-- Form Usage -->
+                                <button type="button" 
+                                        class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100 hover:text-indigo-700 transition-colors ctm-form-usage"
+                                        data-form-id="<?php echo esc_attr($form['id']); ?>" 
+                                        data-form-type="gf"
+                                        data-form-title="<?php echo esc_attr($form['title']); ?>"
+                                        data-force-refresh="true">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
+                                    <?php _e('Usage', 'call-tracking-metrics'); ?>
                                 </button>
                                 
                                 <!-- Edit in WordPress -->
@@ -659,6 +685,66 @@ function truncate_ctm_id($id, $max_length = 20) {
                     <?php _e('This is a preview only. Changes made here will not be saved.', 'call-tracking-metrics'); ?>
                 </div>
                 <button type="button" id="ctm-preview-close-btn" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors">
+                    <?php _e('Close', 'call-tracking-metrics'); ?>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Form Usage Modal -->
+<div id="ctm-usage-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center" style="z-index: 999999;">
+    <div class="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+            <div class="flex items-center">
+                <svg class="w-5 h-5 text-indigo-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                <h3 class="text-lg font-semibold text-gray-900"><?php _e('Form Usage', 'call-tracking-metrics'); ?></h3>
+                <span class="ml-2 text-sm text-gray-500">-</span>
+                <span id="ctm-usage-form-title" class="ml-1 text-sm font-medium text-gray-700"></span>
+            </div>
+            <button type="button" id="ctm-usage-close" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Modal Body -->
+        <div class="flex-1 overflow-y-auto p-6">
+            <!-- Loading State -->
+            <div id="ctm-usage-loading" class="text-center py-12">
+                <svg class="animate-spin h-8 w-8 text-gray-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="text-gray-500"><?php _e('Searching for form usage...', 'call-tracking-metrics'); ?></p>
+            </div>
+            
+            <!-- Usage Content -->
+            <div id="ctm-usage-content" class="hidden">
+                <!-- Form usage will be loaded here -->
+            </div>
+            
+            <!-- Error State -->
+            <div id="ctm-usage-error" class="hidden text-center py-12">
+                <svg class="w-12 h-12 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+                <p class="text-red-600 font-medium mb-2"><?php _e('Failed to load usage data', 'call-tracking-metrics'); ?></p>
+                <p id="ctm-usage-error-message" class="text-gray-500 text-sm"></p>
+            </div>
+        </div>
+        
+        <!-- Modal Footer -->
+        <div class="border-t border-gray-200 px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div class="text-xs text-gray-500">
+                    <?php _e('This shows where the form is currently being used on your website.', 'call-tracking-metrics'); ?>
+                </div>
+                <button type="button" id="ctm-usage-close-btn" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors">
                     <?php _e('Close', 'call-tracking-metrics'); ?>
                 </button>
             </div>
@@ -997,6 +1083,209 @@ jQuery(document).ready(function($) {
             $(this).addClass('hidden').removeClass('flex');
             $('body').removeClass('overflow-hidden');
         }
+    });
+    
+    // Handle Form Usage buttons
+    $('.ctm-form-usage').on('click', function() {
+        const formId = $(this).data('form-id');
+        const formType = $(this).data('form-type');
+        const formTitle = $(this).data('form-title');
+        const forceRefresh = $(this).data('force-refresh') || false;
+        
+        // Show modal and set form title
+        $('#ctm-usage-form-title').text(formTitle);
+        $('#ctm-usage-modal').removeClass('hidden').addClass('flex');
+        $('#ctm-usage-modal').data('current-form-id', formId);
+        $('#ctm-usage-modal').data('current-form-type', formType);
+        $('#ctm-usage-modal').data('current-form-title', formTitle);
+        $('body').addClass('overflow-hidden');
+        
+        // Reset modal states
+        $('#ctm-usage-loading').show();
+        $('#ctm-usage-content').hide().html('');
+        $('#ctm-usage-error').hide();
+        
+        // Show cache status
+        if (forceRefresh) {
+            $('#ctm-usage-loading').html('<div class="text-center"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div><p class="text-sm text-gray-600"><?php _e('Refreshing form usage data...', 'call-tracking-metrics'); ?></p></div>');
+        } else {
+            $('#ctm-usage-loading').html('<div class="text-center"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div><p class="text-sm text-gray-600"><?php _e('Loading form usage data...', 'call-tracking-metrics'); ?></p></div>');
+        }
+        
+        // AJAX call to get form usage data
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'ctm_get_form_usage',
+                nonce: '<?php echo wp_create_nonce('ctm_form_usage_nonce'); ?>',
+                form_id: formId,
+                form_type: formType,
+                force_refresh: forceRefresh
+            },
+            success: function(response) {
+                $('#ctm-usage-loading').hide();
+                
+                if (response.success && response.data) {
+                    let usageHtml = '';
+                    
+                    // Show cache status
+                    if (forceRefresh) {
+                        usageHtml += '<div class="mb-4 p-3 bg-green-50 rounded-lg border border-green-200">';
+                        usageHtml += '<p class="text-sm text-green-800"><?php _e('✓ Fresh data loaded (cache bypassed)', 'call-tracking-metrics'); ?></p>';
+                        usageHtml += '</div>';
+                    } else {
+                        usageHtml += '<div class="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">';
+                        usageHtml += '<p class="text-sm text-blue-800"><?php _e('Data loaded (may be cached)', 'call-tracking-metrics'); ?></p>';
+                        usageHtml += '<button id="ctm-force-refresh" class="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"><?php _e('Force Refresh', 'call-tracking-metrics'); ?></button>';
+                        usageHtml += '</div>';
+                    }
+                    
+                    // Show enhanced pages first (more comprehensive search)
+                    if (response.data.enhanced_pages && response.data.enhanced_pages.length > 0) {
+                        usageHtml += '<div class="mb-6"><h4 class="text-sm font-medium text-gray-900 mb-3"><?php _e('Pages & Posts (Enhanced Search)', 'call-tracking-metrics'); ?></h4>';
+                        usageHtml += '<div class="space-y-2">';
+                        response.data.enhanced_pages.forEach(function(page) {
+                            usageHtml += '<div class="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">';
+                            usageHtml += '<div><a href="' + page.edit_url + '" class="text-sm font-medium text-green-700 hover:text-green-800" target="_blank">' + page.title + '</a>';
+                            usageHtml += '<p class="text-xs text-green-600">' + page.type + ' • ID: ' + page.id + ' • Match: ' + (page.match_type || 'unknown') + '</p>';
+                            usageHtml += '<p class="text-xs text-green-500">' + page.url + '</p></div>';
+                            usageHtml += '<div class="flex space-x-2">';
+                            usageHtml += '<a href="' + page.view_url + '" class="text-xs text-green-600 hover:text-green-700" target="_blank"><?php _e('View', 'call-tracking-metrics'); ?></a>';
+                            usageHtml += '<a href="' + page.edit_url + '" class="text-xs text-green-600 hover:text-green-700" target="_blank"><?php _e('Edit', 'call-tracking-metrics'); ?></a>';
+                            usageHtml += '</div></div>';
+                        });
+                        usageHtml += '</div></div>';
+                    }
+                    
+                    // Show custom post types
+                    if (response.data.custom_post_types && response.data.custom_post_types.length > 0) {
+                        usageHtml += '<div class="mb-6"><h4 class="text-sm font-medium text-gray-900 mb-3"><?php _e('Custom Post Types', 'call-tracking-metrics'); ?></h4>';
+                        usageHtml += '<div class="space-y-2">';
+                        response.data.custom_post_types.forEach(function(post) {
+                            usageHtml += '<div class="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-200">';
+                            usageHtml += '<div><a href="' + post.edit_url + '" class="text-sm font-medium text-purple-700 hover:text-purple-800" target="_blank">' + post.title + '</a>';
+                            usageHtml += '<p class="text-xs text-purple-600">' + post.type + ' • ID: ' + post.id + '</p>';
+                            usageHtml += '<p class="text-xs text-purple-500">' + post.url + '</p></div>';
+                            usageHtml += '<div class="flex space-x-2">';
+                            usageHtml += '<a href="' + post.view_url + '" class="text-xs text-purple-600 hover:text-purple-700" target="_blank"><?php _e('View', 'call-tracking-metrics'); ?></a>';
+                            usageHtml += '<a href="' + post.edit_url + '" class="text-xs text-purple-600 hover:text-purple-700" target="_blank"><?php _e('Edit', 'call-tracking-metrics'); ?></a>';
+                            usageHtml += '</div></div>';
+                        });
+                        usageHtml += '</div></div>';
+                    }
+                    
+                    if (response.data.pages && response.data.pages.length > 0) {
+                        usageHtml += '<div class="mb-6"><h4 class="text-sm font-medium text-gray-900 mb-3"><?php _e('Pages & Posts (Exact Shortcode)', 'call-tracking-metrics'); ?></h4>';
+                        usageHtml += '<div class="space-y-2">';
+                        response.data.pages.forEach(function(page) {
+                            usageHtml += '<div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">';
+                            usageHtml += '<div><a href="' + page.edit_url + '" class="text-sm font-medium text-blue-600 hover:text-blue-800" target="_blank">' + page.title + '</a>';
+                            usageHtml += '<p class="text-xs text-gray-500">' + page.type + ' • ID: ' + page.id + '</p></div>';
+                            usageHtml += '<a href="' + page.view_url + '" class="text-xs text-gray-500 hover:text-gray-700" target="_blank"><?php _e('View', 'call-tracking-metrics'); ?></a>';
+                            usageHtml += '</div>';
+                        });
+                        usageHtml += '</div></div>';
+                    }
+                    
+                    if (response.data.widgets && response.data.widgets.length > 0) {
+                        usageHtml += '<div class="mb-6"><h4 class="text-sm font-medium text-gray-900 mb-3"><?php _e('Widgets', 'call-tracking-metrics'); ?></h4>';
+                        usageHtml += '<div class="space-y-2">';
+                        response.data.widgets.forEach(function(widget) {
+                            usageHtml += '<div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">';
+                            usageHtml += '<div><span class="text-sm font-medium text-gray-900">' + widget.title + '</span>';
+                            usageHtml += '<p class="text-xs text-gray-500">' + widget.area + '</p></div>';
+                            usageHtml += '<a href="' + widget.edit_url + '" class="text-xs text-blue-600 hover:text-blue-800" target="_blank"><?php _e('Edit', 'call-tracking-metrics'); ?></a>';
+                            usageHtml += '</div>';
+                        });
+                        usageHtml += '</div></div>';
+                    }
+                    
+                    if (response.data.shortcodes && response.data.shortcodes.length > 0) {
+                        usageHtml += '<div class="mb-6"><h4 class="text-sm font-medium text-gray-900 mb-3"><?php _e('Shortcode Usage', 'call-tracking-metrics'); ?></h4>';
+                        usageHtml += '<div class="space-y-2">';
+                        response.data.shortcodes.forEach(function(shortcode) {
+                            usageHtml += '<div class="p-3 bg-gray-50 rounded-lg">';
+                            usageHtml += '<div class="flex items-center justify-between mb-2">';
+                            usageHtml += '<span class="text-sm font-medium text-gray-900">' + shortcode.location + '</span>';
+                            usageHtml += '<span class="text-xs text-gray-500">' + shortcode.count + ' <?php _e('instances', 'call-tracking-metrics'); ?></span>';
+                            usageHtml += '</div>';
+                            usageHtml += '<code class="text-xs bg-gray-100 px-2 py-1 rounded">' + shortcode.code + '</code>';
+                            usageHtml += '</div>';
+                        });
+                        usageHtml += '</div></div>';
+                    }
+                    
+                    if (response.data.theme_files && response.data.theme_files.length > 0) {
+                        usageHtml += '<div class="mb-6"><h4 class="text-sm font-medium text-gray-900 mb-3"><?php _e('Theme Files', 'call-tracking-metrics'); ?></h4>';
+                        usageHtml += '<div class="space-y-2">';
+                        response.data.theme_files.forEach(function(file) {
+                            usageHtml += '<div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">';
+                            usageHtml += '<div><span class="text-sm font-medium text-gray-900">' + file.name + '</span>';
+                            usageHtml += '<p class="text-xs text-gray-500">' + file.path + '</p></div>';
+                            usageHtml += '<span class="text-xs text-gray-500">' + file.count + ' <?php _e('references', 'call-tracking-metrics'); ?></span>';
+                            usageHtml += '</div>';
+                        });
+                        usageHtml += '</div></div>';
+                    }
+                    
+                    if (response.data.theme_files_forms && response.data.theme_files_forms.length > 0) {
+                        usageHtml += '<div class="mb-6"><h4 class="text-sm font-medium text-gray-900 mb-3"><?php _e('Theme Files (Form Detection)', 'call-tracking-metrics'); ?></h4>';
+                        usageHtml += '<div class="space-y-2">';
+                        response.data.theme_files_forms.forEach(function(file) {
+                            usageHtml += '<div class="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">';
+                            usageHtml += '<div><span class="text-sm font-medium text-orange-700">' + file.file + '</span>';
+                            usageHtml += '<p class="text-xs text-orange-600">' + file.path + '</p>';
+                            usageHtml += '<p class="text-xs text-orange-500">Match: ' + file.match_type + '</p></div>';
+                            usageHtml += '<span class="text-xs text-orange-600"><?php _e('Theme File', 'call-tracking-metrics'); ?></span>';
+                            usageHtml += '</div>';
+                        });
+                        usageHtml += '</div></div>';
+                    }
+                    
+                    if (!usageHtml || (response.data.pages.length === 0 && response.data.enhanced_pages.length === 0 && response.data.custom_post_types.length === 0 && response.data.widgets.length === 0 && response.data.theme_files.length === 0)) {
+                        usageHtml = '<div class="text-center py-8"><svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>';
+                        usageHtml += '<p class="text-gray-500 text-sm"><?php _e('No usage found for this form.', 'call-tracking-metrics'); ?></p>';
+                        usageHtml += '<p class="text-gray-400 text-xs mt-2"><?php _e('The form may not be used anywhere yet, or usage detection is limited.', 'call-tracking-metrics'); ?></p>';
+                        usageHtml += '<p class="text-gray-400 text-xs mt-1"><?php _e('Try checking the debug information above for more details.', 'call-tracking-metrics'); ?></p></div>';
+                    }
+                    
+                    $('#ctm-usage-content').html(usageHtml).show();
+                } else {
+                    $('#ctm-usage-error').show();
+                    $('#ctm-usage-error-message').text(response.data ? response.data.message : '<?php _e('Unknown error occurred', 'call-tracking-metrics'); ?>');
+                }
+            },
+            error: function() {
+                $('#ctm-usage-loading').hide();
+                $('#ctm-usage-error').show();
+                $('#ctm-usage-error-message').text('<?php _e('Network error occurred', 'call-tracking-metrics'); ?>');
+            }
+        });
+    });
+    
+    // Handle usage modal close
+    $('#ctm-usage-close, #ctm-usage-close-btn').on('click', function() {
+        $('#ctm-usage-modal').addClass('hidden').removeClass('flex');
+        $('body').removeClass('overflow-hidden');
+    });
+    
+    // Close usage modal when clicking outside
+    $('#ctm-usage-modal').on('click', function(e) {
+        if (e.target === this) {
+            $(this).addClass('hidden').removeClass('flex');
+            $('body').removeClass('overflow-hidden');
+        }
+    });
+    
+    // Handle force refresh
+    $(document).on('click', '#ctm-force-refresh', function() {
+        const formId = $('#ctm-usage-modal').data('current-form-id');
+        const formType = $('#ctm-usage-modal').data('current-form-type');
+        const formTitle = $('#ctm-usage-modal').data('current-form-title');
+        
+        // Set force refresh and trigger usage check
+        $('.ctm-form-usage[data-form-id="' + formId + '"][data-form-type="' + formType + '"]').data('force-refresh', true).click();
     });
 });
 </script>

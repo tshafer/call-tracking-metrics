@@ -38,40 +38,8 @@ if (class_exists('GFAPI')) {
  * 
  * @since 1.0.0
  */
-class GFService
+class GFService extends BaseFormService
 {
-    /**
-     * Logging System instance
-     * 
-     * @since 2.0.0
-     * @var \CTM\Admin\LoggingSystem|null
-     */
-    private $loggingSystem;
-
-    /**
-     * Initialize the GF service
-     * 
-     * @since 2.0.0
-     * @param \CTM\Admin\LoggingSystem|null $loggingSystem The logging system
-     */
-    public function __construct($loggingSystem = null)
-    {
-        $this->loggingSystem = $loggingSystem;
-    }
-
-    /**
-     * Internal logging helper to prevent server log pollution
-     * 
-     * @since 2.0.0
-     * @param string $message The message to log
-     * @param string $type The log type (error, debug, api, etc.)
-     */
-    private function logInternal(string $message, string $type = 'debug'): void
-    {
-        if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
-            $this->loggingSystem->logActivity($message, $type);
-        }
-    }
 
     /**
      * Process Gravity Forms submission for CTM API
@@ -322,6 +290,10 @@ class GFService
             $payload['visitor_sid'] = $_COOKIE['__ctmid'] ?? '';
             $payload['domain'] = $_SERVER['HTTP_HOST'] ?? '';
             $payload['raw_data'] = $entry;
+            
+            // Extract and add UTM parameters
+            $utmParams = $this->extractUtmFromEntry($entry);
+            $payload = $this->addUtmToPayload($payload, $utmParams);
 
             
             $this->logInternal('GF Payload processed successfully', 'debug');
@@ -468,7 +440,7 @@ class GFService
             
             $fieldId = $field->id;
             $fieldValue = $entry[$fieldId] ?? null;
-            if ($this->isAdminField($field)) {
+            if ($this->isAdminField($field->type, $field->label ?? '')) {
                 continue;
             }
             // Skip conditional fields not present in entry
@@ -497,7 +469,7 @@ class GFService
                     $inputValue = $entry[$inputId] ?? '';
                     if (!empty($inputValue)) {
                         $part = $input['label'] ?? $inputId;
-                        $address[$part] = $this->sanitizeFieldValue($inputValue, $field);
+                        $address[$part] = $this->sanitizeFieldValue($inputValue, $field->type ?? 'text');
                     }
                 }
                 if (!empty($address)) {
@@ -525,7 +497,7 @@ class GFService
             // Single field processing
             $fieldName = $this->getFieldName($field);
             $ctmFieldName = $fieldMapping[$fieldId] ?? $fieldName;
-            $cleanValue = $this->sanitizeFieldValue($fieldValue, $field);
+            $cleanValue = $this->sanitizeFieldValue($fieldValue, $field->type ?? 'text');
             if (!empty($cleanValue)) {
                 $mappedFields[$ctmFieldName] = $cleanValue;
             }
@@ -549,12 +521,27 @@ class GFService
      * Check if a field is an administrative field that shouldn't be sent to CTM
      * 
      * @since 1.0.0
-     * @param object $field The GF field object
+     * @param string $fieldType The field type
+     * @param string $fieldLabel The field label
      * @return bool True if field is administrative
      */
-    private function isAdminField($field): bool
+    protected function isAdminField(string $fieldType, string $fieldLabel = ''): bool
     {
-        return in_array($field->type, ['page', 'section', 'html', 'captcha', 'password']);
+        $adminTypes = ['page', 'section', 'html', 'captcha', 'password', 'hidden', 'honeypot', 'submit', 'button'];
+        $adminLabels = ['submit', 'send', 'captcha', 'recaptcha', 'honeypot'];
+        
+        if (in_array(strtolower($fieldType), $adminTypes)) {
+            return true;
+        }
+        
+        $labelLower = strtolower($fieldLabel);
+        foreach ($adminLabels as $adminLabel) {
+            if (strpos($labelLower, $adminLabel) !== false) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     /**
@@ -635,7 +622,7 @@ class GFService
                 if (!empty($inputValue)) {
                     $inputName = $input['label'] ?? "Field {$inputId}";
                     $ctmFieldName = $fieldMapping[$inputId] ?? $inputName;
-                    $cleanValue = $this->sanitizeFieldValue($inputValue, $field);
+                    $cleanValue = $this->sanitizeFieldValue($inputValue, $field->type ?? 'text');
                     
                     $subFieldData[$ctmFieldName] = $cleanValue;
                 }
@@ -694,7 +681,7 @@ class GFService
      * @param string $gfType The original GF field type
      * @return string The normalized field type
      */
-    private function normalizeFieldType(string $gfType): string
+    protected function normalizeFieldType(string $gfType): string
     {
         $typeMap = [
             'text' => 'text',
@@ -730,10 +717,10 @@ class GFService
      * 
      * @since 1.0.0
      * @param mixed  $value The raw field value
-     * @param object $field The GF field object for context
+     * @param string $fieldType The type of field (email, phone, url, etc.)
      * @return string The sanitized field value
      */
-    private function sanitizeFieldValue($value, $field): string
+    protected function sanitizeFieldValue($value, string $fieldType = 'text'): string
     {
         // Handle array values (checkboxes, multi-select, list fields)
         if (is_array($value)) {
@@ -745,7 +732,6 @@ class GFService
         $value = (string) $value;
         
         // Field-specific sanitization
-        $fieldType = isset($field->type) ? $field->type : 'text';
         switch ($fieldType) {
             case 'email':
                 $value = sanitize_email($value);
@@ -765,51 +751,6 @@ class GFService
         }
         
         return trim($value);
-    }
-
-
-    /**
-     * Extract UTM parameters from GF entry
-     * 
-     * @since 1.0.0
-     * @param array $entry The GF entry data
-     * @return array UTM parameters
-     */
-    private function extractUtmFromEntry(array $entry): array
-    {
-        $utmParams = [];
-        $utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
-        
-        foreach ($utmKeys as $key) {
-            if (!empty($entry[$key])) {
-                $utmParams[$key] = sanitize_text_field($entry[$key]);
-            }
-        }
-        
-        return $utmParams;
-    }
-
-    /**
-     * Get the form URL from entry data
-     * 
-     * @since 1.0.0
-     * @param array $entry The GF entry data
-     * @return string The form URL
-     */
-    private function getFormUrl(array $entry): string
-    {
-        return $entry['source_url'] ?? home_url();
-    }
-
-    /**
-     * Get the client's IP address (fallback method)
-     * 
-     * @since 1.0.0
-     * @return string The client IP address
-     */
-    private function getClientIpAddress(): string
-    {
-        return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
     }
 
     /**

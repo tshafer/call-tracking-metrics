@@ -207,10 +207,9 @@ trait MonkeyTrait
         $mock('wp_get_current_user', fn() => \Brain\Monkey\Functions\when('wp_get_current_user')->justReturn(new class {
             public function ID() { return 1; }
         }));
-
         // Define constants only if not already defined
-        if (!defined('ABSPATH')) define('ABSPATH', '/tmp');
-        if (!defined('WP_CONTENT_DIR')) define('WP_CONTENT_DIR', '/tmp');
+        if (!defined('ABSPATH')) define('ABSPATH', sys_get_temp_dir() . '/');
+        if (!defined('WP_CONTENT_DIR')) define('WP_CONTENT_DIR', sys_get_temp_dir());
         if (!defined('WP_DEBUG')) define('WP_DEBUG', true);
         if (!defined('WP_DEBUG_LOG')) define('WP_DEBUG_LOG', true);
         if (!defined('WP_DEBUG_DISPLAY')) define('WP_DEBUG_DISPLAY', true);
@@ -223,15 +222,50 @@ trait MonkeyTrait
         if (!defined('DB_PREFIX')) define('DB_PREFIX', 'wp_');
         if (!defined('DB_VERSION')) define('DB_VERSION', '5.8');
 
+        $mock('dbDelta', fn() => \Brain\Monkey\Functions\when('dbDelta')->justReturn(['wp_ctm_log_entries' => 'Created table wp_ctm_log_entries']));
+        
+        // Create the WordPress upgrade.php file if it doesn't exist
+        $upgradeFile = ABSPATH . 'wp-admin/includes/upgrade.php';
+        if (!file_exists($upgradeFile)) {
+            $upgradeDir = dirname($upgradeFile);
+            if (!is_dir($upgradeDir)) {
+                mkdir($upgradeDir, 0755, true);
+            }
+            file_put_contents($upgradeFile, "<?php\n// Mock WordPress upgrade file for testing\nif (!function_exists('dbDelta')) {\n    function dbDelta(\$queries) {\n        return ['wp_ctm_log_entries' => 'Created table wp_ctm_log_entries'];\n    }\n}\n");
+        }
+
         $GLOBALS['wpdb'] = new class {
+            public $queries_run = [];
+            public $get_results_return = [];
+            public $get_col_return = [];
+            public $rows_affected = 1;
+            
             public function get_var($query) {
                 if (strpos($query, 'SHOW TABLES LIKE') !== false) {
                     return 'wp_options';
                 }
+                if (strpos($query, 'SELECT COUNT') !== false) {
+                    return 5; // Mock count
+                }
                 return null;
             }
-            public function prepare($query, $args) {
+            public function get_results($query, $output = OBJECT) {
+                $this->queries_run[] = $query;
+                return $this->get_results_return;
+            }
+            public function get_col($query, $col = 0) {
+                $this->queries_run[] = $query;
+                return $this->get_col_return;
+            }
+            public function prepare($query, ...$args) {
                 return $query;
+            }
+            public function get_charset_collate() {
+                return 'DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci';
+            }
+            public function query($query) {
+                $this->queries_run[] = $query;
+                return true;
             }
             public function db_version() { return '5.8'; }
             public $prefix = 'wp_';
@@ -239,6 +273,7 @@ trait MonkeyTrait
             public $db_collate = 'utf8_general_ci';
             public $db_host = 'localhost';
             public $db_name = 'wordpress';
+            public $options = 'wp_options';
         };
 
         $mock('file_exists', fn() => \Brain\Monkey\Functions\when('file_exists')->alias(function($path) {

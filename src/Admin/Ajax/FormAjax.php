@@ -1,10 +1,66 @@
 <?php
+/**
+ * Form AJAX Handler
+ * 
+ * This file contains the FormAjax class which handles AJAX requests related to
+ * form management including retrieving forms, form fields, and managing notices.
+ * 
+ * @package     CallTrackingMetrics
+ * @subpackage  Admin\Ajax
+ * @author      CallTrackingMetrics Team
+ * @copyright   2024 CallTrackingMetrics
+ * @license     GPL-2.0+
+ * @version     2.0.0
+ * @link        https://calltrackingmetrics.com
+ * @since       1.0.0
+ */
+
 namespace CTM\Admin\Ajax;
 
+/**
+ * Form AJAX Request Handler
+ * 
+ * Handles AJAX requests related to form management including:
+ * - Retrieving available forms (Contact Form 7 and Gravity Forms)
+ * - Getting form fields for mapping
+ * - Managing plugin notices and dismissals
+ * 
+ * This class provides a bridge between the frontend JavaScript and the backend
+ * form plugins, allowing dynamic form and field selection in the admin interface.
+ * 
+ * @package     CallTrackingMetrics
+ * @subpackage  Admin\Ajax
+ * @author      CallTrackingMetrics Team
+ * @since       1.0.0
+ * @version     2.0.0
+ */
 class FormAjax {
+    /**
+     * Gravity Forms API class name
+     * 
+     * @since 1.0.0
+     * @var string|null
+     */
     private $gfapi;
+
+    /**
+     * Contact Form 7 class name
+     * 
+     * @since 1.0.0
+     * @var string|null
+     */
     private $wpcf7_contact_form;
     
+    /**
+     * Initialize Form AJAX handler
+     * 
+     * Sets up the form plugin class references for dependency injection.
+     * If not provided, will attempt to detect available form plugins.
+     * 
+     * @since 1.0.0
+     * @param string|null $gfapi               Optional Gravity Forms API class name
+     * @param string|null $wpcf7_contact_form  Optional Contact Form 7 class name
+     */
     public function __construct($gfapi = null, $wpcf7_contact_form = null) {
         $this->gfapi = $gfapi ?: (class_exists('GFAPI') ? 'GFAPI' : null);
         $this->wpcf7_contact_form = $wpcf7_contact_form ?: (class_exists('WPCF7_ContactForm') ? 'WPCF7_ContactForm' : null);
