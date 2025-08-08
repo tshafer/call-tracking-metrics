@@ -7,8 +7,6 @@
 // Get current settings
 $retention_days = (int) get_option('ctm_log_retention_days', 7);
 $auto_cleanup = get_option('ctm_log_auto_cleanup', true);
-$email_notifications = get_option('ctm_log_email_notifications', false);
-$notification_email = get_option('ctm_log_notification_email', get_option('admin_email'));
 ?>
 
 <div class="bg-white rounded-xl shadow-lg border border-gray-200">
@@ -27,15 +25,9 @@ $notification_email = get_option('ctm_log_notification_email', get_option('admin
     <div id="log-settings-content" class="border-t border-gray-200 p-6">
         <form id="log-settings-form" class="space-y-4">
             <!-- Retention Settings -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label for="log_retention_days" class="block text-sm font-medium text-gray-700 mb-1"><?php _e('Retention (Days)', 'call-tracking-metrics'); ?></label>
-                    <input type="number" id="log_retention_days" name="log_retention_days" min="1" max="365" value="<?= $retention_days ?>" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div>
-                    <label for="log_notification_email" class="block text-sm font-medium text-gray-700 mb-1"><?php _e('Notification Email', 'call-tracking-metrics'); ?></label>
-                    <input type="email" id="log_notification_email" name="log_notification_email" value="<?= esc_attr($notification_email) ?>" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                </div>
+            <div>
+                <label for="log_retention_days" class="block text-sm font-medium text-gray-700 mb-1"><?php _e('Retention (Days)', 'call-tracking-metrics'); ?></label>
+                <input type="number" id="log_retention_days" name="log_retention_days" min="1" max="365" value="<?= $retention_days ?>" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
             </div>
 
             <!-- Checkboxes -->
@@ -43,10 +35,6 @@ $notification_email = get_option('ctm_log_notification_email', get_option('admin
                 <div class="flex items-center">
                     <input type="checkbox" id="log_auto_cleanup" name="log_auto_cleanup" <?= $auto_cleanup ? 'checked' : '' ?> class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                     <label for="log_auto_cleanup" class="ml-2 text-sm text-gray-900"><?php _e('Auto-cleanup logs', 'call-tracking-metrics'); ?></label>
-                </div>
-                <div class="flex items-center">
-                    <input type="checkbox" id="log_email_notifications" name="log_email_notifications" <?= $email_notifications ? 'checked' : '' ?> class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                    <label for="log_email_notifications" class="ml-2 text-sm text-gray-900"><?php _e('Email notifications', 'call-tracking-metrics'); ?></label>
                 </div>
             </div>
 
@@ -80,9 +68,7 @@ $notification_email = get_option('ctm_log_notification_email', get_option('admin
         const formData = new FormData();
         formData.append('action', 'ctm_update_log_settings');
         formData.append('log_retention_days', document.getElementById('log_retention_days').value);
-        formData.append('log_notification_email', document.getElementById('log_notification_email').value);
         formData.append('log_auto_cleanup', document.getElementById('log_auto_cleanup').checked ? '1' : '0');
-        formData.append('log_email_notifications', document.getElementById('log_email_notifications').checked ? '1' : '0');
         formData.append('nonce', '<?= wp_create_nonce('ctm_update_log_settings') ?>');
         
         fetch('<?= admin_url('admin-ajax.php') ?>', {

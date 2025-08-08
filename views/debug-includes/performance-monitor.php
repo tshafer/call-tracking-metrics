@@ -458,11 +458,8 @@ $system_info = ctm_get_system_info_array();
         .then(response => response.json())
         .then(data => {
             if (data.success && data.data) {
-                // Handle double nesting - data is under data.data
-                const metricsData = data.data.data || data.data;
-                
                 // Update the UI with the data
-                updateSystemPerformanceMetrics(metricsData);
+                updateSystemPerformanceMetrics(data.data);
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             } else {

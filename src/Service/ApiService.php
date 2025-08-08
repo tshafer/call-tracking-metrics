@@ -587,7 +587,13 @@ class ApiService
         $should_log = $loggingSystem && $loggingSystem->isDebugEnabled();
         
         if ($should_log) {
-            $loggingSystem->logActivity("API Request - URL: {$url}, Method: {$method}", 'api');
+            // Group API calls by URL and method
+            $api_key = $this->getApiCallKey($url, $method);
+            $loggingSystem->logActivity("API Request - URL: {$url}, Method: {$method}", 'api', [
+                'api_call_key' => $api_key,
+                'url' => $url,
+                'method' => $method
+            ]);
         }
         
         $args = [
@@ -810,5 +816,56 @@ class ApiService
             // Silently fail to avoid disrupting API calls
             $this->logInternal('API Response Time Tracking Error: ' . $e->getMessage(), 'error');
         }
+    }
+
+    /**
+     * Generate a unique key for grouping API calls by URL and method
+     * 
+     * Creates a consistent key that can be used to group similar API calls
+     * for better log organization and analysis.
+     * 
+     * @since 2.0.0
+     * @param string $url The API URL
+     * @param string $method The HTTP method
+     * @return string A unique key for grouping API calls
+     */
+    private function getApiCallKey(string $url, string $method): string
+    {
+        // Extract the endpoint path from the full URL
+        $parsed_url = parse_url($url);
+        $path = $parsed_url['path'] ?? '';
+        
+        // Create a normalized key that groups similar endpoints
+        $normalized_path = $this->normalizeApiPath($path);
+        
+        return strtoupper($method) . ':' . $normalized_path;
+    }
+
+    /**
+     * Normalize API path for consistent grouping
+     * 
+     * Removes variable parts like IDs and parameters to group similar endpoints.
+     * 
+     * @since 2.0.0
+     * @param string $path The API path
+     * @return string Normalized path for grouping
+     */
+    private function normalizeApiPath(string $path): string
+    {
+        // Remove trailing slash
+        $path = rtrim($path, '/');
+        
+        // Normalize common patterns
+        $patterns = [
+            '/\d+/' => '{id}',           // Replace numeric IDs
+            '/[a-f0-9-]{36}/' => '{uuid}', // Replace UUIDs
+            '/[a-f0-9]{8,}/' => '{hash}',  // Replace hashes
+        ];
+        
+        foreach ($patterns as $pattern => $replacement) {
+            $path = preg_replace($pattern, $replacement, $path);
+        }
+        
+        return $path;
     }
 } 

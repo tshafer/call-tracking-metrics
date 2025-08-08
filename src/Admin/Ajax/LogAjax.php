@@ -34,6 +34,7 @@ class LogAjax {
         add_action('wp_ajax_ctm_get_recent_errors', [$this, 'ajaxGetRecentErrors']);
         add_action('wp_ajax_ctm_get_error_rate_stats', [$this, 'ajaxGetErrorRateStats']);
         add_action('wp_ajax_ctm_update_log_settings', [$this, 'ajaxUpdateLogSettings']);
+        add_action('wp_ajax_ctm_load_more_group_entries', [$this, 'ajaxLoadMoreGroupEntries']);
     }
 
     /**
@@ -190,25 +191,16 @@ class LogAjax {
         try {
             // Get form data
             $retention_days = (int) ($_POST['log_retention_days'] ?? 30);
-            $notification_email = sanitize_email($_POST['log_notification_email'] ?? '');
             $auto_cleanup = (bool) ($_POST['log_auto_cleanup'] ?? false);
-            $email_notifications = (bool) ($_POST['log_email_notifications'] ?? false);
             
             // Validate retention days
             if ($retention_days < 1 || $retention_days > 365) {
                 wp_send_json_error(['message' => 'Retention days must be between 1 and 365']);
             }
             
-            // Validate email if notifications are enabled
-            if ($email_notifications && empty($notification_email)) {
-                wp_send_json_error(['message' => 'Email address is required when notifications are enabled']);
-            }
-            
             // Update WordPress options
             update_option('ctm_log_retention_days', $retention_days);
-            update_option('ctm_log_notification_email', $notification_email);
             update_option('ctm_log_auto_cleanup', $auto_cleanup);
-            update_option('ctm_log_email_notifications', $email_notifications);
             
             // Log the settings update
             $this->loggingSystem->logActivity('Log settings updated via AJAX', 'system');
@@ -217,13 +209,129 @@ class LogAjax {
                 'message' => 'Log settings updated successfully',
                 'settings' => [
                     'retention_days' => $retention_days,
-                    'notification_email' => $notification_email,
-                    'auto_cleanup' => $auto_cleanup,
-                    'email_notifications' => $email_notifications
+                    'auto_cleanup' => $auto_cleanup
                 ]
             ]);
         } catch (\Exception $e) {
             wp_send_json_error(['message' => 'Failed to update log settings: ' . $e->getMessage()]);
         }
+    }
+
+    /**
+     * Load more entries for a specific group
+     * 
+     * @since 2.0.0
+     */
+    public function ajaxLoadMoreGroupEntries(): void
+    {
+        check_ajax_referer('ctm_load_more_group_entries', 'nonce');
+        
+        // Check user capabilities
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Insufficient permissions to load more entries']);
+        }
+        
+        try {
+            $date = sanitize_text_field($_POST['date'] ?? '');
+            $group_key = sanitize_text_field($_POST['group_key'] ?? '');
+            $offset = (int) ($_POST['offset'] ?? 0);
+            $limit = (int) ($_POST['limit'] ?? 10);
+            
+            if (empty($date) || empty($group_key)) {
+                wp_send_json_error(['message' => 'Date and group key are required']);
+            }
+            
+            // Get all logs for the date
+            $all_logs = $this->loggingSystem->getLogsForDate($date);
+            
+            // Filter logs by group key
+            $grouped_logs = [];
+            foreach ($all_logs as $log) {
+                $log_group_key = $this->getLogGroupKey($log);
+                if ($log_group_key === $group_key) {
+                    $grouped_logs[] = $log;
+                }
+            }
+            
+            // Get the requested slice of entries
+            $requested_entries = array_slice($grouped_logs, $offset, $limit);
+            
+            wp_send_json_success([
+                'entries' => $requested_entries,
+                'offset' => $offset,
+                'limit' => $limit,
+                'total_in_group' => count($grouped_logs),
+                'has_more' => ($offset + $limit) < count($grouped_logs)
+            ]);
+        } catch (\Exception $e) {
+            wp_send_json_error(['message' => 'Failed to load more entries: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Generate a group key for log entries (copied from LoggingSystem for consistency)
+     * 
+     * @since 2.0.0
+     * @param array $log The log entry
+     * @return string A group key for this log entry
+     */
+    private function getLogGroupKey(array $log): string
+    {
+        $type = $log['type'];
+        $message = $log['message'];
+        $context = $log['context'] ?? [];
+        
+        // Special handling for API calls
+        if ($type === 'api' && isset($context['api_call_key'])) {
+            return 'api:' . $context['api_call_key'];
+        }
+        
+        // For other types, group by message pattern
+        if (strpos($message, 'API Request - URL:') === 0) {
+            // Extract URL and method for API requests
+            if (preg_match('/API Request - URL: ([^,]+), Method: (\w+)/', $message, $matches)) {
+                $url = $matches[1];
+                $method = $matches[2];
+                
+                // Normalize URL for grouping
+                $parsed_url = parse_url($url);
+                $path = $parsed_url['path'] ?? '';
+                
+                // Normalize common patterns
+                $normalized_path = $this->normalizeApiPath($path);
+                return 'api:' . strtoupper($method) . ':' . $normalized_path;
+            }
+        }
+        
+        // For other message types, group by first part of message
+        $words = explode(' ', $message);
+        $first_word = $words[0] ?? '';
+        return $type . ':' . $first_word;
+    }
+
+    /**
+     * Normalize API path for consistent grouping (copied from LoggingSystem for consistency)
+     * 
+     * @since 2.0.0
+     * @param string $path The API path
+     * @return string Normalized path
+     */
+    private function normalizeApiPath(string $path): string
+    {
+        // Remove trailing slash
+        $path = rtrim($path, '/');
+        
+        // Normalize common patterns
+        $patterns = [
+            '/\d+/' => '{id}',           // Replace numeric IDs
+            '/[a-f0-9-]{36}/' => '{uuid}', // Replace UUIDs
+            '/[a-f0-9]{8,}/' => '{hash}',  // Replace hashes
+        ];
+        
+        foreach ($patterns as $pattern => $replacement) {
+            $path = preg_replace($pattern, $replacement, $path);
+        }
+        
+        return $path;
     }
 } 

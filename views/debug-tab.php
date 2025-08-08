@@ -4,8 +4,6 @@
 
 $retention_days = (int) get_option('ctm_log_retention_days', 7);
 $auto_cleanup = get_option('ctm_log_auto_cleanup', true);
-$email_notifications = get_option('ctm_log_email_notifications', false);
-$notification_email = get_option('ctm_log_notification_email', get_option('admin_email'));
 
 // Get log statistics and available dates - OPTIMIZED for performance using new database system
 $log_stats = ['total_days' => 0, 'total_entries' => 0, 'total_size' => 0, 'type_counts' => []];

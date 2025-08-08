@@ -438,22 +438,7 @@ class Options
             exit;
         }
         
-        // Handle email log functionality
-        if (isset($_POST['email_log']) && !empty($_POST['log_date']) && !empty($_POST['email_to'])) {
-            $log_date = sanitize_text_field($_POST['log_date']);
-            $email_to = sanitize_email($_POST['email_to']);
-            $result = $this->loggingSystem->emailLog($log_date, $email_to);
-            
-            // Log the email attempt result
-            if ($result) {
-                $this->loggingSystem->logActivity("Log emailed for date: {$log_date} to: {$email_to}", 'system');
-            } else {
-                $this->loggingSystem->logActivity("Failed to email log for date: {$log_date} to: {$email_to}", 'error');
-            }
-            
-            wp_redirect(admin_url('admin.php?page=call-tracking-metrics&tab=debug'));
-            exit;
-        }
+
         
         // Handle log retention settings update
         if (isset($_POST['update_log_settings'])) {
@@ -463,8 +448,6 @@ class Options
             // Update log management settings
             update_option('ctm_log_retention_days', $retention_days);
             update_option('ctm_log_auto_cleanup', isset($_POST['log_auto_cleanup']));
-            update_option('ctm_log_email_notifications', isset($_POST['log_email_notifications']));
-            update_option('ctm_log_notification_email', sanitize_email($_POST['log_notification_email'] ?? ''));
             
             $this->loggingSystem->logActivity("Log settings updated - Retention: {$retention_days} days", 'system');
             wp_redirect(admin_url('admin.php?page=call-tracking-metrics&tab=debug'));
@@ -657,7 +640,6 @@ class Options
         $gf_currently_enabled = get_option('ctm_api_gf_enabled', false);
         $gf_plugin_active = function_exists('is_plugin_active') ? is_plugin_active('gravityforms/gravityforms.php') : false;
         $gf_class_exists = class_exists('GFAPI');
-        $gf_function_exists = function_exists('gravity_form');
         $gf_available = $gf_plugin_active || $gf_class_exists;
         
 

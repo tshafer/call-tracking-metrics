@@ -36,14 +36,8 @@ class SystemPerformanceAjax {
 
     public function ajaxGetPerformanceMetrics(): void
     {
-        error_log('CTM: ajaxGetPerformanceMetrics called - START');
-        error_log('CTM: POST data: ' . json_encode($_POST));
-        
-        // Temporarily disable nonce check for debugging
-        // check_ajax_referer('ctm_get_performance_metrics', 'nonce');
-        
+       
         try {
-            error_log('CTM: Starting performance metrics calculation');
             global $wpdb;
             $client_metrics = isset($_POST['client_metrics']) ? json_decode(stripslashes($_POST['client_metrics']), true) : null;
             $memory_limit = ini_get('memory_limit');
@@ -128,20 +122,10 @@ class SystemPerformanceAjax {
                         $images_loaded = $images_count . ' images';
                     }
                 }
-            } else {
-                // Use internal logging
-                if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
-                    $this->loggingSystem->logActivity('Performance: No client metrics received or invalid format', 'debug');
-                }
             }
             // Call helpers before array construction
-            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
-                $this->loggingSystem->logActivity('DEBUG: About to call getCacheHits', 'debug');
-            }
             $cache_hits = $this->getCacheHits();
-            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
-                $this->loggingSystem->logActivity('DEBUG: After getCacheHits', 'debug');
-            }
+
             $cache_misses = $this->getCacheMisses();
             $api_calls_24h = $this->getApiCalls24h();
             $api_response_time = $this->getApiResponseTime();
@@ -221,15 +205,13 @@ class SystemPerformanceAjax {
                     'current_queries' => get_num_queries()
                 ]
             ];
-            error_log('CTM: Performance metrics data: ' . json_encode($metrics));
-            wp_send_json_success([
-                'data' => $metrics,
-                'message' => 'Performance metrics retrieved successfully'
-            ]);
-            error_log('CTM: ajaxGetPerformanceMetrics completed successfully');
+            
+            wp_send_json_success($metrics);
         } catch (\Throwable $e) {
-            error_log('CTM: Error in ajaxGetPerformanceMetrics: ' . $e->getMessage());
-            error_log('CTM: Error trace: ' . $e->getTraceAsString());
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('Error in ajaxGetPerformanceMetrics: ' . $e->getMessage(), 'error');
+                $this->loggingSystem->logActivity('Error trace: ' . $e->getTraceAsString(), 'error');
+            }
             wp_send_json_error([
                 'message' => 'Failed to get performance metrics: ' . $e->getMessage()
             ]);
@@ -238,7 +220,6 @@ class SystemPerformanceAjax {
 
     public function ajaxTestWordPressAjax(): void
     {
-        error_log('CTM: WordPress AJAX test called');
         wp_send_json_success([
             'data' => [
                 'test' => 'WordPress AJAX is working',
@@ -251,7 +232,6 @@ class SystemPerformanceAjax {
 
     public function ajaxTestPerformance(): void
     {
-        error_log('CTM: Test performance endpoint called');
         wp_send_json_success([
             'data' => [
                 'test' => 'success',

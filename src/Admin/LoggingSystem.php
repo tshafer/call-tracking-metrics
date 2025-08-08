@@ -48,7 +48,6 @@ class LoggingSystem
     {
         // Ensure table exists before writing
         if (!$this->ensureTableExists()) {
-            error_log('CTM Log: Failed to create or access log table');
             return;
         }
         
@@ -74,8 +73,6 @@ class LoggingSystem
         $result = $wpdb->insert($table_name, $data);
         
         if ($result === false) {
-            // Fallback to error log if database insert fails
-            error_log('CTM Log: Failed to insert log entry into database: ' . $wpdb->last_error);
             return;
         }
         
@@ -348,6 +345,130 @@ class LoggingSystem
         }
         
         return $logs;
+    }
+
+    /**
+     * Get grouped logs for a specific date
+     * 
+     * Groups logs by type and API call patterns for better organization
+     * 
+     * @since 2.0.0
+     * @param string $date The date to get logs for
+     * @return array Grouped logs with counts and examples
+     */
+    public function getGroupedLogsForDate(string $date): array
+    {
+        $logs = $this->getLogsForDate($date);
+        
+        if (empty($logs)) {
+            return [];
+        }
+        
+        $grouped = [];
+        
+        foreach ($logs as $log) {
+            $group_key = $this->getLogGroupKey($log);
+            
+            if (!isset($grouped[$group_key])) {
+                $grouped[$group_key] = [
+                    'type' => $log['type'],
+                    'group_key' => $group_key,
+                    'count' => 0,
+                    'examples' => [],
+                    'first_seen' => $log['timestamp'],
+                    'last_seen' => $log['timestamp'],
+                    'total_logs' => []
+                ];
+            }
+            
+            $grouped[$group_key]['count']++;
+            $grouped[$group_key]['last_seen'] = $log['timestamp'];
+            $grouped[$group_key]['total_logs'][] = $log;
+            
+            // Keep up to 3 examples
+            if (count($grouped[$group_key]['examples']) < 3) {
+                $grouped[$group_key]['examples'][] = $log;
+            }
+        }
+        
+        // Sort by count (highest first) then by last seen (newest first)
+        uasort($grouped, function($a, $b) {
+            if ($a['count'] !== $b['count']) {
+                return $b['count'] - $a['count'];
+            }
+            return strcmp($b['last_seen'], $a['last_seen']);
+        });
+        
+        return $grouped;
+    }
+
+    /**
+     * Generate a group key for log entries
+     * 
+     * Creates consistent grouping keys for similar log entries
+     * 
+     * @since 2.0.0
+     * @param array $log The log entry
+     * @return string A group key for this log entry
+     */
+    private function getLogGroupKey(array $log): string
+    {
+        $type = $log['type'];
+        $message = $log['message'];
+        $context = $log['context'] ?? [];
+        
+        // Special handling for API calls
+        if ($type === 'api' && isset($context['api_call_key'])) {
+            return 'api:' . $context['api_call_key'];
+        }
+        
+        // For other types, group by message pattern
+        if (strpos($message, 'API Request - URL:') === 0) {
+            // Extract URL and method for API requests
+            if (preg_match('/API Request - URL: ([^,]+), Method: (\w+)/', $message, $matches)) {
+                $url = $matches[1];
+                $method = $matches[2];
+                
+                // Normalize URL for grouping
+                $parsed_url = parse_url($url);
+                $path = $parsed_url['path'] ?? '';
+                
+                // Normalize common patterns
+                $normalized_path = $this->normalizeApiPath($path);
+                return 'api:' . strtoupper($method) . ':' . $normalized_path;
+            }
+        }
+        
+        // For other message types, group by first part of message
+        $words = explode(' ', $message);
+        $first_word = $words[0] ?? '';
+        return $type . ':' . $first_word;
+    }
+
+    /**
+     * Normalize API path for consistent grouping
+     * 
+     * @since 2.0.0
+     * @param string $path The API path
+     * @return string Normalized path
+     */
+    private function normalizeApiPath(string $path): string
+    {
+        // Remove trailing slash
+        $path = rtrim($path, '/');
+        
+        // Normalize common patterns
+        $patterns = [
+            '/\d+/' => '{id}',           // Replace numeric IDs
+            '/[a-f0-9-]{36}/' => '{uuid}', // Replace UUIDs
+            '/[a-f0-9]{8,}/' => '{hash}',  // Replace hashes
+        ];
+        
+        foreach ($patterns as $pattern => $replacement) {
+            $path = preg_replace($pattern, $replacement, $path);
+        }
+        
+        return $path;
     }
 
     /**
