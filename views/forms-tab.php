@@ -1027,63 +1027,23 @@ jQuery(document).ready(function($) {
         }
     });
     
-    // Handle Form Preview buttons
+    // Handle Form Preview buttons using unified preview system
     $('.ctm-preview-wp-form').on('click', function() {
         const formId = $(this).data('form-id');
         const formType = $(this).data('form-type');
         const formTitle = $(this).data('form-title');
         
-        // Show modal and set form title
-        $('#ctm-preview-form-title').text(formTitle);
-        $('#ctm-preview-modal').removeClass('hidden').addClass('flex');
-        $('body').addClass('overflow-hidden');
-        
-        // Reset modal states
-        $('#ctm-preview-loading').show();
-        $('#ctm-preview-content').hide().html('');
-        $('#ctm-preview-error').hide();
-        
-        // AJAX call to get form preview
-        $.ajax({
-            url: ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'ctm_preview_wp_form',
-                nonce: '<?php echo wp_create_nonce('ctm_form_import_nonce'); ?>',
-                form_id: formId,
-                form_type: formType
-            },
-            success: function(response) {
-                $('#ctm-preview-loading').hide();
-                
-                if (response.success && response.data && response.data.preview) {
-                    $('#ctm-preview-content').html(response.data.preview).show();
-                } else {
-                    $('#ctm-preview-error').show();
-                    $('#ctm-preview-error-message').text(response.data ? response.data.message : '<?php _e('Unknown error occurred', 'call-tracking-metrics'); ?>');
-                }
-            },
-            error: function() {
-                $('#ctm-preview-loading').hide();
-                $('#ctm-preview-error').show();
-                $('#ctm-preview-error-message').text('<?php _e('Network error occurred', 'call-tracking-metrics'); ?>');
-            }
+        // Use unified preview system
+        CTMPreview.showWPPreview({
+            formId: formId,
+            formType: formType,
+            formTitle: formTitle,
+            tabbed: true, // Consistent tabbed interface with Raw Code + Rendered Form
+            nonce: '<?php echo wp_create_nonce('ctm_form_import_nonce'); ?>'
         });
     });
     
-    // Handle preview modal close
-    $('#ctm-preview-close, #ctm-preview-close-btn').on('click', function() {
-        $('#ctm-preview-modal').addClass('hidden').removeClass('flex');
-        $('body').removeClass('overflow-hidden');
-    });
-    
-    // Close preview modal when clicking outside
-    $('#ctm-preview-modal').on('click', function(e) {
-        if (e.target === this) {
-            $(this).addClass('hidden').removeClass('flex');
-            $('body').removeClass('overflow-hidden');
-        }
-    });
+    // Modal events are now handled by the unified CTMPreview system
     
     // Handle Form Usage buttons
     $('.ctm-form-usage').on('click', function() {

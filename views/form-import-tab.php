@@ -458,202 +458,33 @@ jQuery(document).ready(function($) {
     // Listen for changes in form and target selection
     $('#ctm-form-select, #ctm-target-type').on('change', checkFormSelections);
 
-    // Preview form (optional, non-blocking)
+    // Preview form using unified preview system
     $('#ctm-preview-form').on('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
         
         const formId = $('#ctm-form-select').val();
         const targetType = $('#ctm-target-type').val();
-        
-        if (!formId || !targetType) {
-            showMessage('error', 'Please select both a form and target type.');
-            return;
-        }
-        
         const button = $(this);
-        const modal = $('#ctm-preview-modal');
-        const modalLoading = $('#ctm-modal-loading');
-        const modalContent = $('#ctm-modal-content');
         
-        // Show modal and loading state
-        modal.removeClass('hidden').css('display', 'flex');
-        $('body').addClass('overflow-hidden');
-        modalLoading.removeClass('hidden');
-        modalContent.addClass('hidden');
+        // Disable button during preview
         button.prop('disabled', true).text('Generating...');
         
-        // Check if modal exists
-        if (modal.length === 0) {
-            alert('Modal element not found!');
-            return;
-        }
-
-        // Make AJAX request to generate preview
-        $.ajax({
-            url: ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'ctm_preview_form',
-                nonce: nonce,
-                ctm_form_id: formId,
-                target_type: targetType
-            },
-           
-            success: function(response) {
-                // Check if response has the expected structure
-                if (!response || typeof response !== 'object') {
-                    modal.addClass('hidden').css('display', 'none');
-                    $('body').removeClass('overflow-hidden');
-                    showMessage('error', 'Invalid response from server');
-                    return;
-                }
-                
-                if (response.success && response.data && (response.data.raw_code || response.data.rendered_form)) {
-                    
-                    // Extract raw code and rendered form
-                    const rawCode = response.data.raw_code || 'No raw code available';
-                    const renderedForm = response.data.rendered_form || 'No rendered form available';
-                    
-                    
-                    modalLoading.addClass('hidden');
-                    modalContent.removeClass('hidden');
-                    
-                    // Create the modal content structure dynamically
-                    modalContent.html(`
-                        <!-- Tabs -->
-                        <div class="border-b border-gray-200 mb-6">
-                            <nav class="flex space-x-8">
-                                <button type="button" id="ctm-tab-raw" class="ctm-tab-button py-2 px-1 border-b-2 border-blue-500 text-blue-600 font-medium text-sm">
-                                    Raw Code
-                                </button>
-                                <button type="button" id="ctm-tab-rendered" class="ctm-tab-button py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium text-sm">
-                                    Rendered Form
-                                </button>
-                            </nav>
-                        </div>
-
-                        <!-- Raw Code Tab -->
-                        <div id="ctm-tab-raw-content" class="ctm-tab-content">
-                            <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                                <h4 class="text-sm font-medium text-gray-700 mb-2">Raw Form Code</h4>
-                                <p class="text-xs text-gray-500 mb-3">This is the raw code that will be generated for the form.</p>
-                            </div>
-                            <div id="ctm-raw-code" class="bg-gray-50 border border-gray-200 rounded p-3 font-mono text-xs overflow-x-auto text-gray-800 whitespace-pre-wrap"></div>
-                        </div>
-
-                        <!-- Rendered Form Tab -->
-                        <div id="ctm-tab-rendered-content" class="ctm-tab-content hidden">
-                            <div class="bg-blue-50 rounded-lg p-4 mb-4">
-                                <h4 class="text-sm font-medium text-blue-700 mb-2">Rendered Form Preview</h4>
-                                <p class="text-xs text-blue-600 mb-3">This is how the form will appear after import. Note: This is a static preview - interactive features will work after import.</p>
-                            </div>
-                            <div id="ctm-rendered-form" class="bg-white border border-gray-200 rounded-lg p-6"></div>
-                        </div>
-                    `);
-                    
-                    // Set the content, sanitizing the rendered form to prevent script errors
-                    $('#ctm-raw-code').text(rawCode);
-                    
-                    // Clean the rendered form HTML to remove problematic scripts
-                    let cleanedRenderedForm = renderedForm;
-                    
-                    // Remove Gravity Forms scripts that cause errors in admin context
-                    cleanedRenderedForm = cleanedRenderedForm.replace(/<script[^>]*gform[^>]*>[\s\S]*?<\/script>/gi, '');
-                    cleanedRenderedForm = cleanedRenderedForm.replace(/gform\.initializeOnLoaded[^;]*;?/gi, '');
-                    
-                    // Remove Contact Form 7 scripts that might cause similar issues
-                    cleanedRenderedForm = cleanedRenderedForm.replace(/<script[^>]*wpcf7[^>]*>[\s\S]*?<\/script>/gi, '');
-                    
-                    // Remove any other inline scripts that might cause issues
-                    cleanedRenderedForm = cleanedRenderedForm.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
-                    
-                    $('#ctm-rendered-form').html(cleanedRenderedForm);
-                    
-            
-                    // Re-bind tab switching for dynamically created content
-                    $('.ctm-tab-button').off('click').on('click', function() {
-                        const targetTab = $(this).attr('id');
-                        
-                        // Update tab button styles
-                        $('.ctm-tab-button').removeClass('border-blue-500 text-blue-600').addClass('border-transparent text-gray-500 hover:text-gray-700');
-                        $(this).removeClass('border-transparent text-gray-500 hover:text-gray-700').addClass('border-blue-500 text-blue-600');
-                        
-                        // Show/hide tab content
-                        $('.ctm-tab-content').addClass('hidden');
-                        if (targetTab === 'ctm-tab-raw') {
-                            $('#ctm-tab-raw-content').removeClass('hidden');
-                        } else if (targetTab === 'ctm-tab-rendered') {
-                            $('#ctm-tab-rendered-content').removeClass('hidden');
-                        }
-                    });
-                    
-                } else {
-                    // Handle error cases - show error in modal instead of closing it
-                    
-                    const errorMessage = (response.data && response.data.message) 
-                        ? response.data.message 
-                        : (response.message || 'Unknown error occurred');
-                    
-                    // Show error content in the modal instead of closing it
-                    modalLoading.addClass('hidden');
-                    modalContent.removeClass('hidden');
-                    
-                    // Display error in both tabs
-                    $('#ctm-raw-code').text('Error: ' + errorMessage);
-                    $('#ctm-rendered-form').html('<div class="bg-red-50 border border-red-200 rounded-lg p-4"><div class="text-red-800 font-medium">Preview Error</div><div class="text-red-700 text-sm mt-2">' + errorMessage + '</div><div class="text-red-600 text-xs mt-2">Full response: ' + JSON.stringify(response, null, 2) + '</div></div>');
-                }
-            },
-            error: function(xhr, status, error) {
-                modal.addClass('hidden').css('display', 'none');
-                $('body').removeClass('overflow-hidden');
-                showMessage('error', 'Failed to generate preview. Please try again.');
-            },
-            complete: function() {
-                button.prop('disabled', false).html('<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg><?php _e('Preview Form', 'call-tracking-metrics'); ?>');
-            }
+        // Use unified preview system
+        CTMPreview.showCTMPreview({
+            ctmFormId: formId,
+            targetType: targetType,
+            tabbed: true,
+            nonce: nonce
         });
         
-        return; // Skip the old AJAX call below
+        // Re-enable button after a short delay
+        setTimeout(function() {
+            button.prop('disabled', false).html('<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg><?php _e('Preview Form', 'call-tracking-metrics'); ?>');
+        }, 1000);
     });
 
-    // Close modal
-    $('#ctm-close-modal').on('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        $('#ctm-preview-modal').addClass('hidden').css('display', 'none');
-        $('body').removeClass('overflow-hidden');
-    });
-
-    // Close modal when clicking outside
-    $('#ctm-preview-modal').on('click', function(e) {
-        if (e.target === this) {    
-            $(this).addClass('hidden').css('display', 'none');
-            $('body').removeClass('overflow-hidden');
-        }
-    });
-
-    // Prevent modal from closing when clicking inside the modal content
-    $('#ctm-preview-modal .bg-white').on('click', function(e) {
-        e.stopPropagation();
-    });
-
-    // Tab switching
-    $('.ctm-tab-button').on('click', function() {
-        const targetTab = $(this).attr('id');
-        
-        // Update tab button styles
-        $('.ctm-tab-button').removeClass('border-blue-500 text-blue-600').addClass('border-transparent text-gray-500 hover:text-gray-700');
-        $(this).removeClass('border-transparent text-gray-500 hover:text-gray-700').addClass('border-blue-500 text-blue-600');
-        
-        // Show/hide tab content
-        $('.ctm-tab-content').addClass('hidden');
-        if (targetTab === 'ctm-tab-raw') {
-            $('#ctm-tab-raw-content').removeClass('hidden');
-        } else if (targetTab === 'ctm-tab-rendered') {
-            $('#ctm-tab-rendered-content').removeClass('hidden');
-        }
-    });
+    // Modal events are now handled by the unified CTMPreview system
 
     // Import form
     $('#ctm-import-form').on('click', function() {

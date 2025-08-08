@@ -371,6 +371,15 @@ class CallTrackingMetrics
                 true
             );
             
+            // Enqueue unified preview JS
+            wp_enqueue_script(
+                'ctm-preview-js',
+                plugins_url('assets/js/ctm-preview.js', __FILE__),
+                ['jquery'],
+                '2.0.0',
+                true
+            );
+            
             // Localize general tab data
             wp_localize_script('ctm-general-tab-js', 'ctmGeneralData', [
                 'ajaxurl' => admin_url('admin-ajax.php'),

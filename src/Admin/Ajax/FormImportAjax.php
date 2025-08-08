@@ -1016,15 +1016,18 @@ class FormImportAjax
                 return;
             }
 
-            // Generate preview based on form type
+            // Generate preview and raw code based on form type
             if ($formType === 'cf7') {
                 $preview = $this->generateCF7WPPreview($formId);
+                $rawCode = $this->generateCF7WPRawCode($formId);
             } else {
                 $preview = $this->generateGFWPPreview($formId);
+                $rawCode = $this->generateGFWPRawCode($formId);
             }
 
             wp_send_json_success([
                 'preview' => $preview,
+                'raw_code' => $rawCode,
                 'form_id' => $formId,
                 'form_type' => $formType
             ]);
@@ -1032,6 +1035,27 @@ class FormImportAjax
         } catch (\Exception $e) {
             wp_send_json_error(['message' => 'Preview generation failed: ' . $e->getMessage()]);
         }
+    }
+
+    /**
+     * Generate raw code for existing Contact Form 7 form
+     * 
+     * @since 2.0.0
+     * @param string $formId CF7 form ID
+     * @return string Raw form code
+     */
+    private function generateCF7WPRawCode(string $formId): string
+    {
+        if (!class_exists('WPCF7_ContactForm')) {
+            return 'Contact Form 7 is not available';
+        }
+
+        $form = \WPCF7_ContactForm::get_instance($formId);
+        if (!$form) {
+            return 'Contact Form 7 form not found';
+        }
+
+        return $form->prop('form');
     }
 
     /**
@@ -1110,6 +1134,50 @@ class FormImportAjax
         $html .= '</form>';
         
         return $html;
+    }
+
+    /**
+     * Generate raw code for existing Gravity Forms form
+     * 
+     * @since 2.0.0
+     * @param string $formId GF form ID
+     * @return string Raw form code (human-readable format)
+     */
+    private function generateGFWPRawCode(string $formId): string
+    {
+        if (!class_exists('GFAPI')) {
+            return 'Gravity Forms is not available';
+        }
+
+        $form = \GFAPI::get_form($formId);
+        if (!$form) {
+            return 'Gravity Forms form not found';
+        }
+
+        // Format the GF form as readable code (same format as import preview)
+        $rawCode = "Gravity Forms Form Configuration:\n\n";
+        $rawCode .= "Form Title: " . $form['title'] . "\n\n";
+        $rawCode .= "Fields:\n";
+        
+        if (isset($form['fields']) && is_array($form['fields'])) {
+            foreach ($form['fields'] as $field) {
+                $rawCode .= "- " . $field['label'] . " (" . $field['type'] . ")\n";
+                if (isset($field['choices']) && is_array($field['choices'])) {
+                    foreach ($field['choices'] as $choice) {
+                        $rawCode .= "  * " . $choice['text'] . "\n";
+                    }
+                }
+            }
+        }
+        
+        if (isset($form['notifications']) && is_array($form['notifications'])) {
+            $rawCode .= "\nNotifications:\n";
+            foreach ($form['notifications'] as $notification) {
+                $rawCode .= "- " . $notification['name'] . " (to: " . $notification['to'] . ")\n";
+            }
+        }
+        
+        return $rawCode;
     }
 
     /**
