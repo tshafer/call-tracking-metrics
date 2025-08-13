@@ -277,6 +277,7 @@ class CallTrackingMetrics
         
         // Form confirmation handlers
         add_action('wp_footer', [$this, 'cf7Confirmation'], 10, 1);
+        add_action('wp_footer', [$this, 'gfSessionTracking'], 10, 1);
 
         // Enqueue Tailwind CSS for admin pages (settings, debug, etc.)
         add_action('admin_enqueue_scripts', function($hook) {
@@ -559,6 +560,113 @@ class CallTrackingMetrics
         echo "  }\n";
         echo "}, false);\n";
         echo "</script>";
+        
+        // Add CTM session tracking and duplicate prevention
+        echo "<script type='text/javascript'>\n";
+        echo "// CTM Session Tracking and Duplicate Prevention\n";
+        echo "document.addEventListener('DOMContentLoaded', function() {\n";
+        echo "  // Function to get CTM session ID\n";
+        echo "  function getCTMSessionId() {\n";
+        echo "    try {\n";
+        echo "      if (typeof __ctm !== 'undefined' && __ctm.tracker && __ctm.tracker.getSessionId) {\n";
+        echo "        return __ctm.tracker.getSessionId();\n";
+        echo "      }\n";
+        echo "      // Fallback: try to get from localStorage or generate a unique ID\n";
+        echo "      let sessionId = localStorage.getItem('ctm_session_id');\n";
+        echo "      if (!sessionId) {\n";
+        echo "        sessionId = 'ctm_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);\n";
+        echo "        localStorage.setItem('ctm_session_id', sessionId);\n";
+        echo "      }\n";
+        echo "      return sessionId;\n";
+        echo "    } catch(e) {\n";
+        echo "      console.log('CTM session tracking error:', e);\n";
+        echo "      return null;\n";
+        echo "    }\n";
+        echo "  }\n";
+        echo "  \n";
+        echo "  // Add session ID to all CF7 forms\n";
+        echo "  const cf7Forms = document.querySelectorAll('.wpcf7-form');\n";
+        echo "  cf7Forms.forEach(function(form) {\n";
+        echo "    const sessionId = getCTMSessionId();\n";
+        echo "    if (sessionId) {\n";
+        echo "      // Add hidden input for session ID\n";
+        echo "      let sessionInput = form.querySelector('input[name=\"ctm_session_id\"]');\n";
+        echo "      if (!sessionInput) {\n";
+        echo "        sessionInput = document.createElement('input');\n";
+        echo "        sessionInput.type = 'hidden';\n";
+        echo "        sessionInput.name = 'ctm_session_id';\n";
+        echo "        form.appendChild(sessionInput);\n";
+        echo "      }\n";
+        echo "      sessionInput.value = sessionId;\n";
+        echo "      \n";
+        echo "      // Set cookie for server-side access\n";
+        echo "      document.cookie = 'ctm_session_id=' + sessionId + '; path=/; max-age=3600';\n";
+        echo "    }\n";
+        echo "  });\n";
+        echo "});\n";
+        echo "</script>";
+    }
+    
+    /**
+     * Output Gravity Forms session tracking JavaScript
+     * 
+     * Injects JavaScript code that tracks GF form submissions
+     * for duplicate prevention using CTM session IDs.
+     * 
+     * @since 2.0.0
+     * @return void
+     */
+    public function gfSessionTracking(): void
+    {
+        // Only add if Gravity Forms is active
+        if (!$this->gfActive()) {
+            return;
+        }
+        
+        // Add CTM session tracking and duplicate prevention for Gravity Forms
+        echo "<script type='text/javascript'>\n";
+        echo "// CTM Session Tracking for Gravity Forms\n";
+        echo "document.addEventListener('DOMContentLoaded', function() {\n";
+        echo "  // Function to get CTM session ID\n";
+        echo "  function getCTMSessionId() {\n";
+        echo "    try {\n";
+        echo "      if (typeof __ctm !== 'undefined' && __ctm.tracker && __ctm.tracker.getSessionId) {\n";
+        echo "        return __ctm.tracker.getSessionId();\n";
+        echo "      }\n";
+        echo "      // Fallback: try to get from localStorage or generate a unique ID\n";
+        echo "      let sessionId = localStorage.getItem('ctm_session_id');\n";
+        echo "      if (!sessionId) {\n";
+        echo "        sessionId = 'ctm_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);\n";
+        echo "        localStorage.setItem('ctm_session_id', sessionId);\n";
+        echo "      }\n";
+        echo "      return sessionId;\n";
+        echo "    } catch(e) {\n";
+        echo "      console.log('CTM session tracking error:', e);\n";
+        echo "      return null;\n";
+        echo "    }\n";
+        echo "  }\n";
+        echo "  \n";
+        echo "  // Add session ID to all Gravity Forms\n";
+        echo "  const gfForms = document.querySelectorAll('.gform_wrapper form');\n";
+        echo "  gfForms.forEach(function(form) {\n";
+        echo "    const sessionId = getCTMSessionId();\n";
+        echo "    if (sessionId) {\n";
+        echo "      // Add hidden input for session ID\n";
+        echo "      let sessionInput = form.querySelector('input[name=\"ctm_session_id\"]');\n";
+        echo "      if (!sessionInput) {\n";
+        echo "        sessionInput = document.createElement('input');\n";
+        echo "        sessionInput.type = 'hidden';\n";
+        echo "        sessionInput.name = 'ctm_session_id';\n";
+        echo "        form.appendChild(sessionInput);\n";
+        echo "      }\n";
+        echo "      sessionInput.value = sessionId;\n";
+        echo "      \n";
+        echo "      // Set cookie for server-side access\n";
+        echo "      document.cookie = 'ctm_session_id=' + sessionId + '; path=/; max-age=3600';\n";
+        echo "    }\n";
+        echo "  });\n";
+        echo "});\n";
+        echo "</script>";
     }
 
     /**
@@ -576,6 +684,14 @@ class CallTrackingMetrics
     {
         // Don't process if form submission is aborted
         if (true === $abort) {
+            return;
+        }
+        
+        // Check for duplicate submission prevention
+        $duplicatePrevention = new \CTM\Service\DuplicatePreventionService();
+        if ($duplicatePrevention->isEnabled() && $duplicatePrevention->isDuplicateSubmission($form->id(), 'cf7')) {
+            // This is a duplicate submission, abort it
+            $abort = true;
             return;
         }
         
@@ -686,6 +802,14 @@ class CallTrackingMetrics
      */
     public function submitGF($entry, $form): void
     {
+        // Check for duplicate submission prevention
+        $duplicatePrevention = new \CTM\Service\DuplicatePreventionService();
+        if ($duplicatePrevention->isEnabled() && $duplicatePrevention->isDuplicateSubmission($form['id'], 'gf')) {
+            // This is a duplicate submission, log it but don't process
+            $this->logInternal('GF Duplicate Submission Prevented: Form ID ' . $form['id'], 'info');
+            return;
+        }
+        
         // Set error handler to prevent fatal errors
         $original_error_handler = set_error_handler(function($severity, $message, $file, $line) {
             if (!(error_reporting() & $severity)) {

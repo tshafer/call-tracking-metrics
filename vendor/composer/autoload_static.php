@@ -19,8 +19,6 @@ class ComposerStaticInit8e582eeff70d714acd719ae3332a1b48
         '06a34129a50df3d9257ee706cf3c875b' => __DIR__ . '/..' . '/illuminate/filesystem/functions.php',
         '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
         'f598d06aa772fa33d905e87be6398fb1' => __DIR__ . '/..' . '/symfony/polyfill-intl-idn/bootstrap.php',
-        'c72349b1fe8d0deeedd3a52e8aa814d8' => __DIR__ . '/..' . '/mockery/mockery/library/helpers.php',
-        'ce9671a430e4846b44e1c68c7611f9f5' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery.php',
         '6124b4c8570aa390c21fafd04a26c69f' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/deep_copy.php',
         '9b38cf48e83f5d8f60375221cd213eee' => __DIR__ . '/..' . '/phpstan/phpstan/bootstrap.php',
         '051bafe20e2674435a162870efa2d2a7' => __DIR__ . '/..' . '/brain/monkey/inc/api.php',
@@ -60,10 +58,6 @@ class ComposerStaticInit8e582eeff70d714acd719ae3332a1b48
             'Psr\\Container\\' => 14,
             'Psr\\Clock\\' => 10,
             'PhpParser\\' => 10,
-        ),
-        'M' => 
-        array (
-            'Mockery\\' => 8,
         ),
         'I' => 
         array (
@@ -196,10 +190,6 @@ class ComposerStaticInit8e582eeff70d714acd719ae3332a1b48
         array (
             0 => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser',
         ),
-        'Mockery\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/mockery/mockery/library/Mockery',
-        ),
         'Illuminate\\Support\\' => 
         array (
             0 => __DIR__ . '/..' . '/illuminate/support',
@@ -233,7 +223,7 @@ class ComposerStaticInit8e582eeff70d714acd719ae3332a1b48
         ),
         'Doctrine\\Inflector\\' => 
         array (
-            0 => __DIR__ . '/..' . '/doctrine/inflector/lib/Doctrine/Inflector',
+            0 => __DIR__ . '/..' . '/doctrine/inflector/src',
         ),
         'DeepCopy\\' => 
         array (
@@ -258,6 +248,16 @@ class ComposerStaticInit8e582eeff70d714acd719ae3332a1b48
         'Brain\\Monkey\\' => 
         array (
             0 => __DIR__ . '/..' . '/brain/monkey/src',
+        ),
+    );
+
+    public static $prefixesPsr0 = array (
+        'M' => 
+        array (
+            'Mockery' => 
+            array (
+                0 => __DIR__ . '/..' . '/mockery/mockery/library',
+            ),
         ),
     );
 
@@ -1033,6 +1033,7 @@ class ComposerStaticInit8e582eeff70d714acd719ae3332a1b48
         'PHPUnit\\TextUI\\CliArguments\\Exception' => __DIR__ . '/..' . '/phpunit/phpunit/src/TextUI/Configuration/Cli/Exception.php',
         'PHPUnit\\TextUI\\CliArguments\\XmlConfigurationFileFinder' => __DIR__ . '/..' . '/phpunit/phpunit/src/TextUI/Configuration/Cli/XmlConfigurationFileFinder.php',
         'PHPUnit\\TextUI\\Command\\AtLeastVersionCommand' => __DIR__ . '/..' . '/phpunit/phpunit/src/TextUI/Command/Commands/AtLeastVersionCommand.php',
+        'PHPUnit\\TextUI\\Command\\CheckPhpConfigurationCommand' => __DIR__ . '/..' . '/phpunit/phpunit/src/TextUI/Command/Commands/CheckPhpConfigurationCommand.php',
         'PHPUnit\\TextUI\\Command\\Command' => __DIR__ . '/..' . '/phpunit/phpunit/src/TextUI/Command/Command.php',
         'PHPUnit\\TextUI\\Command\\GenerateConfigurationCommand' => __DIR__ . '/..' . '/phpunit/phpunit/src/TextUI/Command/Commands/GenerateConfigurationCommand.php',
         'PHPUnit\\TextUI\\Command\\ListGroupsCommand' => __DIR__ . '/..' . '/phpunit/phpunit/src/TextUI/Command/Commands/ListGroupsCommand.php',
@@ -1529,6 +1530,7 @@ class ComposerStaticInit8e582eeff70d714acd719ae3332a1b48
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInit8e582eeff70d714acd719ae3332a1b48::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInit8e582eeff70d714acd719ae3332a1b48::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInit8e582eeff70d714acd719ae3332a1b48::$prefixesPsr0;
             $loader->classMap = ComposerStaticInit8e582eeff70d714acd719ae3332a1b48::$classMap;
 
         }, null, ClassLoader::class);

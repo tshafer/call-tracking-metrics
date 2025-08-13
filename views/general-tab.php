@@ -182,6 +182,38 @@ $apiSecret = $apiSecret ?? '';
                     <label for="ctm_dashboard_enabled" class="text-gray-700 select-none cursor-pointer font-medium"><?php _e('Enable Dashboard Widget', 'call-tracking-metrics'); ?></label>
                 </div>
             </div>
+            
+            <!-- Duplicate Prevention Section -->
+            <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700"><?php _e('Duplicate Prevention', 'call-tracking-metrics'); ?></h2>
+                <p class="text-gray-600 text-sm mb-4"><?php _e('Prevent duplicate form submissions using CTM session tracking and IP-based fallback.', 'call-tracking-metrics'); ?></p>
+                
+                <div class="flex items-center gap-2 mb-3">
+                    <input type="checkbox" id="ctm_duplicate_prevention_enabled" name="ctm_duplicate_prevention_enabled" value="1" class="mr-2" <?= checked(get_option('ctm_duplicate_prevention_enabled', 1), 1, false) ?>>
+                    <label for="ctm_duplicate_prevention_enabled" class="text-gray-700 select-none cursor-pointer font-medium"><?php _e('Enable duplicate submission prevention', 'call-tracking-metrics'); ?></label>
+                </div>
+                
+                <div class="ml-6 space-y-3">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="ctm_duplicate_prevention_use_session" name="ctm_duplicate_prevention_use_session" value="1" class="mr-2" <?= checked(get_option('ctm_duplicate_prevention_use_session', 1), 1, false) ?>>
+                        <label for="ctm_duplicate_prevention_use_session" class="text-gray-700 select-none cursor-pointer text-sm"><?php _e('Use CTM session ID for duplicate prevention', 'call-tracking-metrics'); ?></label>
+                    </div>
+                    
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="ctm_duplicate_prevention_fallback_ip" name="ctm_duplicate_prevention_fallback_ip" value="1" class="mr-2" <?= checked(get_option('ctm_duplicate_prevention_fallback_ip', 1), 1, false) ?>>
+                        <label for="ctm_duplicate_prevention_fallback_ip" class="text-gray-700 select-none cursor-pointer text-sm"><?php _e('Fallback to IP-based prevention if session ID unavailable', 'call-tracking-metrics'); ?></label>
+                    </div>
+                    
+                    <div class="flex items-center gap-2">
+                        <label for="ctm_duplicate_prevention_expiration" class="text-gray-700 text-sm"><?php _e('Prevention duration (seconds):', 'call-tracking-metrics'); ?></label>
+                        <input type="number" id="ctm_duplicate_prevention_expiration" name="ctm_duplicate_prevention_expiration" value="<?= esc_attr(get_option('ctm_duplicate_prevention_expiration', 60)) ?>" min="30" max="300" class="w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+                
+                <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+                    <strong><?php _e('How it works:', 'call-tracking-metrics'); ?></strong> <?php _e('When a form is submitted, a unique key is created using the CTM session ID and form ID. If the same session/form combination is submitted again within the specified time period, the duplicate submission is blocked. If no CTM session ID is available, the system falls back to IP-based prevention.', 'call-tracking-metrics'); ?>
+                </div>
+            </div>
             <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
                 <h2 class="text-xl font-semibold mb-4 text-gray-700"><?php _e('Integrations', 'call-tracking-metrics'); ?></h2>
                 

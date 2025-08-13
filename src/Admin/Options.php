@@ -118,6 +118,28 @@ class Options
         register_setting("call-tracking-metrics", "ctm_api_cf7_logs");
         register_setting("call-tracking-metrics", "ctm_api_gf_logs");
         
+        // Duplicate Prevention Settings
+        register_setting("call-tracking-metrics", "ctm_duplicate_prevention_enabled", [
+            'type' => 'boolean',
+            'default' => true,
+            'sanitize_callback' => 'rest_sanitize_boolean'
+        ]);
+        register_setting("call-tracking-metrics", "ctm_duplicate_prevention_expiration", [
+            'type' => 'integer',
+            'default' => 60,
+            'sanitize_callback' => 'intval'
+        ]);
+        register_setting("call-tracking-metrics", "ctm_duplicate_prevention_use_session", [
+            'type' => 'boolean',
+            'default' => true,
+            'sanitize_callback' => 'rest_sanitize_boolean'
+        ]);
+        register_setting("call-tracking-metrics", "ctm_duplicate_prevention_fallback_ip", [
+            'type' => 'boolean',
+            'default' => true,
+            'sanitize_callback' => 'rest_sanitize_boolean'
+        ]);
+        
         // Log Size Limit Settings
         register_setting("call-tracking-metrics", "ctm_max_log_entries_per_day", [
             'type' => 'integer',
@@ -521,6 +543,19 @@ class Options
         $autoInjectTracking = isset($_POST['ctm_auto_inject_tracking_script']) ? 1 : 0;
         $debugEnabled = isset($_POST['ctm_debug_enabled']) ? 1 : 0;
         
+        // Duplicate Prevention Settings
+        $duplicatePreventionEnabled = isset($_POST['ctm_duplicate_prevention_enabled']) ? 1 : 0;
+        $duplicatePreventionExpiration = isset($_POST['ctm_duplicate_prevention_expiration']) ? intval($_POST['ctm_duplicate_prevention_expiration']) : 60;
+        $duplicatePreventionUseSession = isset($_POST['ctm_duplicate_prevention_use_session']) ? 1 : 0;
+        $duplicatePreventionFallbackIp = isset($_POST['ctm_duplicate_prevention_fallback_ip']) ? 1 : 0;
+        
+        // Validate expiration time
+        if ($duplicatePreventionExpiration < 30) {
+            $duplicatePreventionExpiration = 30;
+        } elseif ($duplicatePreventionExpiration > 300) {
+            $duplicatePreventionExpiration = 300;
+        }
+        
         // Auto-disable integrations if required plugins are not available
         $cf7_plugin_active = function_exists('is_plugin_active') ? is_plugin_active('contact-form-7/wp-contact-form-7.php') : false;
         if (!$cf7_plugin_active && !class_exists('WPCF7_ContactForm') && !function_exists('wpcf7_contact_form')) {
@@ -580,6 +615,12 @@ class Options
         update_option('ctm_dashboard_enabled', $dashboardEnabled);
         update_option('ctm_auto_inject_tracking_script', $autoInjectTracking);
         update_option('ctm_debug_enabled', $debugEnabled);
+        
+        // Save duplicate prevention settings
+        update_option('ctm_duplicate_prevention_enabled', $duplicatePreventionEnabled);
+        update_option('ctm_duplicate_prevention_expiration', $duplicatePreventionExpiration);
+        update_option('ctm_duplicate_prevention_use_session', $duplicatePreventionUseSession);
+        update_option('ctm_duplicate_prevention_fallback_ip', $duplicatePreventionFallbackIp);
         
         // Fetch tracking script from API if new API credentials were provided
         if (isset($_POST['ctm_api_key']) && isset($_POST['ctm_api_secret']) && !empty($apiKey) && !empty($apiSecret)) {

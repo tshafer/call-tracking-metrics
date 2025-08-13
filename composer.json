@@ -25,10 +25,12 @@
     },
     "require-dev": {
       "phpunit/phpunit": "^10.0",
-      "brain/monkey": "^2.6",
-        "phpstan/phpstan": "2.1.x-dev",
-        "shipmonk/dead-code-detector": "dev-master"
+      "brain/monkey": "2.6.2",
+      "mockery/mockery": "1.4.4",
+      "phpstan/phpstan": "2.1.x-dev",
+      "shipmonk/dead-code-detector": "dev-master"
     },
     "license": "GPL-2.0-or-later",
-    "minimum-stability": "dev"
+    "minimum-stability": "stable",
+    "prefer-stable": true
 }
