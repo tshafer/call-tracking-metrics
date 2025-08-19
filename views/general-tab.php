@@ -185,7 +185,18 @@ $apiSecret = $apiSecret ?? '';
                     <input type="checkbox" id="ctm_auto_inject_tracking_script" name="ctm_auto_inject_tracking_script" value="1" class="mr-2" <?= checked(get_option('ctm_auto_inject_tracking_script'), 1, false) ?>>
                     <label for="ctm_auto_inject_tracking_script" class="text-gray-700 select-none cursor-pointer font-medium"><?php _e('Auto-inject tracking script into site <head>', 'call-tracking-metrics'); ?></label>
                 </div>
-                <p class="text-gray-500 text-xs mt-1 ml-6"><?php _e('If enabled, the tracking script above will be automatically inserted into your site\'s <head> on every page.', 'call-tracking-metrics'); ?></p>                
+                <p class="text-gray-500 text-xs mt-1 ml-6"><?php _e('If enabled, the tracking script above will be automatically inserted into your site\'s <head> on every page.', 'call-tracking-metrics'); ?></p>
+                
+                <?php if (get_option('ctm_debug_enabled')): ?>
+                    <!-- Debug: Test Duplicate Prevention -->
+                    <div class="mt-3 p-3 bg-green-50 border border-green-200 rounded text-xs text-green-800">
+                        <strong><?php _e('Debug: Test Duplicate Prevention', 'call-tracking-metrics'); ?></strong><br>
+                        <button type="button" onclick="testDuplicatePrevention()" class="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1 rounded mt-2">
+                            <?php _e('Test Duplicate Prevention', 'call-tracking-metrics'); ?>
+                        </button>
+                        <div id="duplicate-prevention-test-result" class="mt-2 text-xs"></div>
+                    </div>
+                <?php endif; ?>
             </div>
             <!-- Debug Mode Section -->
             <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
@@ -898,5 +909,51 @@ document.addEventListener('DOMContentLoaded', function() {
                 button.disabled = false;
             });
         }
+    }
+    
+    // Function to test duplicate prevention
+    function testDuplicatePrevention() {
+        const button = event.target;
+        const originalText = button.textContent;
+        button.textContent = 'Testing...';
+        button.disabled = true;
+        
+        const resultDiv = document.getElementById('duplicate-prevention-test-result');
+        resultDiv.innerHTML = 'Testing duplicate prevention...';
+        
+        // Make AJAX call to test duplicate prevention
+        fetch(ajaxurl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'action=ctm_test_duplicate_prevention&nonce=' + ctmGeneralData.nonce
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const result = data.data;
+                let html = '<div class="mt-2 p-2 bg-white border rounded">';
+                html += '<strong>Test Results:</strong><br>';
+                html += `First submission: ${result.first_submission ? 'Blocked (duplicate)' : 'Allowed'}<br>`;
+                html += `Second submission: ${result.second_submission ? 'Blocked (duplicate)' : 'Allowed'}<br>`;
+                html += `Duplicate prevention working: ${result.duplicate_prevention_working ? '✓ YES' : '✗ NO'}<br>`;
+                html += `Session ID: ${result.session_id}<br>`;
+                html += `Form ID: ${result.form_id}<br>`;
+                html += `Settings: ${JSON.stringify(result.settings)}`;
+                html += '</div>';
+                resultDiv.innerHTML = html;
+            } else {
+                resultDiv.innerHTML = '<div class="mt-2 p-2 bg-red-100 border border-red-300 rounded text-red-700">Test failed: ' + (data.data || 'Unknown error') + '</div>';
+            }
+        })
+        .catch(error => {
+            resultDiv.innerHTML = '<div class="mt-2 p-2 bg-red-100 border border-red-300 rounded text-red-700">Error: ' + error.message + '</div>';
+        })
+        .finally(() => {
+            // Reset button state
+            button.textContent = originalText;
+            button.disabled = false;
+        });
     }
 </script>

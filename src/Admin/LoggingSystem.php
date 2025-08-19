@@ -35,6 +35,14 @@ class LoggingSystem
             'memory_peak' => memory_get_peak_usage(true)
         ];
 
+        // Ensure all required keys are present to prevent undefined array key warnings
+        $required_keys = ['timestamp', 'type', 'message', 'context', 'user_id', 'ip_address', 'user_agent', 'memory_usage', 'memory_peak'];
+        foreach ($required_keys as $key) {
+            if (!array_key_exists($key, $log_entry)) {
+                $log_entry[$key] = null;
+            }
+        }
+
         $this->writeToLog($log_entry);
         
         // Auto-cleanup old logs
@@ -56,15 +64,15 @@ class LoggingSystem
         
         // Prepare data for database insertion
         $data = [
-            'timestamp' => $log_entry['timestamp'],
-            'type' => $log_entry['type'],
-            'message' => $log_entry['message'],
+            'timestamp' => $log_entry['timestamp'] ?? null,
+            'type' => $log_entry['type'] ?? null,
+            'message' => $log_entry['message'] ?? null,
             'context' => !empty($log_entry['context']) ? json_encode($log_entry['context']) : null,
-            'user_id' => $log_entry['user_id'] ?: null,
-            'ip_address' => $log_entry['ip_address'] ?: null,
-            'user_agent' => $log_entry['user_agent'] ?: null,
-            'memory_usage' => $log_entry['memory_usage'] ?: null,
-            'memory_peak' => $log_entry['memory_peak'] ?: null,
+            'user_id' => $log_entry['user_id'] ?? null,
+            'ip_address' => $log_entry['ip_address'] ?? null,
+            'user_agent' => $log_entry['user_agent'] ?? null,
+            'memory_usage' => $log_entry['memory_usage'] ?? null,
+            'memory_peak' => $log_entry['memory_peak'] ?? null,
             'form_type' => $log_entry['form_type'] ?? null,
             'form_id' => $log_entry['form_id'] ?? null
         ];
@@ -876,6 +884,14 @@ class LoggingSystem
             'memory_peak' => memory_get_peak_usage(true)
         ];
 
+        // Ensure all required keys are present to prevent undefined array key warnings
+        $required_keys = ['timestamp', 'type', 'message', 'context', 'user_id', 'ip_address', 'user_agent', 'memory_usage', 'memory_peak'];
+        foreach ($required_keys as $key) {
+            if (!array_key_exists($key, $log_entry)) {
+                $log_entry[$key] = null;
+            }
+        }
+
         // Use database logging instead of file-based logging
         $instance = new self();
         $instance->writeToLog($log_entry);
@@ -1034,14 +1050,21 @@ class LoggingSystem
             'message' => "Form submission processed for {$form_title} (ID: {$form_id})",
             'payload' => $payload,
             'response' => $response,
-            'context' => array_merge($additional_context, [
-                'user_id' => \get_current_user_id(),
-                'ip_address' => $this->getUserIP(),
-                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown',
-                'memory_usage' => memory_get_usage(true),
-                'memory_peak' => memory_get_peak_usage(true)
-            ])
+            'user_id' => \get_current_user_id(),
+            'ip_address' => $this->getUserIP(),
+            'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown',
+            'memory_usage' => memory_get_usage(true),
+            'memory_peak' => memory_get_peak_usage(true),
+            'context' => $additional_context
         ];
+
+        // Ensure all required keys are present to prevent undefined array key warnings
+        $required_keys = ['timestamp', 'type', 'message', 'context', 'user_id', 'ip_address', 'user_agent', 'memory_usage', 'memory_peak', 'form_type', 'form_id'];
+        foreach ($required_keys as $key) {
+            if (!array_key_exists($key, $log_entry)) {
+                $log_entry[$key] = null;
+            }
+        }
 
         $this->writeToLog($log_entry);
         

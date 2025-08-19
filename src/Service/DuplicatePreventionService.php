@@ -20,7 +20,7 @@ class DuplicatePreventionService
      * @since 2.0.0
      * @var int
      */
-    private const DEFAULT_EXPIRATION = 60; // 1 minute
+    private const DEFAULT_EXPIRATION = 604800; // 7 days (604,800 seconds)
 
     /**
      * Check if a form submission is a duplicate
@@ -33,24 +33,69 @@ class DuplicatePreventionService
      */
     public function isDuplicateSubmission(string $formId, string $formType, int $expirationSeconds = self::DEFAULT_EXPIRATION): bool
     {
-        $ctmSessionId = $this->getCTMSessionId();
-        
-        if (empty($ctmSessionId)) {
-            // If we can't get a CTM session ID, fall back to IP-based prevention
-            return $this->isDuplicateByIP($formId, $formType, $expirationSeconds);
+        try {
+                    // Debug logging disabled to prevent white screen
+        // if (defined('WP_DEBUG') && WP_DEBUG) {
+        //     error_log("CTM Debug: Checking duplicate submission for form {$formId} ({$formType})");
+        // }
+            
+            $ctmSessionId = $this->getCTMSessionId();
+            
+            if (empty($ctmSessionId)) {
+                // If we can't get a CTM session ID, fall back to IP-based prevention
+                // if (defined('WP_DEBUG') && WP_DEBUG) {
+                //     error_log("CTM Debug: No CTM session ID, falling back to IP-based prevention");
+                // }
+                return $this->isDuplicateByIP($formId, $formType, $expirationSeconds);
+            }
+            
+            // if (defined('WP_DEBUG') && WP_DEBUG) {
+            //     error_log("CTM Debug: Using CTM session ID: " . substr($ctmSessionId, 0, 10) . "...");
+            // }
+            
+            $transientKey = $this->generateTransientKey($ctmSessionId, $formId, $formType);
+            // error_log("CTM Debug: Generated transient key: $transientKey");
+            
+            $existingSubmission = get_transient($transientKey);
+            // if (defined('WP_DEBUG') && WP_DEBUG) {
+            //     error_log("CTM Debug: get_transient result for key '$transientKey': " . ($existingSubmission !== false ? 'found' : 'not found'));
+            // }
+            
+            if ($existingSubmission !== false) {
+                // if (defined('WP_DEBUG') && WP_DEBUG) {
+                //     error_log("CTM Debug: Duplicate submission detected for key: " . substr($transientKey, 0, 20) . "...");
+                // }
+                return true; // This is a duplicate
+            }
+            
+            // Set the transient to prevent future duplicates
+            $setResult = set_transient($transientKey, time(), $expirationSeconds);
+            // if (defined('WP_DEBUG') && WP_DEBUG) {
+            //     error_log("CTM Debug: Set transient result: " . ($setResult ? 'success' : 'failed'));
+            //     error_log("CTM Debug: Transient expiration set to: {$expirationSeconds} seconds");
+            // }
+            
+            // Debug logging disabled to prevent white screen issues
+            // if ($setResult && defined('WP_DEBUG') && WP_DEBUG) {
+            //     $verifyTransient = get_transient($transientKey);
+            //     error_log("CTM Debug: Immediate verification - get_transient for key '$transientKey': " . var_export($verifyTransient, true));
+            //     
+            //     $optionKey = '_transient_' . $transientKey;
+            //     $optionValue = get_option($optionKey);
+            //     error_log("CTM Debug: Direct option check for '$optionKey': " . var_export($optionValue, true));
+            //     
+            //     $timeoutKey = '_transient_timeout_' . $transientKey;
+            //     $timeoutValue = get_option($timeoutKey);
+            //     error_log("CTM Debug: Transient timeout for '$timeoutKey': " . var_export($timeoutValue, true));
+            // }
+            
+            return false; // Not a duplicate
+            
+        } catch (\Exception $e) {
+            // Log the error and fall back to allowing the submission
+            // error_log('CTM Duplicate Prevention Error: ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine());
+            return false; // Allow submission if duplicate prevention fails
         }
-        
-        $transientKey = $this->generateTransientKey($ctmSessionId, $formId, $formType);
-        $existingSubmission = get_transient($transientKey);
-        
-        if ($existingSubmission !== false) {
-            return true; // This is a duplicate
-        }
-        
-        // Set the transient to prevent future duplicates
-        set_transient($transientKey, time(), $expirationSeconds);
-        
-        return false; // Not a duplicate
     }
     
     /**
@@ -59,7 +104,7 @@ class DuplicatePreventionService
      * @since 2.0.0
      * @return string|null The CTM session ID or null if not available
      */
-    private function getCTMSessionId(): ?string
+    public function getCTMSessionId(): ?string
     {
         // Try to get from cookies first (most reliable)
         if (isset($_COOKIE['ctm_session_id'])) {
@@ -90,33 +135,66 @@ class DuplicatePreventionService
      */
     private function isDuplicateByIP(string $formId, string $formType, int $expirationSeconds): bool
     {
-        $ipAddress = $this->getClientIP();
-        $transientKey = $this->generateIPTransientKey($ipAddress, $formId, $formType);
-        
-        $existingSubmission = get_transient($transientKey);
-        
-        if ($existingSubmission !== false) {
-            return true; // This is a duplicate
+        try {
+            // Debug logging disabled to prevent white screen
+            // if (defined('WP_DEBUG') && WP_DEBUG) {
+            //     error_log("CTM Debug: Using IP-based duplicate prevention for form {$formId} ({$formType})");
+            // }
+            
+            $ipAddress = $this->getClientIP();
+            // Debug logging disabled to prevent white screen
+            // if (defined('WP_DEBUG') && WP_DEBUG) {
+            //     error_log("CTM Debug: Client IP: {$ipAddress}");
+            // }
+            
+            $transientKey = $this->generateIPTransientKey($ipAddress, $formId, $formType);
+            // Debug logging disabled to prevent white screen
+            // if (defined('WP_DEBUG') && WP_DEBUG) {
+            //     error_log("CTM Debug: isDuplicateByIP - Generated IP transient key: $transientKey");
+            // }
+            
+            $existingSubmission = get_transient($transientKey);
+            // Debug logging disabled to prevent white screen
+            // if (defined('WP_DEBUG') && WP_DEBUG) {
+            //     error_log("CTM Debug: isDuplicateByIP - get_transient result for IP key '$transientKey': " . ($existingSubmission !== false ? 'found' : 'not found'));
+            // }
+            
+            if ($existingSubmission !== false) {
+                // Debug logging disabled to prevent white screen
+                // if (defined('WP_DEBUG') && WP_DEBUG) {
+                //     error_log("CTM Debug: IP-based duplicate detected for key: " . substr($transientKey, 0, 20) . "...");
+                // }
+                return true; // This is a duplicate
+            }
+            
+            // Set the transient to prevent future duplicates
+            $setResult = set_transient($transientKey, time(), $expirationSeconds);
+            // Debug logging disabled to prevent white screen
+            // if (defined('WP_DEBUG') && WP_DEBUG) {
+            //     error_log("CTM Debug: IP transient set result: " . ($setResult ? 'success' : 'failed'));
+            // }
+            
+            return false; // Not a duplicate
+            
+        } catch (\Exception $e) {
+            // Log the error and fall back to allowing the submission
+            // error_log('CTM IP Duplicate Prevention Error: ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine());
+            return false; // Allow submission if IP-based prevention fails
         }
-        
-        // Set the transient to prevent future duplicates
-        set_transient($transientKey, time(), $expirationSeconds);
-        
-        return false; // Not a duplicate
     }
     
     /**
      * Generate a transient key for CTM session-based duplicate prevention
      * 
      * @since 2.0.0
-     * @param string $ctmSessionId The CTM session ID
+     * @param string $sessionId The CTM session ID
      * @param string $formId The form ID
      * @param string $formType The form type
      * @return string The transient key
      */
-    private function generateTransientKey(string $ctmSessionId, string $formId, string $formType): string
+    private function generateTransientKey(string $sessionId, string $formId, string $formType): string
     {
-        return 'ctm_duplicate_' . md5($ctmSessionId . '_' . $formId . '_' . $formType);
+        return "ctm_form_submission_{$formId}_{$formType}_{$sessionId}";
     }
     
     /**
@@ -130,7 +208,7 @@ class DuplicatePreventionService
      */
     private function generateIPTransientKey(string $ipAddress, string $formId, string $formType): string
     {
-        return 'ctm_duplicate_ip_' . md5($ipAddress . '_' . $formId . '_' . $formType);
+        return "ctm_form_submission_ip_{$formId}_{$formType}_{$ipAddress}";
     }
     
     /**
@@ -152,7 +230,7 @@ class DuplicatePreventionService
         ];
         
         foreach ($ipKeys as $key) {
-            if (!empty($_SERVER[$key])) {
+            if (isset($_SERVER[$key]) && !empty($_SERVER[$key])) {
                 $ip = $_SERVER[$key];
                 
                 // Handle X-Forwarded-For which can contain multiple IPs
@@ -168,7 +246,12 @@ class DuplicatePreventionService
             }
         }
         
-        return $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+        // Safe fallback - check if REMOTE_ADDR exists before using it
+        if (isset($_SERVER['REMOTE_ADDR']) && !empty($_SERVER['REMOTE_ADDR'])) {
+            return $_SERVER['REMOTE_ADDR'];
+        }
+        
+        return '127.0.0.1';
     }
     
     /**
@@ -220,5 +303,17 @@ class DuplicatePreventionService
     {
         $settings = $this->getSettings();
         return $settings['enabled'];
+    }
+
+    private function isDuplicatePreventionEnabled(): bool
+    {
+        $settings = $this->getSettings();
+        return $settings['enabled'];
+    }
+
+    private function shouldUseIPFallback(): bool
+    {
+        $settings = $this->getSettings();
+        return $settings['fallback_to_ip'];
     }
 }

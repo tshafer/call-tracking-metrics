@@ -42,41 +42,16 @@ if (!defined('ABSPATH') && !defined('CTM_TESTING') && php_sapi_name() !== 'cli')
     exit('Direct access forbidden.');
 }
 
-// Set up error handling to prevent blank pages
+// Simple error handling to prevent white screens
 set_error_handler(function($severity, $message, $file, $line) {
     if (!(error_reporting() & $severity)) {
         return;
     }
-    
-    // Try to use internal logging if available
-    if (class_exists('CTM\Admin\LoggingSystem')) {
-        try {
-            $loggingSystem = new CTM\Admin\LoggingSystem();
-            if ($loggingSystem->isDebugEnabled()) {
-                $loggingSystem->logActivity("Plugin Error: $message in $file on line $line", 'error');
-            }
-        } catch (Exception $e) {
-            // Silently fail to avoid server log pollution
-        }
-    }
-    
-    return true;
+    return true; // Let WordPress handle the error
 });
 
-// Set up exception handler
+// Simple exception handler
 set_exception_handler(function($exception) {
-    // Try to use internal logging if available
-    if (class_exists('CTM\Admin\LoggingSystem')) {
-        try {
-            $loggingSystem = new CTM\Admin\LoggingSystem();
-            if ($loggingSystem->isDebugEnabled()) {
-                $loggingSystem->logActivity("Plugin Exception: " . $exception->getMessage() . " in " . $exception->getFile() . " on line " . $exception->getLine(), 'error');
-            }
-        } catch (Exception $e) {
-            // Silently fail to avoid server log pollution
-        }
-    }
-    
     if (is_admin()) {
         echo '<div class="wrap"><div class="notice notice-error"><p>Plugin Error: Call Tracking Metrics encountered an error. Please check the error logs or contact support.</p></div></div>';
     }
@@ -564,14 +539,28 @@ class CallTrackingMetrics
      */
     public function formInit(): void
     {
+        // TEMPORARY LOGGING - Remove after debugging
+        error_log("CTM DEBUG: formInit called at " . date('Y-m-d H:i:s'));
+        
         // Initialize Contact Form 7 integration if enabled and active
         if ($this->cf7Enabled() && $this->cf7Active()) {
+            error_log("CTM DEBUG: Adding CF7 hook for form submission");
             add_action('wpcf7_before_send_mail', [$this, 'submitCF7'], 10, 2);
+        } else {
+            error_log("CTM DEBUG: CF7 not enabled or not active");
         }
         
         // Initialize Gravity Forms integration if enabled and active
         if ($this->gfEnabled() && $this->gfActive()) {
+            error_log("CTM DEBUG: Adding GF hooks for form submission");
+            // Use validation hook to prevent duplicate submissions before processing
+            add_filter('gform_validation', [$this, 'validateGFDuplicate'], 10, 1);
+            // Keep the after submission hook for processing successful submissions
             add_action('gform_after_submission', [$this, 'submitGF'], 10, 2);
+            // Customize validation message for duplicate submissions
+            add_filter('gform_validation_message', [$this, 'customizeGFValidationMessage'], 10, 2);
+        } else {
+            error_log("CTM DEBUG: GF not enabled or not active");
         }
     }
 
@@ -730,15 +719,31 @@ class CallTrackingMetrics
      */
     public function submitCF7($form, &$abort): void
     {
+        // TEMPORARY LOGGING - Remove after debugging
+        error_log("CTM DEBUG: submitCF7 called for form ID: " . $form->id() . " at " . date('Y-m-d H:i:s'));
+        
         // Don't process if form submission is aborted
         if (true === $abort) {
+            error_log("CTM DEBUG: CF7 form submission already aborted");
             return;
         }
         
         // Check for duplicate submission prevention
         $duplicatePrevention = new \CTM\Service\DuplicatePreventionService();
-        if ($duplicatePrevention->isEnabled() && $duplicatePrevention->isDuplicateSubmission($form->id(), 'cf7')) {
+        $isDuplicate = $duplicatePrevention->isDuplicateSubmission($form->id(), 'cf7');
+        error_log("CTM DEBUG: CF7 Duplicate prevention check result: " . ($isDuplicate ? 'DUPLICATE' : 'NOT duplicate'));
+        
+        if ($duplicatePrevention->isEnabled() && $isDuplicate) {
             // This is a duplicate submission, abort it
+            error_log("CTM DEBUG: CF7 Duplicate Submission Prevented: Form ID " . $form->id());
+            
+            // Provide user feedback for duplicate submission
+            if (method_exists($form, 'set_invalid_fields')) {
+                $form->set_invalid_fields([['name' => '', 'reason' => 'You have already submitted this form. Please wait before submitting again.']]);
+            } elseif (method_exists($form, 'set_invalid_field')) {
+                $form->set_invalid_field('', 'You have already submitted this form. Please wait before submitting again.');
+            }
+            
             $abort = true;
             return;
         }
@@ -838,6 +843,74 @@ class CallTrackingMetrics
     }
 
     /**
+     * Validate Gravity Forms submission for duplicate prevention
+     * 
+     * This runs BEFORE the form is processed, allowing us to prevent
+     * duplicate submissions and show proper error messages.
+     * 
+     * @since 2.0.0
+     * @param array $validation_result The validation result array
+     * @return array The modified validation result
+     */
+    public function validateGFDuplicate($validation_result): array
+    {
+        // Only check if validation hasn't already failed
+        if ($validation_result['is_valid']) {
+            $form = $validation_result['form'];
+            $form_id = $form['id'];
+            
+            error_log("CTM DEBUG: validateGFDuplicate called for form ID: " . $form_id);
+            
+            // Check for duplicate submission prevention
+            $duplicatePrevention = new \CTM\Service\DuplicatePreventionService();
+            if ($duplicatePrevention->isEnabled() && $duplicatePrevention->isDuplicateSubmission($form_id, 'gf')) {
+                error_log("CTM DEBUG: GF Duplicate Submission Prevented in validation: Form ID " . $form_id);
+                
+                // Mark validation as failed
+                $validation_result['is_valid'] = false;
+                
+                // Set a clear validation message
+                $validation_result['form']['validationSummary'] = 'Duplicate submission detected. You have already submitted this form. Please wait before submitting again.';
+                
+                // Add validation error to the first field to make it more visible
+                if (!empty($form['fields'])) {
+                    $firstField = $form['fields'][0];
+                    $fieldId = $firstField->id;
+                    
+                    // Add field-specific validation error
+                    if (!isset($validation_result['form']['validationSummary'])) {
+                        $validation_result['form']['validationSummary'] = '';
+                    }
+                    $validation_result['form']['validationSummary'] .= ' Duplicate submission detected.';
+                }
+            }
+        }
+        
+        return $validation_result;
+    }
+
+    /**
+     * Customize Gravity Forms validation message for duplicate submissions
+     * 
+     * @since 2.0.0
+     * @param string $message The validation message
+     * @param array $form The form configuration
+     * @return string The customized validation message
+     */
+    public function customizeGFValidationMessage($message, $form): string
+    {
+        // Check if this form has a duplicate submission validation error
+        if (isset($form['validationSummary']) && strpos($form['validationSummary'], 'Duplicate submission detected') !== false) {
+            return '<div class="gform_validation_errors" style="background: #fef7f7; border: 1px solid #dc3232; border-radius: 4px; padding: 15px; margin: 15px 0; text-align: center;">
+                <p style="color: #dc3232; font-size: 16px; margin: 0; font-weight: bold;">⚠️ Duplicate Submission</p>
+                <p style="color: #333; font-size: 14px; margin: 8px 0 0 0;">You have already submitted this form. Please wait before submitting again.</p>
+            </div>';
+        }
+        
+        return $message;
+    }
+
+    /**
      * Handle Gravity Forms submission and send data to CTM API
      * 
      * Processes GF form submissions, formats the data, and sends it
@@ -850,13 +923,11 @@ class CallTrackingMetrics
      */
     public function submitGF($entry, $form): void
     {
-        // Check for duplicate submission prevention
-        $duplicatePrevention = new \CTM\Service\DuplicatePreventionService();
-        if ($duplicatePrevention->isEnabled() && $duplicatePrevention->isDuplicateSubmission($form['id'], 'gf')) {
-            // This is a duplicate submission, log it but don't process
-            $this->logInternal('GF Duplicate Submission Prevented: Form ID ' . $form['id'], 'info');
-            return;
-        }
+        // TEMPORARY LOGGING - Remove after debugging
+        error_log("CTM DEBUG: submitGF called for form ID: " . $form['id'] . " at " . date('Y-m-d H:i:s'));
+        
+        // Note: Duplicate prevention is now handled in validateGFDuplicate() method
+        // which runs before this method, so we don't need to check here anymore
         
         // Set error handler to prevent fatal errors
         $original_error_handler = set_error_handler(function($severity, $message, $file, $line) {
