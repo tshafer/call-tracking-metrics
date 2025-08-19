@@ -190,7 +190,7 @@ class Options
         
         add_menu_page(
             __('CallTrackingMetrics', 'call-tracking-metrics'),           // Page title
-            __('Call Tracking', 'call-tracking-metrics'),                 // Menu title (shortened)
+            __('CTM', 'call-tracking-metrics'),                           // Menu title (shortened)
             'manage_options',                // Capability required
             'call-tracking-metrics',         // Menu slug
             [$this, 'renderSettingsPage'],   // Callback function
