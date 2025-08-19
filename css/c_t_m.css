@@ -320,3 +320,35 @@
 #wpbody-content .wrap .focus\:border-blue-500:focus {
     border-color: #3b82f6 !important;
 }
+
+/* Fix formatting issue with content boxes overlapping WordPress footer */
+#wpbody-content .wrap .mb-12 {
+    margin-bottom: 3rem !important;
+}
+
+#wpbody-content .wrap .bg-white.rounded-xl.shadow-lg {
+    margin-bottom: 2rem !important;
+}
+
+/* Ensure proper spacing for the last content box */
+#wpbody-content .wrap .bg-gradient-to-r:last-of-type {
+    margin-bottom: 4rem !important;
+}
+
+/* Add bottom padding to the main content wrapper to prevent footer overlap */
+#wpbody-content .wrap {
+    padding-bottom: 2rem !important;
+}
+
+/* Ensure the documentation tab content has proper bottom spacing */
+#wpbody-content .wrap .space-y-8 > div:last-child {
+    margin-bottom: 3rem !important;
+}
+
+/* Hide restricted tabs when API is not connected */
+#wpbody-content .wrap nav a[href*="tab=api"],
+#wpbody-content .wrap nav a[href*="tab=import"],
+#wpbody-content .wrap nav a[href*="tab=forms"],
+#wpbody-content .wrap nav a[href*="tab=debug"] {
+    display: none !important;
+}

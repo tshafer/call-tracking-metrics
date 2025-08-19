@@ -11,6 +11,20 @@ $apiSecret = $apiSecret ?? '';
 <form method="post" action="" class="space-y-6">
     <?php wp_nonce_field('ctm_save_settings', 'ctm_settings_nonce'); ?>
     
+    <?php if (isset($_GET['error']) && $_GET['error'] === 'api_required'): ?>
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div class="flex items-center">
+                <svg class="w-5 h-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.08 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+                <div>
+                    <h3 class="text-sm font-medium text-red-800"><?php _e('API Connection Required', 'call-tracking-metrics'); ?></h3>
+                    <p class="text-sm text-red-700 mt-1"><?php _e('You need to connect your API credentials before accessing that feature. Please enter your API Key and Secret below.', 'call-tracking-metrics'); ?></p>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+    
     <?php if ($apiStatus !== 'connected'): ?>
         <!-- API Connection Only View (Not Connected) -->
         <div class="max-w-4xl mx-auto">
@@ -151,14 +165,17 @@ $apiSecret = $apiSecret ?? '';
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             <!-- Tracking Script Section -->
-            <div class="bg-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm max-w-2xl">
+            <div class="bg-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm max-w-2xl" style="display: block !important; visibility: visible !important;">
                 <label for="ctm_tracking_script" class="text-xl font-semibold mb-4 text-gray-700"><?php _e('Tracking Script', 'call-tracking-metrics'); ?></label>
                 <p class="text-gray-500 text-sm mb-4"><?php _e('This script is automatically fetched from CallTrackingMetrics. You can override it if needed, but we recommend using the auto-fetched version for accuracy.', 'call-tracking-metrics'); ?></p>
                 <div class="flex flex-col md:flex-row md:items-center gap-4 mb-4">
+                    <?php 
+                    $tracking_script = get_option('call_track_account_script');
+                    ?>
                     <textarea id="ctm_tracking_script" name="call_track_account_script" rows="3"
                         class="p-2 block w-full rounded border border-gray-300 focus:ring-blue-500 focus:border-blue-500 transition bg-gray-100 text-gray-700 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed read-only:bg-gray-100 read-only:text-gray-400 read-only:cursor-not-allowed shadow-sm"
                         style="min-height: 60px; font-family: monospace; font-size: 0.97em; resize: vertical;"
-                        readonly><?= esc_textarea(get_option('call_track_account_script')) ?></textarea>
+                        readonly><?= esc_textarea($tracking_script) ?></textarea>
                 </div>
                 <div class="flex items-center gap-2 mt-2">
                     <input type="checkbox" id="ctm_tracking_override_checkbox" class="mr-2">
@@ -168,7 +185,7 @@ $apiSecret = $apiSecret ?? '';
                     <input type="checkbox" id="ctm_auto_inject_tracking_script" name="ctm_auto_inject_tracking_script" value="1" class="mr-2" <?= checked(get_option('ctm_auto_inject_tracking_script'), 1, false) ?>>
                     <label for="ctm_auto_inject_tracking_script" class="text-gray-700 select-none cursor-pointer font-medium"><?php _e('Auto-inject tracking script into site <head>', 'call-tracking-metrics'); ?></label>
                 </div>
-                <p class="text-gray-500 text-xs mt-1 ml-6"><?php _e('If enabled, the tracking script above will be automatically inserted into your site\'s <head> on every page.', 'call-tracking-metrics'); ?></p>
+                <p class="text-gray-500 text-xs mt-1 ml-6"><?php _e('If enabled, the tracking script above will be automatically inserted into your site\'s <head> on every page.', 'call-tracking-metrics'); ?></p>                
             </div>
             <!-- Debug Mode Section -->
             <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
@@ -205,8 +222,8 @@ $apiSecret = $apiSecret ?? '';
                     </div>
                     
                     <div class="flex items-center gap-2">
-                        <label for="ctm_duplicate_prevention_expiration" class="text-gray-700 text-sm"><?php _e('Prevention duration (seconds):', 'call-tracking-metrics'); ?></label>
-                        <input type="number" id="ctm_duplicate_prevention_expiration" name="ctm_duplicate_prevention_expiration" value="<?= esc_attr(get_option('ctm_duplicate_prevention_expiration', 60)) ?>" min="30" max="300" class="w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
+                        <label for="ctm_duplicate_prevention_expiration" class="text-gray-700 text-sm"><?php _e('Prevention duration (days):', 'call-tracking-metrics'); ?></label>
+                        <input type="number" id="ctm_duplicate_prevention_expiration" name="ctm_duplicate_prevention_expiration" value="<?= esc_attr(floor(get_option('ctm_duplicate_prevention_expiration', 604800) / 86400)) ?>" min="1" max="30" class="w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
                     </div>
                 </div>
                 
@@ -805,5 +822,81 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     updateCountdownDisplay();
-});
+    });
+    
+    // Function to force refresh tracking script
+    function forceRefreshTrackingScript() {
+        if (confirm('Force refresh the tracking script from the CTM API? This will fetch the latest script and update the textarea above.')) {
+            // Show loading state
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Refreshing...';
+            button.disabled = true;
+            
+            // Make AJAX call to refresh tracking script
+            fetch(ajaxurl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'action=ctm_refresh_tracking_script&nonce=' + ctmGeneralData.nonce
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update the textarea with the new script
+                    document.getElementById('ctm_tracking_script').value = data.data.script;
+                    alert('Tracking script refreshed successfully!');
+                } else {
+                    alert('Failed to refresh tracking script: ' + (data.data || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                alert('Error refreshing tracking script: ' + error.message);
+            })
+            .finally(() => {
+                // Reset button state
+                button.textContent = originalText;
+                button.disabled = false;
+            });
+        }
+    }
+    
+    // Function to test API connection and fetch tracking script
+    function testApiConnection() {
+        if (confirm('Test API connection and fetch tracking script? This will make API calls to CTM.')) {
+            // Show loading state
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Testing...';
+            button.disabled = true;
+            
+            // Make AJAX call to fetch tracking script
+            fetch(ajaxurl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'action=ctm_fetch_tracking_script&nonce=' + ctmGeneralData.nonce
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update the textarea with the fetched script
+                    document.getElementById('ctm_tracking_script').value = data.data.script;
+                    alert('Success! Tracking script fetched and updated.');
+                } else {
+                    alert('Failed to fetch tracking script: ' + (data.data || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                alert('Error fetching tracking script: ' + error.message);
+            })
+            .finally(() => {
+                // Reset button state
+                button.textContent = originalText;
+                button.disabled = false;
+            });
+        }
+    }
 </script>

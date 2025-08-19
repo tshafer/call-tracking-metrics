@@ -201,6 +201,10 @@ class CallTrackingMetrics
      */
     public function __construct()
     {
+        // Make plugin instance globally accessible
+        global $ctm_plugin;
+        $ctm_plugin = $this;
+        
         // Set up global error handling to prevent white screens
         $this->setupGlobalErrorHandling();
         
@@ -381,6 +385,26 @@ class CallTrackingMetrics
                 true
             );
             
+            // Enqueue admin tab control JS
+            wp_enqueue_script(
+                'ctm-admin-tab-control-js',
+                plugins_url('assets/js/admin-tab-control.js', __FILE__),
+                ['jquery'],
+                '2.0.0',
+                true
+            );
+            
+                        // Localize admin tab control data
+            $apiConnected = $this->adminOptions->isApiConnected();
+            // Debug: Log the API connection status
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('JavaScript localization - apiConnected: ' . ($apiConnected ? 'true' : 'false'), 'debug');
+            }
+            wp_localize_script('ctm-admin-tab-control-js', 'ctmAdminVars', [
+                'apiConnected' => $apiConnected,
+                'ajaxurl' => admin_url('admin-ajax.php'),
+            ]);
+            
             // Localize general tab data
             wp_localize_script('ctm-general-tab-js', 'ctmGeneralData', [
                 'ajaxurl' => admin_url('admin-ajax.php'),
@@ -395,7 +419,7 @@ class CallTrackingMetrics
                 'debug_enabled' => get_option('ctm_debug_enabled', false),
             ]);
             
-            // Add modal styles
+            // Add modal styles and wpfooter positioning fix
             wp_add_inline_style('ctm-tailwind', '
                 body.ctm-modal-open #adminmenumain,
                 body.ctm-modal-open #adminmenuwrap,
@@ -410,6 +434,19 @@ class CallTrackingMetrics
                 }
                 body.ctm-modal-open #ctm-form-logs-modal {
                     z-index: 999999 !important;
+                }
+                
+                /* Fix wpfooter positioning to prevent overlay issues */
+                #wpfooter {
+                    position: relative !important;
+                    bottom: auto !important;
+                    left: auto !important;
+                    right: auto !important;
+                }
+                
+                /* Ensure proper spacing below content */
+                .wrap {
+                    margin-bottom: 60px !important;
                 }
             ');
         });
@@ -667,6 +704,17 @@ class CallTrackingMetrics
         echo "  });\n";
         echo "});\n";
         echo "</script>";
+    }
+
+    /**
+     * Check if API is connected (helper function for views)
+     * 
+     * @since 2.0.0
+     * @return bool True if API is connected
+     */
+    public function ctm_is_api_connected(): bool
+    {
+        return $this->adminOptions->isApiConnected();
     }
 
     /**

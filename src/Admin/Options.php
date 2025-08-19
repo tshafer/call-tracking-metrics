@@ -109,7 +109,11 @@ class Options
         register_setting("call-tracking-metrics", "ctm_api_tracking_enabled");
         register_setting("call-tracking-metrics", "ctm_api_cf7_enabled");
         register_setting("call-tracking-metrics", "ctm_api_gf_enabled");
-        register_setting("call-tracking-metrics", "ctm_auto_inject_tracking_script");
+        register_setting("call-tracking-metrics", "ctm_auto_inject_tracking_script", [
+            'type' => 'boolean',
+            'default' => true,
+            'sanitize_callback' => 'rest_sanitize_boolean'
+        ]);
         
         // Debugging Option
         register_setting("call-tracking-metrics", "ctm_debug_enabled");
@@ -126,7 +130,7 @@ class Options
         ]);
         register_setting("call-tracking-metrics", "ctm_duplicate_prevention_expiration", [
             'type' => 'integer',
-            'default' => 60,
+            'default' => 604800, // 7 days in seconds (7 * 24 * 60 * 60)
             'sanitize_callback' => 'intval'
         ]);
         register_setting("call-tracking-metrics", "ctm_duplicate_prevention_use_session", [
@@ -189,13 +193,13 @@ class Options
         $icon_url = file_exists($logo_path) ? $logo_url : 'dashicons-chart-area';
         
         add_menu_page(
-            __('CallTrackingMetrics', 'call-tracking-metrics'),           // Page title
-            __('CTM', 'call-tracking-metrics'),                           // Menu title (shortened)
-            'manage_options',                // Capability required
-            'call-tracking-metrics',         // Menu slug
-            [$this, 'renderSettingsPage'],   // Callback function
-            $icon_url,                       // Custom icon or fallback
-            30                                // Position (after Posts, before Media)
+            __('CallTrackingMetrics', 'call-tracking-metrics'),    // Page title
+            __('CTM', 'call-tracking-metrics'),                   // Menu title (shortened)
+            'manage_options',                                      // Capability required
+            'call-tracking-metrics',                               // Menu slug
+            [$this, 'renderSettingsPage'],                         // Callback function
+            $icon_url,                                             // Custom icon or fallback
+            30                                                      // Position (after Posts, before Media)
         );
         
         // Add CSS for custom menu icon
@@ -243,6 +247,9 @@ class Options
      */
     public function initialize(): void
     {
+        // Ensure duplicate prevention settings have proper defaults
+        $this->ensureDuplicatePreventionDefaults();
+        
         // Register all AJAX endpoint handlers
         $this->ajaxHandlers->registerHandlers();
 
@@ -270,6 +277,9 @@ class Options
     public function renderSettingsPage(): void
     {
         try {
+            // Ensure duplicate prevention defaults are set before rendering
+            $this->ensureDuplicatePreventionDefaults();
+            
             // Handle form submissions first
             $this->handleFormSubmission();
             
@@ -278,7 +288,7 @@ class Options
             $apiSecret = get_option('ctm_api_secret');
             $apiStatus = 'not_tested';
             
-            // Determine API status without automatic testing to prevent page load delays
+            // Determine API status and ensure tracking script is always available
             // Note: Automatic testing completely disabled to prevent timeout issues
             if ($apiKey && $apiSecret) {
                 // Check if we have a cached connection status
@@ -286,15 +296,33 @@ class Options
                 if ($lastConnectionTest !== false) {
                     $apiStatus = $lastConnectionTest;
                 } else {
-                    // No cache - assume connected if we have credentials and tracking script
+                    // No cache - check tracking script and fetch if needed
                     $trackingScript = get_option('call_track_account_script');
                     if (!empty($trackingScript)) {
                         $apiStatus = 'connected';
                         // Cache the assumed status
                         set_transient('ctm_last_connection_status', 'connected', 5 * 60);
                     } else {
-                        // No tracking script and no cache - default to not_tested
-                        $apiStatus = 'not_tested';
+                        // No tracking script - automatically fetch it
+                        if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                            $this->loggingSystem->logActivity('No tracking script found on page load, automatically fetching from API', 'debug');
+                        }
+                        
+                        $fetchedScript = $this->fetchTrackingScriptFromApi($apiKey, $apiSecret);
+                        if (!empty($fetchedScript)) {
+                            update_option('call_track_account_script', $fetchedScript);
+                            $apiStatus = 'connected';
+                            set_transient('ctm_last_connection_status', 'connected', 5 * 60);
+                            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                                $this->loggingSystem->logActivity('Successfully fetched tracking script on page load', 'debug');
+                            }
+                        } else {
+                            // Failed to fetch - default to not_tested
+                            $apiStatus = 'not_tested';
+                            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                                $this->loggingSystem->logActivity('Failed to fetch tracking script on page load', 'debug');
+                            }
+                        }
                     }
                 }
             }
@@ -351,6 +379,256 @@ class Options
     }
 
     /**
+     * Check if API is connected using the same logic as renderSettingsPage
+     * 
+     * @since 2.0.0
+     * @return bool True if API is connected, false otherwise
+     */
+    public function isApiConnected(): bool
+    {
+        $apiKey = get_option('ctm_api_key');
+        $apiSecret = get_option('ctm_api_secret');
+        
+        // Debug logging
+        if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+            $this->loggingSystem->logActivity('isApiConnected() called - API Key exists: ' . (!empty($apiKey) ? 'yes' : 'no') . ', API Secret exists: ' . (!empty($apiSecret) ? 'yes' : 'no'), 'debug');
+        }
+        
+        if (empty($apiKey) || empty($apiSecret)) {
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('isApiConnected() returning false - missing credentials', 'debug');
+            }
+            return false;
+        }
+        
+        // Check if we have a cached connection status
+        $lastConnectionTest = get_transient('ctm_last_connection_status');
+        if ($lastConnectionTest !== false) {
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('isApiConnected() returning cached status: ' . $lastConnectionTest, 'debug');
+            }
+            return $lastConnectionTest === 'connected';
+        }
+        
+        // No cache - check if we have tracking script, if not try to fetch it
+        $trackingScript = get_option('call_track_account_script');
+        if (empty($trackingScript)) {
+            // Try to fetch the tracking script from the API
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('isApiConnected() - no tracking script, attempting to fetch from API', 'debug');
+            }
+            
+            $trackingScript = $this->fetchTrackingScriptFromApi($apiKey, $apiSecret);
+            if (!empty($trackingScript)) {
+                // Successfully fetched tracking script
+                update_option('call_track_account_script', $trackingScript);
+                set_transient('ctm_last_connection_status', 'connected', 5 * 60);
+                if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                    $this->loggingSystem->logActivity('isApiConnected() returning true - successfully fetched tracking script', 'debug');
+                }
+                return true;
+            }
+        } else {
+            // Already have tracking script
+            set_transient('ctm_last_connection_status', 'connected', 5 * 60);
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('isApiConnected() returning true - has existing tracking script', 'debug');
+            }
+            return true;
+        }
+        
+        if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+            $this->loggingSystem->logActivity('isApiConnected() returning false - could not fetch tracking script', 'debug');
+        }
+        return false;
+    }
+
+    /**
+     * Fetch tracking script from the CTM API
+     * 
+     * @since 2.0.0
+     * @param string $apiKey The API key
+     * @param string $apiSecret The API secret
+     * @return string|null The tracking script or null if failed
+     */
+    private function fetchTrackingScriptFromApi(string $apiKey, string $apiSecret): ?string
+    {
+        try {
+            // Get the API service
+            $apiService = new \CTM\Service\ApiService(\ctm_get_api_url());
+            
+            // Get account info first
+            $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
+            if (!$accountInfo || !isset($accountInfo['account']['id'])) {
+                if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                    $this->loggingSystem->logActivity('fetchTrackingScriptFromApi() - failed to get account info', 'debug');
+                }
+                return null;
+            }
+            
+            $accountId = $accountInfo['account']['id'];
+            
+            // Get tracking script
+            $scripts = $apiService->getTrackingScript($accountId, $apiKey, $apiSecret);
+            
+            // Debug: Log the entire API response to see the structure
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('fetchTrackingScriptFromApi() - API response: ' . json_encode($scripts), 'debug');
+            }
+            
+            // Try different possible response structures
+            if ($scripts && isset($scripts['tracking']) && !empty($scripts['tracking'])) {
+                if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                    $this->loggingSystem->logActivity('fetchTrackingScriptFromApi() - found script in scripts[tracking]', 'debug');
+                }
+                return $scripts['tracking'];
+            }
+            
+            if ($scripts && isset($scripts['scripts']) && !empty($scripts['scripts'])) {
+                if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                    $this->loggingSystem->logActivity('fetchTrackingScriptFromApi() - found script in scripts[scripts]', 'debug');
+                }
+                return $scripts['scripts'];
+            }
+            
+            if ($scripts && isset($scripts['script']) && !empty($scripts['script'])) {
+                if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                    $this->loggingSystem->logActivity('fetchTrackingScriptFromApi() - found script in scripts[script]', 'debug');
+                }
+                return $scripts['script'];
+            }
+            
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('fetchTrackingScriptFromApi() - no tracking script found in any expected location', 'debug');
+            }
+            return null;
+            
+        } catch (\Exception $e) {
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('fetchTrackingScriptFromApi() - exception: ' . $e->getMessage(), 'debug');
+            }
+            return null;
+        }
+    }
+
+    /**
+     * Force refresh the tracking script from the API
+     * 
+     * @since 2.0.0
+     * @return bool True if successful, false otherwise
+     */
+    public function forceRefreshTrackingScript(): bool
+    {
+        $apiKey = get_option('ctm_api_key');
+        $apiSecret = get_option('ctm_api_secret');
+        
+        if (empty($apiKey) || empty($apiSecret)) {
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('forceRefreshTrackingScript() - no API credentials', 'debug');
+            }
+            return false;
+        }
+        
+        $trackingScript = $this->fetchTrackingScriptFromApi($apiKey, $apiSecret);
+        if (!empty($trackingScript)) {
+            update_option('call_track_account_script', $trackingScript);
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('forceRefreshTrackingScript() - successfully updated tracking script', 'debug');
+            }
+            return true;
+        }
+        
+        if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+            $this->loggingSystem->logActivity('forceRefreshTrackingScript() - failed to fetch tracking script', 'debug');
+        }
+        return false;
+    }
+
+    /**
+     * Ensure duplicate prevention settings have proper defaults
+     * 
+     * This method ensures that new installations and existing installations
+     * have the duplicate prevention settings enabled by default.
+     * 
+     * @since 2.0.0
+     * @return void
+     */
+    public function ensureDuplicatePreventionDefaults(): void
+    {
+        // Check if duplicate prevention settings exist or are disabled, set defaults
+        $enabled = get_option('ctm_duplicate_prevention_enabled');
+        if ($enabled === false || $enabled === '0' || $enabled === 0) {
+            update_option('ctm_duplicate_prevention_enabled', true);
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('Set duplicate prevention enabled to true (was: ' . var_export($enabled, true) . ')', 'debug');
+            }
+        }
+        
+        $useSession = get_option('ctm_duplicate_prevention_use_session');
+        if ($useSession === false || $useSession === '0' || $useSession === 0) {
+            update_option('ctm_duplicate_prevention_use_session', true);
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('Set duplicate prevention use session to true (was: ' . var_export($useSession, true) . ')', 'debug');
+            }
+        }
+        
+        $fallbackIp = get_option('ctm_duplicate_prevention_fallback_ip');
+        if ($fallbackIp === false || $fallbackIp === '0' || $fallbackIp === 0) {
+            update_option('ctm_duplicate_prevention_fallback_ip', true);
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('Set duplicate prevention fallback IP to true (was: ' . var_export($fallbackIp, true) . ')', 'debug');
+            }
+        }
+        
+        $expiration = get_option('ctm_duplicate_prevention_expiration');
+        if ($expiration === false || $expiration === '0' || $expiration === 0) {
+            update_option('ctm_duplicate_prevention_expiration', 604800); // 7 days (7 * 24 * 60 * 60)
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('Set duplicate prevention expiration to 604800 (7 days) (was: ' . var_export($expiration, true) . ')', 'debug');
+            }
+        }
+        
+        // Force enable if still not set (for existing installations)
+        if (get_option('ctm_duplicate_prevention_enabled') !== true) {
+            update_option('ctm_duplicate_prevention_enabled', true);
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('Force-enabled duplicate prevention (was not true)', 'debug');
+            }
+        }
+        
+        if (get_option('ctm_duplicate_prevention_use_session') !== true) {
+            update_option('ctm_duplicate_prevention_use_session', true);
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('Force-enabled duplicate prevention use session (was not true)', 'debug');
+            }
+        }
+        
+        if (get_option('ctm_duplicate_prevention_fallback_ip') !== true) {
+            update_option('ctm_duplicate_prevention_fallback_ip', true);
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('Force-enabled duplicate prevention fallback IP (was not true)', 'debug');
+            }
+        }
+        
+        // Ensure auto-inject tracking script is enabled by default
+        $autoInjectTracking = get_option('ctm_auto_inject_tracking_script');
+        if ($autoInjectTracking === false || $autoInjectTracking === '0' || $autoInjectTracking === 0) {
+            update_option('ctm_auto_inject_tracking_script', true);
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('Set auto-inject tracking script to true (was: ' . var_export($autoInjectTracking, true) . ')', 'debug');
+            }
+        }
+        
+        // Force enable if still not set (for existing installations)
+        if (get_option('ctm_auto_inject_tracking_script') !== true) {
+            update_option('ctm_auto_inject_tracking_script', true);
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('Force-enabled auto-inject tracking script (was not true)', 'debug');
+            }
+        }
+    }
+
+    /**
      * Generate plugin notices for missing dependencies
      * 
      * Checks for Contact Form 7 and Gravity Forms plugins and generates
@@ -399,6 +677,21 @@ class Options
      */
     private function getTabContent(string $active_tab): string
     {
+        // Check API connection status
+        $apiKey = get_option('ctm_api_key');
+        $apiSecret = get_option('ctm_api_secret');
+        $isApiConnected = !empty($apiKey) && !empty($apiSecret);
+        
+        // Define which tabs require API connection
+        $apiRequiredTabs = ['api', 'import', 'forms', 'debug'];
+        
+        // Block access to API-required tabs if not connected
+        if (in_array($active_tab, $apiRequiredTabs) && !$isApiConnected) {
+            // Redirect to general tab with a notice
+            wp_redirect(admin_url('admin.php?page=call-tracking-metrics&tab=general&error=api_required'));
+            exit;
+        }
+        
         switch ($active_tab) {
             case 'api':
                 return $this->renderer->getApiTabContent();
@@ -488,6 +781,33 @@ class Options
             }
             $this->saveGeneralSettings();
         }
+        
+        // Handle AJAX test API connection
+        if (isset($_POST['action']) && $_POST['action'] === 'ctm_test_api_connection') {
+            check_ajax_referer('ctm_general_nonce', 'nonce');
+            if (!current_user_can('manage_options')) {
+                wp_send_json_error(['message' => 'Permission denied.']);
+            }
+            
+            $apiKey = get_option('ctm_api_key');
+            $apiSecret = get_option('ctm_api_secret');
+            
+            if (empty($apiKey) || empty($apiSecret)) {
+                wp_send_json_error(['message' => 'API credentials not found.']);
+            }
+            
+            try {
+                $fetchedScript = $this->fetchTrackingScriptFromApi($apiKey, $apiSecret);
+                if (!empty($fetchedScript)) {
+                    update_option('call_track_account_script', $fetchedScript);
+                    wp_send_json_success(['script' => $fetchedScript]);
+                } else {
+                    wp_send_json_error(['message' => 'Failed to fetch tracking script from API.']);
+                }
+            } catch (\Exception $e) {
+                wp_send_json_error(['message' => 'API error: ' . $e->getMessage()]);
+            }
+        }
     }
     /**
      * Get the tracking script from the API
@@ -545,15 +865,18 @@ class Options
         
         // Duplicate Prevention Settings
         $duplicatePreventionEnabled = isset($_POST['ctm_duplicate_prevention_enabled']) ? 1 : 0;
-        $duplicatePreventionExpiration = isset($_POST['ctm_duplicate_prevention_expiration']) ? intval($_POST['ctm_duplicate_prevention_expiration']) : 60;
+        $duplicatePreventionExpiration = isset($_POST['ctm_duplicate_prevention_expiration']) ? intval($_POST['ctm_duplicate_prevention_expiration']) : 7; // Default to 7 days
         $duplicatePreventionUseSession = isset($_POST['ctm_duplicate_prevention_use_session']) ? 1 : 0;
         $duplicatePreventionFallbackIp = isset($_POST['ctm_duplicate_prevention_fallback_ip']) ? 1 : 0;
         
-        // Validate expiration time
-        if ($duplicatePreventionExpiration < 30) {
-            $duplicatePreventionExpiration = 30;
-        } elseif ($duplicatePreventionExpiration > 300) {
-            $duplicatePreventionExpiration = 300;
+        // Convert days to seconds and validate expiration time
+        $duplicatePreventionExpiration = $duplicatePreventionExpiration * 86400; // Convert days to seconds (24 * 60 * 60)
+        
+        // Validate expiration time (1 day to 30 days in seconds)
+        if ($duplicatePreventionExpiration < 86400) { // Less than 1 day
+            $duplicatePreventionExpiration = 86400; // 1 day
+        } elseif ($duplicatePreventionExpiration > 2592000) { // More than 30 days
+            $duplicatePreventionExpiration = 2592000; // 30 days
         }
         
         // Auto-disable integrations if required plugins are not available
@@ -632,11 +955,39 @@ class Options
             $this->loggingSystem->logActivity('Settings saved - CF7 enabled: ' . ($cf7Enabled ? 'true' : 'false') . ', GF enabled: ' . ($gfEnabled ? 'true' : 'false'), 'debug');
         }
         
-        // Save tracking script if provided
+        // Save tracking script if provided and not empty
         if (isset($_POST['call_track_account_script'])) {
-            // Save as raw HTML, not entities
             $raw_script = wp_unslash($_POST['call_track_account_script']);
-            update_option('call_track_account_script', wp_kses_post($raw_script));
+            // Only update if the script actually contains content
+            if (!empty(trim($raw_script))) {
+                update_option('call_track_account_script', wp_kses_post($raw_script));
+                if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                    $this->loggingSystem->logActivity('Tracking script updated via form submission', 'debug');
+                }
+            } else {
+                if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                    $this->loggingSystem->logActivity('Tracking script field was empty, not overwriting existing script', 'debug');
+                }
+            }
+        }
+        
+        // Ensure tracking script is never empty - automatically fetch from API if missing
+        $currentScript = get_option('call_track_account_script');
+        if (empty($currentScript) && !empty($apiKey) && !empty($apiSecret)) {
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('Tracking script is empty, automatically fetching from API', 'debug');
+            }
+            $fetchedScript = $this->fetchTrackingScriptFromApi($apiKey, $apiSecret);
+            if (!empty($fetchedScript)) {
+                update_option('call_track_account_script', $fetchedScript);
+                if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                    $this->loggingSystem->logActivity('Successfully fetched and stored tracking script from API', 'debug');
+                }
+            } else {
+                if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                    $this->loggingSystem->logActivity('Failed to fetch tracking script from API - will retry on next page load', 'debug');
+                }
+            }
         }
         
         // Log the settings change

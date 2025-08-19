@@ -76,6 +76,8 @@ class ApiAjax {
         add_action('wp_ajax_ctm_change_api_keys', [$this, 'ajaxChangeApiKeys']);
         // AJAX: Disable API
         add_action('wp_ajax_ctm_disable_api', [$this, 'ajaxDisableApi']);
+        // AJAX: Fetch tracking script
+        add_action('wp_ajax_ctm_fetch_tracking_script', [$this, 'ajaxFetchTrackingScript']);
     }
 
 
@@ -414,5 +416,68 @@ class ApiAjax {
         // Clear connection status cache
         delete_transient('ctm_last_connection_status');
         wp_send_json_success(['message' => 'API credentials cleared.']);
+    }
+    
+    /**
+     * AJAX handler to fetch tracking script from API
+     * 
+     * Fetches the tracking script from the CallTrackingMetrics API using stored credentials.
+     * This is used to populate the tracking script textarea in the admin interface.
+     * 
+     * Expected POST parameters:
+     * - nonce: Security nonce for verification
+     * 
+     * @since 2.0.0
+     * @return void Outputs JSON response with tracking script
+     */
+    public function ajaxFetchTrackingScript() {
+        check_ajax_referer('ctm_general_nonce', 'nonce');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Permission denied.']);
+        }
+        
+        $apiKey = get_option('ctm_api_key');
+        $apiSecret = get_option('ctm_api_secret');
+        
+        if (empty($apiKey) || empty($apiSecret)) {
+            wp_send_json_error(['message' => 'API credentials not found.']);
+        }
+        
+        try {
+            // Get the API service
+            $apiService = new \CTM\Service\ApiService(\ctm_get_api_url());
+            
+            // Get account info first
+            $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
+            if (!$accountInfo || !isset($accountInfo['account']['id'])) {
+                wp_send_json_error(['message' => 'Failed to get account info from API.']);
+            }
+            
+            $accountId = $accountInfo['account']['id'];
+            
+            // Get tracking script
+            $scripts = $apiService->getTrackingScript($accountId, $apiKey, $apiSecret);
+            
+            // Try different possible response structures
+            $trackingScript = null;
+            if ($scripts && isset($scripts['tracking']) && !empty($scripts['tracking'])) {
+                $trackingScript = $scripts['tracking'];
+            } elseif ($scripts && isset($scripts['scripts']) && !empty($scripts['scripts'])) {
+                $trackingScript = $scripts['scripts'];
+            } elseif ($scripts && isset($scripts['script']) && !empty($scripts['script'])) {
+                $trackingScript = $scripts['script'];
+            }
+            
+            if (!empty($trackingScript)) {
+                // Store the tracking script
+                update_option('call_track_account_script', $trackingScript);
+                wp_send_json_success(['script' => $trackingScript]);
+            } else {
+                wp_send_json_error(['message' => 'No tracking script found in API response.']);
+            }
+            
+        } catch (\Exception $e) {
+            wp_send_json_error(['message' => 'API error: ' . $e->getMessage()]);
+        }
     }
 } 
