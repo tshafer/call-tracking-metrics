@@ -187,6 +187,19 @@ $apiSecret = $apiSecret ?? '';
                 </div>
                 <p class="text-gray-500 text-xs mt-1 ml-6"><?php _e('If enabled, the tracking script above will be automatically inserted into your site\'s <head> on every page.', 'call-tracking-metrics'); ?></p>
                 
+                <!-- Inline error/success message container -->
+                <div id="tracking-script-message" class="mt-4 p-3 rounded hidden"></div>
+                
+                <!-- Action buttons -->
+                <div class="mt-4 flex gap-2">
+                    <button type="button" onclick="fetchTrackingScriptNow()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded transition">
+                        <?php _e('Fetch Tracking Script', 'call-tracking-metrics'); ?>
+                    </button>
+                    <button type="button" onclick="refreshTrackingScriptNow()" class="bg-gray-600 hover:bg-gray-700 text-white text-sm px-4 py-2 rounded transition">
+                        <?php _e('Refresh Script', 'call-tracking-metrics'); ?>
+                    </button>
+                </div>
+                
                 <?php if (get_option('ctm_debug_enabled')): ?>
                     <!-- Debug: Test Duplicate Prevention -->
                     <div class="mt-3 p-3 bg-green-50 border border-green-200 rounded text-xs text-green-800">
@@ -835,80 +848,116 @@ document.addEventListener('DOMContentLoaded', function() {
     updateCountdownDisplay();
     });
     
-    // Function to force refresh tracking script
-    function forceRefreshTrackingScript() {
-        if (confirm('Force refresh the tracking script from the CTM API? This will fetch the latest script and update the textarea above.')) {
-            // Show loading state
-            const button = event.target;
-            const originalText = button.textContent;
-            button.textContent = 'Refreshing...';
-            button.disabled = true;
-            
-            // Make AJAX call to refresh tracking script
-            fetch(ajaxurl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: 'action=ctm_refresh_tracking_script&nonce=' + ctmGeneralData.nonce
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update the textarea with the new script
-                    document.getElementById('ctm_tracking_script').value = data.data.script;
-                    alert('Tracking script refreshed successfully!');
-                } else {
-                    alert('Failed to refresh tracking script: ' + (data.data || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                alert('Error refreshing tracking script: ' + error.message);
-            })
-            .finally(() => {
-                // Reset button state
-                button.textContent = originalText;
-                button.disabled = false;
-            });
+    // Helper function to show inline messages
+    function showTrackingMessage(message, type = 'error') {
+        const messageEl = document.getElementById('tracking-script-message');
+        if (!messageEl) return;
+        
+        messageEl.classList.remove('hidden', 'bg-red-50', 'border-red-200', 'text-red-800', 'bg-green-50', 'border-green-200', 'text-green-800', 'bg-blue-50', 'border-blue-200', 'text-blue-800');
+        
+        if (type === 'error') {
+            messageEl.classList.add('bg-red-50', 'border', 'border-red-200', 'text-red-800');
+        } else if (type === 'success') {
+            messageEl.classList.add('bg-green-50', 'border', 'border-green-200', 'text-green-800');
+        } else {
+            messageEl.classList.add('bg-blue-50', 'border', 'border-blue-200', 'text-blue-800');
         }
+        
+        messageEl.textContent = message;
     }
     
-    // Function to test API connection and fetch tracking script
-    function testApiConnection() {
-        if (confirm('Test API connection and fetch tracking script? This will make API calls to CTM.')) {
-            // Show loading state
-            const button = event.target;
-            const originalText = button.textContent;
-            button.textContent = 'Testing...';
-            button.disabled = true;
-            
-            // Make AJAX call to fetch tracking script
-            fetch(ajaxurl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: 'action=ctm_fetch_tracking_script&nonce=' + ctmGeneralData.nonce
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update the textarea with the fetched script
-                    document.getElementById('ctm_tracking_script').value = data.data.script;
-                    alert('Success! Tracking script fetched and updated.');
-                } else {
-                    alert('Failed to fetch tracking script: ' + (data.data || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                alert('Error fetching tracking script: ' + error.message);
-            })
-            .finally(() => {
-                // Reset button state
-                button.textContent = originalText;
-                button.disabled = false;
-            });
+    // Function to refresh tracking script
+    function refreshTrackingScriptNow() {
+        const button = event.target;
+        const originalText = button.textContent;
+        button.textContent = 'Refreshing...';
+        button.disabled = true;
+        
+        showTrackingMessage('Fetching tracking script from API...', 'info');
+        
+        // Make AJAX call to refresh tracking script
+        fetch(ajaxurl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'action=ctm_refresh_tracking_script&nonce=' + ctmGeneralData.nonce
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('API Response:', data);
+            if (data.success) {
+                document.getElementById('ctm_tracking_script').value = data.data.script;
+                showTrackingMessage('Tracking script refreshed successfully!', 'success');
+            } else {
+                let errorMsg = extractErrorMessage(data);
+                console.error('Error details:', data);
+                showTrackingMessage('Failed to refresh: ' + errorMsg, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            showTrackingMessage('Network error: ' + error.message, 'error');
+        })
+        .finally(() => {
+            button.textContent = originalText;
+            button.disabled = false;
+        });
+    }
+    
+    // Helper function to extract error message from response
+    function extractErrorMessage(data) {
+        if (data.data) {
+            if (typeof data.data === 'string') {
+                return data.data;
+            } else if (data.data.message) {
+                return data.data.message;
+            } else if (data.message) {
+                return data.message;
+            }
+        } else if (data.message) {
+            return data.message;
         }
+        return 'Unknown error - check console for details';
+    }
+    
+    // Function to fetch tracking script
+    function fetchTrackingScriptNow() {
+        const button = event.target;
+        const originalText = button.textContent;
+        button.textContent = 'Fetching...';
+        button.disabled = true;
+        
+        showTrackingMessage('Fetching tracking script from API...', 'info');
+        
+        // Make AJAX call to fetch tracking script
+        fetch(ajaxurl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'action=ctm_fetch_tracking_script&nonce=' + ctmGeneralData.nonce
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('API Response:', data);
+            if (data.success) {
+                document.getElementById('ctm_tracking_script').value = data.data.script;
+                showTrackingMessage('Success! Tracking script fetched and updated.', 'success');
+            } else {
+                let errorMsg = extractErrorMessage(data);
+                console.error('Error details:', data);
+                showTrackingMessage('Failed to fetch: ' + errorMsg, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            showTrackingMessage('Network error: ' + error.message, 'error');
+        })
+        .finally(() => {
+            button.textContent = originalText;
+            button.disabled = false;
+        });
     }
     
     // Function to test duplicate prevention
