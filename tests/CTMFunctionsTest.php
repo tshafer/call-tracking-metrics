@@ -10,7 +10,6 @@ use CTM\Tests\Traits\MonkeyTrait;
 class CTMFunctionsTest extends TestCase
 {
     use MonkeyTrait;
-    use MonkeyTrait;
     protected function setUp(): void
     {
         parent::setUp();
@@ -142,5 +141,33 @@ class CTMFunctionsTest extends TestCase
         
         $result = ctm_get_api_url();
         $this->assertEquals('https://api.calltrackingmetrics.com', $result);
+    }
+
+    public function testCtmGetAvailableApiEndpointsReturnsDefaults()
+    {
+        \Brain\Monkey\Filters\expectApplied('ctm_available_api_endpoints')
+            ->once()
+            ->with(\Mockery::type('array'))
+            ->andReturnUsing(function($endpoints) {
+                return $endpoints;
+            });
+
+        $result = ctm_get_available_api_endpoints();
+        $this->assertArrayHasKey('https://api.calltrackingmetrics.com', $result);
+        $this->assertArrayHasKey('https://api.calltrackingmetrics.de', $result);
+        $this->assertEquals(__('Global (.com)', 'call-tracking-metrics'), $result['https://api.calltrackingmetrics.com']);
+        $this->assertEquals(__('Europe (.de)', 'call-tracking-metrics'), $result['https://api.calltrackingmetrics.de']);
+    }
+
+    public function testCtmGetAvailableApiEndpointsRespectsFilters()
+    {
+        $custom = ['https://custom.example' => 'Custom'];
+
+        \Brain\Monkey\Filters\expectApplied('ctm_available_api_endpoints')
+            ->once()
+            ->andReturn($custom);
+
+        $result = ctm_get_available_api_endpoints();
+        $this->assertSame($custom, $result);
     }
 } 
