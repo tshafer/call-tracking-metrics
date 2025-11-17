@@ -18,6 +18,10 @@
 // API Activity tab view
 // Data is passed from Options.php: $apiKey, $apiSecret, $apiStatus, $accountInfo
 $api_connected = ($apiStatus === 'connected');
+$apiBaseUrl = isset($apiBaseUrl) ? rtrim($apiBaseUrl, '/') : ctm_get_api_url();
+$availableApiEndpoints = isset($availableApiEndpoints) && is_array($availableApiEndpoints)
+    ? $availableApiEndpoints
+    : ctm_get_available_api_endpoints();
 ?>
 <?php // Add nonces for AJAX actions
 $ctm_change_api_nonce = wp_create_nonce('ctm_change_api_keys');
@@ -150,11 +154,51 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
                         </div>
                         <div class="flex justify-between items-center py-2">
                             <span class="text-gray-600 text-sm"><?php _e('Base URL', 'call-tracking-metrics'); ?></span>
-                            <span class="font-mono font-medium text-gray-900 text-sm break-all"><?= esc_html(ctm_get_api_url()) ?></span>
+                            <span id="ctm-api-base-url-display" class="font-mono font-medium text-gray-900 text-sm break-all"><?= esc_html($apiBaseUrl) ?></span>
                         </div>
                         <div class="flex justify-between items-center py-2">
                             <span class="text-gray-600 text-sm"><?php _e('Last Connected', 'call-tracking-metrics'); ?></span>
                             <span class="font-medium text-gray-900"><?= date('M j, Y g:i A') ?></span>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <div class="bg-gray-50 border border-gray-200 rounded-xl p-5">
+                            <div class="flex flex-col gap-4">
+                                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                    <div>
+                                        <h4 class="text-base font-semibold text-gray-900"><?php _e('Switch API Endpoint', 'call-tracking-metrics'); ?></h4>
+                                        <p class="text-sm text-gray-500 mt-1"><?php _e('Select the regional CallTrackingMetrics API that best fits your account.', 'call-tracking-metrics'); ?></p>
+                                    </div>
+                                    <span class="inline-flex items-center text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-full px-4 py-1.5 shadow-sm">
+                                        <span class="uppercase tracking-wide text-xs text-gray-400 mr-2"><?php _e('Current', 'call-tracking-metrics'); ?></span>
+                                        <span class="font-mono text-gray-700"><?= esc_html(parse_url($apiBaseUrl, PHP_URL_HOST)); ?></span>
+                                    </span>
+                                </div>
+                                <div class="flex flex-col md:flex-row md:items-end gap-3">
+                                    <div class="md:flex-1 md:max-w-md">
+                                        <label for="ctm_api_base_url_select" class="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide"><?php _e('Endpoint', 'call-tracking-metrics'); ?></label>
+                                        <select id="ctm_api_base_url_select" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm">
+                                            <?php foreach ($availableApiEndpoints as $endpointUrl => $label): ?>
+                                                <option value="<?= esc_attr($endpointUrl); ?>" <?= selected($apiBaseUrl, rtrim($endpointUrl, '/'), false); ?>>
+                                                    <?= esc_html($label); ?> (<?= esc_html(parse_url($endpointUrl, PHP_URL_HOST)); ?>)
+                                                </option>
+                                            <?php endforeach; ?>
+                                            <?php if (!array_key_exists($apiBaseUrl, $availableApiEndpoints)): ?>
+                                                <option value="<?= esc_attr($apiBaseUrl); ?>" selected>
+                                                    <?= sprintf(__('Custom (%s)', 'call-tracking-metrics'), esc_html($apiBaseUrl)); ?>
+                                                </option>
+                                            <?php endif; ?>
+                                        </select>
+                                    </div>
+                                    <button type="button" id="ctm-update-endpoint-btn" class="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-semibold rounded-full shadow-sm transition-all duration-200 gap-2 self-start">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                        </svg>
+                                        <span><?php _e('Update', 'call-tracking-metrics'); ?></span>
+                                    </button>
+                                </div>
+                                <div id="ctm-endpoint-update-message" class="text-xs"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -278,6 +322,22 @@ $ctm_disable_api_nonce = wp_create_nonce('ctm_disable_api');
                         <label for="ctm_new_api_secret" class="block text-gray-700 font-medium mb-2"><?php _e('API Secret', 'call-tracking-metrics'); ?></label>
                         <input type="text" id="ctm_new_api_secret" name="ctm_new_api_secret" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" required autocomplete="off">
                     </div>
+                    <div class="mb-6">
+                        <label for="ctm_new_api_base_url" class="block text-gray-700 font-medium mb-2"><?php _e('API Endpoint', 'call-tracking-metrics'); ?></label>
+                        <select id="ctm_new_api_base_url" name="ctm_new_api_base_url" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                            <?php foreach ($availableApiEndpoints as $endpointUrl => $label): ?>
+                                <option value="<?= esc_attr($endpointUrl); ?>" <?= selected($apiBaseUrl, rtrim($endpointUrl, '/'), false); ?>>
+                                    <?= esc_html($label); ?> (<?= esc_html(parse_url($endpointUrl, PHP_URL_HOST)); ?>)
+                                </option>
+                            <?php endforeach; ?>
+                            <?php if (!array_key_exists($apiBaseUrl, $availableApiEndpoints)): ?>
+                                <option value="<?= esc_attr($apiBaseUrl); ?>" selected>
+                                    <?= sprintf(__('Custom (%s)', 'call-tracking-metrics'), esc_html($apiBaseUrl)); ?>
+                                </option>
+                            <?php endif; ?>
+                        </select>
+                        <p class="text-gray-500 text-xs mt-2"><?php _e('Pick the regional endpoint that matches where your CTM account is hosted.', 'call-tracking-metrics'); ?></p>
+                    </div>
                     <div class="flex justify-end space-x-3">
                         <button type="button" id="ctm-cancel-change-api" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -379,6 +439,12 @@ var ctmApiData = {
     nonce: '<?= wp_create_nonce('ctm_test_api_connection') ?>',
     change_api_nonce: '<?= wp_create_nonce('ctm_change_api_keys') ?>',
     disable_api_nonce: '<?= wp_create_nonce('ctm_disable_api') ?>',
+    api_base_url: '<?= esc_js($apiBaseUrl); ?>',
+    api_endpoints: <?= wp_json_encode($availableApiEndpoints); ?>,
+    custom_endpoint_label: '<?= esc_js(__('Custom (%s)', 'call-tracking-metrics')); ?>',
+    endpoint_update_success: '<?= esc_js(__('API endpoint updated successfully.', 'call-tracking-metrics')); ?>',
+    endpoint_update_error: '<?= esc_js(__('Failed to update API endpoint. Please try again.', 'call-tracking-metrics')); ?>',
+    endpoint_update_in_progress: '<?= esc_js(__('Updating...', 'call-tracking-metrics')); ?>',
     initial_connected: <?= ($api_connected && !empty($accountInfo)) ? 'true' : 'false' ?>
 };
 
@@ -435,7 +501,8 @@ jQuery(document).ready(function($) {
                 action: 'ctm_test_api_connection',
                 api_key: ctmApiData.api_key,
                 api_secret: ctmApiData.api_secret,
-                nonce: ctmApiData.nonce
+                nonce: ctmApiData.nonce,
+                api_base_url: ctmApiData.api_base_url
             },
             success: function(response) {
                 if (response.success) {
@@ -478,6 +545,9 @@ jQuery(document).ready(function($) {
                     displayAccountSummary(response.data.account_info.account, response.data.account_details?.account, response.data.capabilities);
                     displayTechnicalDetails(response.data);
                     displayPerformanceMetrics(response.data.performance, response.data.connection_quality);
+                    if (response.data.metadata && response.data.metadata.api_endpoint) {
+                        updateApiBaseUrl(response.data.metadata.api_endpoint);
+                    }
                 } else {
                     updateStatus(false, response.data || 'Test failed');
                     appendLog('error', `❌ ${response.data || 'Test failed'}`);
@@ -512,8 +582,41 @@ jQuery(document).ready(function($) {
         icon.toggleClass('rotate-90');
     });
     
+    // Quick endpoint update button
+    $('#ctm-update-endpoint-btn').on('click', function() {
+        const newBase = $('#ctm_api_base_url_select').val();
+        if (!newBase) {
+            return;
+        }
+        const $button = $(this);
+        const originalText = $button.text();
+        showEndpointMessage('', '');
+        $button.prop('disabled', true).addClass('opacity-75 cursor-wait').text(ctmApiData.endpoint_update_in_progress || originalText);
+        $.post(ajaxurl, {
+            action: 'ctm_change_api_keys',
+            api_key: '',
+            api_secret: '',
+            api_base_url: newBase,
+            nonce: ctmApiData.change_api_nonce
+        }, function(resp) {
+            if (resp.success) {
+                updateApiBaseUrl(newBase);
+                showEndpointMessage('success', ctmApiData.endpoint_update_success);
+            } else {
+                const errorMessage = resp.data && resp.data.message ? resp.data.message : ctmApiData.endpoint_update_error;
+                showEndpointMessage('error', errorMessage);
+            }
+        }).fail(function() {
+            showEndpointMessage('error', ctmApiData.endpoint_update_error);
+        }).always(function() {
+            $button.prop('disabled', false).removeClass('opacity-75 cursor-wait').text(originalText);
+        });
+    });
+    
     // Modal logic for Change API Keys
     $('#ctm-change-api-btn').on('click', function() {
+        ensureEndpointOption(ctmApiData.api_base_url);
+        $('#ctm_new_api_base_url').val(ctmApiData.api_base_url);
         $('#ctm-change-api-modal').removeClass('hidden');
     });
     $('#ctm-close-change-api, #ctm-cancel-change-api').on('click', function() {
@@ -526,6 +629,7 @@ jQuery(document).ready(function($) {
         var apiKey = $('#ctm_new_api_key').val();
         var apiSecret = $('#ctm_new_api_secret').val();
         var nonce = ctmApiData.change_api_nonce;
+        var apiBaseUrl = $('#ctm_new_api_base_url').val();
         var $modal = $('#ctm-change-api-modal');
         var $saveBtn = $(this).find('button[type=submit]');
         $saveBtn.prop('disabled', true).text('Saving...');
@@ -533,6 +637,7 @@ jQuery(document).ready(function($) {
             action: 'ctm_change_api_keys',
             api_key: apiKey,
             api_secret: apiSecret,
+            api_base_url: apiBaseUrl,
             nonce: nonce
         }, function(resp) {
             $saveBtn.prop('disabled', false).text('Save');
@@ -581,6 +686,54 @@ jQuery(document).ready(function($) {
     }
     
 
+    
+    function ensureEndpointOption(value) {
+        if (!value) {
+            return;
+        }
+        const selects = $('#ctm_new_api_base_url, #ctm_api_base_url_select');
+        if (!selects.length) {
+            return;
+        }
+        selects.each(function() {
+            const select = $(this);
+            if (select.find('option[value="' + value + '"]').length === 0) {
+                const label = ctmApiData.api_endpoints && ctmApiData.api_endpoints[value]
+                    ? ctmApiData.api_endpoints[value]
+                    : (ctmApiData.custom_endpoint_label || 'Custom (%s)').replace('%s', value);
+                const option = $('<option>').attr('value', value).text(label);
+                select.append(option);
+            }
+        });
+    }
+    
+    function updateApiBaseUrl(newUrl) {
+        if (!newUrl) {
+            return;
+        }
+        const normalized = newUrl.replace(/\/+$/, '');
+        ctmApiData.api_base_url = normalized;
+        $('#ctm-api-base-url-display').text(normalized);
+        ensureEndpointOption(normalized);
+        $('#ctm_new_api_base_url').val(normalized);
+        $('#ctm_api_base_url_select').val(normalized);
+    }
+    
+    function showEndpointMessage(type, message) {
+        const messageEl = $('#ctm-endpoint-update-message');
+        messageEl.removeClass();
+        messageEl.addClass('text-xs mt-2');
+        if (!message) {
+            messageEl.text('');
+            return;
+        }
+        if (type === 'success') {
+            messageEl.addClass('px-3 py-2 rounded border bg-green-50 border-green-200 text-green-700');
+        } else {
+            messageEl.addClass('px-3 py-2 rounded border bg-red-50 border-red-200 text-red-700');
+        }
+        messageEl.text(message);
+    }
     
     function appendLog(type, message) {
         const logs = $('#ctm-test-logs');

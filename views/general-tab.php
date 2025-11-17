@@ -5,6 +5,10 @@
 $apiStatus = $apiStatus ?? 'not_connected';
 $apiKey = $apiKey ?? '';
 $apiSecret = $apiSecret ?? '';
+$apiBaseUrl = isset($apiBaseUrl) ? rtrim($apiBaseUrl, '/') : ctm_get_api_url();
+$availableApiEndpoints = isset($availableApiEndpoints) && is_array($availableApiEndpoints)
+    ? $availableApiEndpoints
+    : ctm_get_available_api_endpoints();
 
 // API credentials are passed from the controller, no hardcoding needed
 ?>
@@ -62,7 +66,23 @@ $apiSecret = $apiSecret ?? '';
                     </div>
                 </div>
                 
-
+                <div class="mb-6">
+                    <label for="ctm_api_base_url" class="block mb-2 text-gray-700 font-medium"><?php _e('API Endpoint', 'call-tracking-metrics'); ?></label>
+                    <select id="ctm_api_base_url" name="ctm_api_base_url" class="block w-full rounded border-gray-300 focus:ring-[#02bdf6] focus:border-[#02bdf6]">
+                        <?php foreach ($availableApiEndpoints as $endpointUrl => $label): ?>
+                            <option value="<?= esc_attr($endpointUrl); ?>" <?= selected($apiBaseUrl, rtrim($endpointUrl, '/'), false); ?>>
+                                <?= esc_html($label); ?> (<?= esc_html(parse_url($endpointUrl, PHP_URL_HOST)); ?>)
+                            </option>
+                        <?php endforeach; ?>
+                        <?php if (!array_key_exists($apiBaseUrl, $availableApiEndpoints)): ?>
+                            <option value="<?= esc_attr($apiBaseUrl); ?>" selected>
+                                <?= sprintf(__('Custom (%s)', 'call-tracking-metrics'), esc_html($apiBaseUrl)); ?>
+                            </option>
+                        <?php endif; ?>
+                    </select>
+                    <p class="text-gray-500 text-sm mt-2"><?php _e('Choose the regional API endpoint that matches your CallTrackingMetrics account.', 'call-tracking-metrics'); ?></p>
+                </div>
+                
                 
 
                 
@@ -139,6 +159,22 @@ $apiSecret = $apiSecret ?? '';
         <!-- Full Settings View (Connected) -->
         <input type="hidden" name="ctm_api_key" value="<?= esc_attr($apiKey) ?>">
         <input type="hidden" name="ctm_api_secret" value="<?= esc_attr($apiSecret) ?>">
+        <div class="max-w-md mb-6">
+            <label for="ctm_api_base_url" class="block mb-2 text-gray-700 font-medium"><?php _e('API Endpoint', 'call-tracking-metrics'); ?></label>
+            <select id="ctm_api_base_url" name="ctm_api_base_url" class="block w-full rounded border-gray-300 focus:ring-[#02bdf6] focus:border-[#02bdf6]">
+                <?php foreach ($availableApiEndpoints as $endpointUrl => $label): ?>
+                    <option value="<?= esc_attr($endpointUrl); ?>" <?= selected($apiBaseUrl, rtrim($endpointUrl, '/'), false); ?>>
+                        <?= esc_html($label); ?> (<?= esc_html(parse_url($endpointUrl, PHP_URL_HOST)); ?>)
+                    </option>
+                <?php endforeach; ?>
+                <?php if (!array_key_exists($apiBaseUrl, $availableApiEndpoints)): ?>
+                    <option value="<?= esc_attr($apiBaseUrl); ?>" selected>
+                        <?= sprintf(__('Custom (%s)', 'call-tracking-metrics'), esc_html($apiBaseUrl)); ?>
+                    </option>
+                <?php endif; ?>
+            </select>
+            <p class="text-gray-500 text-sm mt-2"><?php _e('Switch endpoints if your account is hosted in Europe.', 'call-tracking-metrics'); ?></p>
+        </div>
         <div class="mb-8">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
                 <div class="bg-blue-50 border-l-2 border-blue-400 p-2 rounded flex items-center gap-2 text-sm">
@@ -334,10 +370,13 @@ $apiSecret = $apiSecret ?? '';
 
 <script>
 // Localize script data for general tab
-var ctmGeneralData = {
+var ctmGeneralData = Object.assign({}, window.ctmGeneralData || {}, {
     ajaxurl: '<?= admin_url('admin-ajax.php') ?>',
-    testNonce: '<?= wp_create_nonce('ctm_test_api_connection') ?>'
-};
+    dismissNonce: (window.ctmGeneralData && window.ctmGeneralData.dismissNonce) ? window.ctmGeneralData.dismissNonce : '<?= wp_create_nonce('ctm_dismiss_notice') ?>',
+    generalNonce: (window.ctmGeneralData && window.ctmGeneralData.generalNonce) ? window.ctmGeneralData.generalNonce : '<?= wp_create_nonce('ctm_general_nonce') ?>',
+    testNonce: '<?= wp_create_nonce('ctm_test_api_connection') ?>',
+    apiBaseUrl: '<?= esc_js($apiBaseUrl); ?>'
+});
 
 function dismissNotice(type) {
     // Hide the notice immediately
@@ -355,7 +394,7 @@ function dismissNotice(type) {
     const formData = new FormData();
     formData.append('action', 'ctm_dismiss_notice');
     formData.append('notice_type', type);
-    formData.append('nonce', ctmGeneralData.nonce);
+    formData.append('nonce', ctmGeneralData.dismissNonce);
     
     fetch(ctmGeneralData.ajaxurl, {
         method: 'POST',
@@ -368,6 +407,10 @@ function dismissNotice(type) {
 function testApiConnection() {
     const apiKey = document.getElementById('ctm_api_key').value;
     const apiSecret = document.getElementById('ctm_api_secret').value;
+    const apiEndpointSelect = document.getElementById('ctm_api_base_url');
+    let apiBaseUrl = apiEndpointSelect ? apiEndpointSelect.value : (ctmGeneralData.apiBaseUrl || 'https://api.calltrackingmetrics.com');
+    apiBaseUrl = apiBaseUrl.replace(/\/+$/, '');
+    ctmGeneralData.apiBaseUrl = apiBaseUrl;
     const saveBtn = document.getElementById('save-api-btn');
     const apiTestLogs = document.getElementById('api-test-logs');
     const apiLogContent = document.getElementById('api-log-content');
@@ -409,7 +452,7 @@ function testApiConnection() {
     updateProgress(++currentStep, totalSteps, 'Validating credentials...');
     appendLog('info', 'Starting API connection test...');
     appendLog('info', `API Key: ${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)}`);
-    appendLog('info', `Target: https://api.calltrackingmetrics.com`);
+    appendLog('info', `Target: ${apiBaseUrl}`);
     
     setTimeout(() => {
         // Step 2: Connection
@@ -424,7 +467,7 @@ function testApiConnection() {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: 'action=ctm_test_api_connection&api_key=' + encodeURIComponent(apiKey) + '&api_secret=' + encodeURIComponent(apiSecret) + '&nonce=' + ctmGeneralData.testNonce
+            body: 'action=ctm_test_api_connection&api_key=' + encodeURIComponent(apiKey) + '&api_secret=' + encodeURIComponent(apiSecret) + '&api_base_url=' + encodeURIComponent(apiBaseUrl) + '&nonce=' + ctmGeneralData.testNonce
         })
         .then(response => {
             const requestTime = Date.now() - requestStart;
@@ -817,6 +860,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    const apiEndpointSelect = document.getElementById('ctm_api_base_url');
+    if (apiEndpointSelect) {
+        ctmGeneralData.apiBaseUrl = apiEndpointSelect.value.replace(/\/+$/, '');
+        apiEndpointSelect.addEventListener('change', function() {
+            ctmGeneralData.apiBaseUrl = this.value.replace(/\/+$/, '');
+        });
+    }
+    
     // Form submission handler for API credentials - only when API is not connected
     const apiForm = document.querySelector('form');
     const saveBtn = document.getElementById('save-api-btn');
@@ -881,7 +932,7 @@ document.addEventListener('DOMContentLoaded', function() {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: 'action=ctm_refresh_tracking_script&nonce=' + ctmGeneralData.nonce
+            body: 'action=ctm_refresh_tracking_script&nonce=' + ctmGeneralData.generalNonce
         })
         .then(response => response.json())
         .then(data => {
@@ -936,7 +987,7 @@ document.addEventListener('DOMContentLoaded', function() {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: 'action=ctm_fetch_tracking_script&nonce=' + ctmGeneralData.nonce
+            body: 'action=ctm_fetch_tracking_script&nonce=' + ctmGeneralData.generalNonce
         })
         .then(response => response.json())
         .then(data => {
@@ -976,7 +1027,7 @@ document.addEventListener('DOMContentLoaded', function() {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: 'action=ctm_test_duplicate_prevention&nonce=' + ctmGeneralData.nonce
+            body: 'action=ctm_test_duplicate_prevention&nonce=' + ctmGeneralData.generalNonce
         })
         .then(response => response.json())
         .then(data => {

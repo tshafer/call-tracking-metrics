@@ -305,6 +305,28 @@ class AdminAjaxApiAjaxTest extends TestCase
         $this->assertArrayHasKey('account_id', $called);
         $this->assertEquals(123, $updated['ctm_api_auth_account']);
     }
+    public function testAjaxTestApiConnectionUpdatesApiBaseUrlWhenProvided() {
+        $apiService = new \CTM\Service\ApiService('https://dummy-ctm-api.test');
+        $apiAjax = new ApiAjax($apiService);
+        $_POST['api_key'] = str_repeat('a', 21);
+        $_POST['api_secret'] = str_repeat('b', 21);
+        $_POST['api_base_url'] = 'https://api.calltrackingmetrics.de/';
+        $called = [];
+        $updated = [];
+        \Brain\Monkey\Functions\when('update_option')->alias(function($k, $v = null) use (&$updated) { $updated[$k] = $v; return true; });
+        \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arr) use (&$called) { $called = $arr; });
+        \Brain\Monkey\Functions\when('wp_remote_request')->alias(function() {
+            return [
+                'response' => ['code' => 200],
+                'body' => json_encode(['account' => ['id' => 456]])
+            ];
+        });
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_body')->justReturn(json_encode(['account' => ['id' => 456]]));
+        $apiAjax->ajaxTestApiConnection();
+        $this->assertNotFalse($called);
+        $this->assertEquals('https://api.calltrackingmetrics.de', $updated['ctm_api_base_url']);
+        $this->assertEquals('https://api.calltrackingmetrics.de', $called['metadata']['api_endpoint']);
+    }
     public function testAjaxTestApiConnectionReturnsCorrectMetadata() {
         $apiService = new \CTM\Service\ApiService('https://dummy-ctm-api.test');
         $apiAjax = new ApiAjax($apiService);
@@ -462,6 +484,7 @@ class AdminAjaxApiAjaxTest extends TestCase
         $apiAjax = new ApiAjax();
         $_POST['api_key'] = 'key';
         $_POST['api_secret'] = 'secret';
+        $_POST['api_base_url'] = 'https://api.calltrackingmetrics.de/';
         \Brain\Monkey\Functions\when('check_ajax_referer')->justReturn(true);
         \Brain\Monkey\Functions\when('current_user_can')->justReturn(true);
         $updated = [];
@@ -471,7 +494,7 @@ class AdminAjaxApiAjaxTest extends TestCase
         // Patch ApiService to avoid real API calls
         $apiAjax = new class extends ApiAjax {
             public function __construct() {}
-            public function getApiService() {
+            public function getApiService($base = null) {
                 return new class {
                     public function getAccountInfo($k, $s) { return ['account' => ['id' => 'acct_1']]; }
                     public function getTrackingScript($id, $k, $s) { return ['tracking' => '<script>track</script>']; }
@@ -483,10 +506,27 @@ class AdminAjaxApiAjaxTest extends TestCase
                 if (!current_user_can('manage_options')) { wp_send_json_error(['message' => 'Permission denied.']); }
                 $apiKey = sanitize_text_field($_POST['api_key'] ?? '');
                 $apiSecret = sanitize_text_field($_POST['api_secret'] ?? '');
+                $apiBaseRaw = $_POST['api_base_url'] ?? '';
+                if (is_array($apiBaseRaw)) {
+                    $apiBaseRaw = reset($apiBaseRaw);
+                }
+                $apiBaseUrl = null;
+                if (is_string($apiBaseRaw)) {
+                    $apiBaseRaw = trim($apiBaseRaw);
+                    if ($apiBaseRaw !== '') {
+                        if (!preg_match('/^https?:\/\//i', $apiBaseRaw)) {
+                            $apiBaseRaw = 'https://' . $apiBaseRaw;
+                        }
+                        $apiBaseUrl = rtrim($apiBaseRaw, '/');
+                    }
+                }
                 if (!$apiKey || !$apiSecret) { wp_send_json_error(['message' => 'API Key and Secret are required.']); }
                 update_option('ctm_api_key', $apiKey);
                 update_option('ctm_api_secret', $apiSecret);
-                $apiService = $this->getApiService();
+                if ($apiBaseUrl) {
+                    update_option('ctm_api_base_url', $apiBaseUrl);
+                }
+                $apiService = $this->getApiService($apiBaseUrl ?: 'https://api.calltrackingmetrics.com');
                 $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
                 $accountId = null;
                 if ($accountInfo && isset($accountInfo['account']['id'])) {
@@ -507,8 +547,99 @@ class AdminAjaxApiAjaxTest extends TestCase
         $this->assertEquals('secret', $updated['ctm_api_secret']);
         $this->assertEquals('acct_1', $updated['ctm_api_auth_account']);
         $this->assertEquals('<script>track</script>', $updated['call_track_account_script']);
+        $this->assertEquals('https://api.calltrackingmetrics.de', $updated['ctm_api_base_url']);
         $this->assertIsArray($called);
         $this->assertEquals('API keys updated.', $called['message']);
+    }
+    public function testAjaxChangeApiKeysUpdatesBaseOnly() {
+        $apiAjax = new class extends ApiAjax {
+            private $capturedBase;
+            public function getCapturedBase(): ?string {
+                return $this->capturedBase;
+            }
+            public function getApiService($base = null) {
+                $this->capturedBase = $base;
+                return new class {
+                    public function getAccountInfo($k, $s) { return ['account' => ['id' => 'acct_1']]; }
+                    public function getTrackingScript($id, $k, $s) { return ['tracking' => '<script>track</script>']; }
+                };
+            }
+            public function ajaxChangeApiKeys() {
+                check_ajax_referer('ctm_change_api_keys', 'nonce');
+                if (!current_user_can('manage_options')) { wp_send_json_error(['message' => 'Permission denied.']); }
+                $providedApiKey = sanitize_text_field($_POST['api_key'] ?? '');
+                $providedApiSecret = sanitize_text_field($_POST['api_secret'] ?? '');
+                $apiBaseRaw = $_POST['api_base_url'] ?? '';
+                if (is_array($apiBaseRaw)) {
+                    $apiBaseRaw = reset($apiBaseRaw);
+                }
+                $apiBaseUrl = null;
+                if (is_string($apiBaseRaw)) {
+                    $apiBaseRaw = trim($apiBaseRaw);
+                    if ($apiBaseRaw !== '') {
+                        if (!preg_match('/^https?:\/\//i', $apiBaseRaw)) {
+                            $apiBaseRaw = 'https://' . $apiBaseRaw;
+                        }
+                        $apiBaseUrl = rtrim($apiBaseRaw, '/');
+                    }
+                }
+                $existingApiKey = get_option('ctm_api_key');
+                $existingApiSecret = get_option('ctm_api_secret');
+                $apiKey = $providedApiKey !== '' ? $providedApiKey : $existingApiKey;
+                $apiSecret = $providedApiSecret !== '' ? $providedApiSecret : $existingApiSecret;
+                if (!$apiKey || !$apiSecret) { wp_send_json_error(['message' => 'API Key and Secret are required.']); }
+                if ($providedApiKey !== '') {
+                    update_option('ctm_api_key', $apiKey);
+                }
+                if ($providedApiSecret !== '') {
+                    update_option('ctm_api_secret', $apiSecret);
+                }
+                if ($apiBaseUrl) {
+                    update_option('ctm_api_base_url', $apiBaseUrl);
+                }
+                delete_transient('ctm_last_connection_status');
+                $apiService = $this->getApiService($apiBaseUrl ?: 'https://api.calltrackingmetrics.com');
+                $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
+                $accountId = null;
+                if ($accountInfo && isset($accountInfo['account']['id'])) {
+                    $accountId = $accountInfo['account']['id'];
+                    update_option('ctm_api_auth_account', $accountId);
+                }
+                if ($accountId) {
+                    $scripts = $apiService->getTrackingScript($accountId, $apiKey, $apiSecret);
+                    if ($scripts && isset($scripts['tracking']) && !empty($scripts['tracking'])) {
+                        update_option('call_track_account_script', $scripts['tracking']);
+                    }
+                }
+                wp_send_json_success(['message' => 'API keys updated.']);
+            }
+        };
+        $_POST['api_key'] = '';
+        $_POST['api_secret'] = '';
+        $_POST['api_base_url'] = 'https://api.calltrackingmetrics.de/';
+        \Brain\Monkey\Functions\when('check_ajax_referer')->justReturn(true);
+        \Brain\Monkey\Functions\when('current_user_can')->justReturn(true);
+        \Brain\Monkey\Functions\when('get_option')->alias(function($key, $default = '') {
+            if ($key === 'ctm_api_key') {
+                return 'stored_key';
+            }
+            if ($key === 'ctm_api_secret') {
+                return 'stored_secret';
+            }
+            return $default;
+        });
+        $updated = [];
+        $called = [];
+        \Brain\Monkey\Functions\when('update_option')->alias(function($k, $v) use (&$updated) { $updated[$k] = $v; });
+        \Brain\Monkey\Functions\when('delete_transient')->justReturn(true);
+        \Brain\Monkey\Functions\when('wp_send_json_success')->alias(function($arr) use (&$called) { $called = (array)$arr; });
+        $apiAjax->ajaxChangeApiKeys();
+        $this->assertArrayHasKey('ctm_api_base_url', $updated);
+        $this->assertEquals('https://api.calltrackingmetrics.de', $updated['ctm_api_base_url']);
+        $this->assertArrayNotHasKey('ctm_api_key', $updated);
+        $this->assertArrayNotHasKey('ctm_api_secret', $updated);
+        $this->assertEquals('API keys updated.', $called['message']);
+        $this->assertEquals('https://api.calltrackingmetrics.de', $apiAjax->getCapturedBase());
     }
     public function testAjaxDisableApiPermissionDenied() {
         $apiAjax = new ApiAjax();
@@ -542,7 +673,7 @@ class AdminAjaxApiAjaxTest extends TestCase
         // Patch ApiService to throw
         $apiAjax = new class extends ApiAjax {
             public function __construct() {}
-            public function getApiService() {
+            public function getApiService($base = null) {
                 return new class {
                     public function getAccountInfo($k, $s) { throw new \Exception('API error'); }
                     public function getTrackingScript($id, $k, $s) { throw new \Exception('Script error'); }
@@ -553,11 +684,25 @@ class AdminAjaxApiAjaxTest extends TestCase
                 if (!current_user_can('manage_options')) { wp_send_json_error(['message' => 'Permission denied.']); }
                 $apiKey = sanitize_text_field($_POST['api_key'] ?? '');
                 $apiSecret = sanitize_text_field($_POST['api_secret'] ?? '');
+                $apiBaseRaw = $_POST['api_base_url'] ?? '';
+                if (is_array($apiBaseRaw)) {
+                    $apiBaseRaw = reset($apiBaseRaw);
+                }
+                $apiBaseUrl = null;
+                if (is_string($apiBaseRaw)) {
+                    $apiBaseRaw = trim($apiBaseRaw);
+                    if ($apiBaseRaw !== '') {
+                        if (!preg_match('/^https?:\/\//i', $apiBaseRaw)) {
+                            $apiBaseRaw = 'https://' . $apiBaseRaw;
+                        }
+                        $apiBaseUrl = rtrim($apiBaseRaw, '/');
+                    }
+                }
                 if (!$apiKey || !$apiSecret) { wp_send_json_error(['message' => 'API Key and Secret are required.']); }
                 update_option('ctm_api_key', $apiKey);
                 update_option('ctm_api_secret', $apiSecret);
                 try {
-                    $apiService = $this->getApiService();
+                    $apiService = $this->getApiService($apiBaseUrl ?: 'https://api.calltrackingmetrics.com');
                     $apiService->getAccountInfo($apiKey, $apiSecret);
                 } catch (\Exception $e) {
                     wp_send_json_error(['message' => 'API error: ' . $e->getMessage()]);
@@ -597,7 +742,7 @@ class AdminAjaxApiAjaxTest extends TestCase
     public function testAjaxChangeApiKeysTrackingScriptMissing() {
         $apiAjax = new class extends ApiAjax {
             public function __construct() {}
-            public function getApiService() {
+            public function getApiService($base = null) {
                 return new class {
                     public function getAccountInfo($k, $s) { return ['account' => ['id' => 'acct_1']]; }
                     public function getTrackingScript($id, $k, $s) { return []; }
@@ -608,10 +753,27 @@ class AdminAjaxApiAjaxTest extends TestCase
                 if (!current_user_can('manage_options')) { wp_send_json_error(['message' => 'Permission denied.']); }
                 $apiKey = sanitize_text_field($_POST['api_key'] ?? '');
                 $apiSecret = sanitize_text_field($_POST['api_secret'] ?? '');
+                $apiBaseRaw = $_POST['api_base_url'] ?? '';
+                if (is_array($apiBaseRaw)) {
+                    $apiBaseRaw = reset($apiBaseRaw);
+                }
+                $apiBaseUrl = null;
+                if (is_string($apiBaseRaw)) {
+                    $apiBaseRaw = trim($apiBaseRaw);
+                    if ($apiBaseRaw !== '') {
+                        if (!preg_match('/^https?:\/\//i', $apiBaseRaw)) {
+                            $apiBaseRaw = 'https://' . $apiBaseRaw;
+                        }
+                        $apiBaseUrl = rtrim($apiBaseRaw, '/');
+                    }
+                }
                 if (!$apiKey || !$apiSecret) { wp_send_json_error(['message' => 'API Key and Secret are required.']); }
                 update_option('ctm_api_key', $apiKey);
                 update_option('ctm_api_secret', $apiSecret);
-                $apiService = $this->getApiService();
+                if ($apiBaseUrl) {
+                    update_option('ctm_api_base_url', $apiBaseUrl);
+                }
+                $apiService = $this->getApiService($apiBaseUrl ?: 'https://api.calltrackingmetrics.com');
                 $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
                 $accountId = null;
                 if ($accountInfo && isset($accountInfo['account']['id'])) {
@@ -646,7 +808,7 @@ class AdminAjaxApiAjaxTest extends TestCase
     public function testAjaxChangeApiKeysAccountInfoMissingAccount() {
         $apiAjax = new class extends ApiAjax {
             public function __construct() {}
-            public function getApiService() {
+            public function getApiService($base = null) {
                 return new class {
                     public function getAccountInfo($k, $s) { return ['foo' => 'bar']; }
                     public function getTrackingScript($id, $k, $s) { return ['tracking' => '<script>track</script>']; }
@@ -657,10 +819,27 @@ class AdminAjaxApiAjaxTest extends TestCase
                 if (!current_user_can('manage_options')) { wp_send_json_error(['message' => 'Permission denied.']); }
                 $apiKey = sanitize_text_field($_POST['api_key'] ?? '');
                 $apiSecret = sanitize_text_field($_POST['api_secret'] ?? '');
+                $apiBaseRaw = $_POST['api_base_url'] ?? '';
+                if (is_array($apiBaseRaw)) {
+                    $apiBaseRaw = reset($apiBaseRaw);
+                }
+                $apiBaseUrl = null;
+                if (is_string($apiBaseRaw)) {
+                    $apiBaseRaw = trim($apiBaseRaw);
+                    if ($apiBaseRaw !== '') {
+                        if (!preg_match('/^https?:\/\//i', $apiBaseRaw)) {
+                            $apiBaseRaw = 'https://' . $apiBaseRaw;
+                        }
+                        $apiBaseUrl = rtrim($apiBaseRaw, '/');
+                    }
+                }
                 if (!$apiKey || !$apiSecret) { wp_send_json_error(['message' => 'API Key and Secret are required.']); }
                 update_option('ctm_api_key', $apiKey);
                 update_option('ctm_api_secret', $apiSecret);
-                $apiService = $this->getApiService();
+                if ($apiBaseUrl) {
+                    update_option('ctm_api_base_url', $apiBaseUrl);
+                }
+                $apiService = $this->getApiService($apiBaseUrl ?: 'https://api.calltrackingmetrics.com');
                 $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
                 $accountId = null;
                 if ($accountInfo && isset($accountInfo['account']['id'])) {

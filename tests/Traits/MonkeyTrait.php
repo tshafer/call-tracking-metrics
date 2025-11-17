@@ -8,6 +8,9 @@ trait MonkeyTrait
 {
     public function initalMonkey(): void
     {
+        if (!defined('OBJECT')) {
+            define('OBJECT', 'OBJECT');
+        }
         // Helper to avoid duplicate mocks
         $set = [];
         $mock = function($fn, $cb) use (&$set) {
@@ -17,6 +20,10 @@ trait MonkeyTrait
             }
         };
         $mock('ctm_get_api_url', fn() => \Brain\Monkey\Functions\when('ctm_get_api_url')->justReturn('https://api.calltrackingmetrics.com'));
+        $mock('ctm_get_available_api_endpoints', fn() => \Brain\Monkey\Functions\when('ctm_get_available_api_endpoints')->justReturn([
+            'https://api.calltrackingmetrics.com' => 'Global (.com)',
+            'https://api.calltrackingmetrics.de' => 'Europe (.de)',
+        ]));
         $mock('delete_option', fn() => \Brain\Monkey\Functions\when('delete_option')->justReturn(true));
         $mock('wp_next_scheduled', fn() => \Brain\Monkey\Functions\when('wp_next_scheduled')->justReturn(null));
         $mock('wp_schedule_event', fn() => \Brain\Monkey\Functions\when('wp_schedule_event')->justReturn(null));
@@ -115,7 +122,10 @@ trait MonkeyTrait
         \Brain\Monkey\Functions\when('get_locale')->justReturn('en_US');
 
         $mock('register_setting', fn() => \Brain\Monkey\Functions\when('register_setting')->justReturn(null));
-        $mock('plugin_dir_path', fn() => \Brain\Monkey\Functions\when('plugin_dir_path')->justReturn('/tmp/'));
+        $mock('plugin_dir_path', fn() => \Brain\Monkey\Functions\when('plugin_dir_path')->alias(function($file) {
+            $normalized = str_replace('\\', '/', $file);
+            return '/tmp' . $normalized;
+        }));
         $mock('count_users', fn() => \Brain\Monkey\Functions\when('count_users')->justReturn(['total_users' => 1]));
         $mock('add_action', fn() => \Brain\Monkey\Functions\when('add_action')->justReturn(null));
         $mock('add_filter', fn() => \Brain\Monkey\Functions\when('add_filter')->justReturn(null));
@@ -126,6 +136,7 @@ trait MonkeyTrait
         $mock('home_url', fn() => \Brain\Monkey\Functions\when('home_url')->justReturn('https://example.com'));
         $mock('check_ajax_referer', fn() => \Brain\Monkey\Functions\when('check_ajax_referer')->justReturn(true));
         $mock('sanitize_text_field', fn() => \Brain\Monkey\Functions\when('sanitize_text_field')->alias(fn($v) => $v));
+        $mock('wp_unslash', fn() => \Brain\Monkey\Functions\when('wp_unslash')->alias(fn($v) => $v));
         $mock('_n', fn() => \Brain\Monkey\Functions\when('_n')->alias(function($single, $plural, $number) { return $number == 1 ? $single : $plural; }));
         // $mock('wp_send_json_success', fn() => \Brain\Monkey\Functions\when('wp_send_json_success')->justReturn(null));
         // $mock('wp_send_json_error', fn() => \Brain\Monkey\Functions\when('wp_send_json_error')->justReturn(null));

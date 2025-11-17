@@ -104,6 +104,30 @@ function ctm_get_api_url(): string
 }
 }
 
+if (!function_exists('ctm_get_available_api_endpoints')) {
+/**
+ * Retrieve the list of available CTM API endpoints.
+ *
+ * @since 2.0.0
+ * @return array<string,string> Associative array of endpoint => label.
+ */
+function ctm_get_available_api_endpoints(): array
+{
+    $endpoints = [
+        'https://api.calltrackingmetrics.com' => __('Global (.com)', 'call-tracking-metrics'),
+        'https://api.calltrackingmetrics.de' => __('Europe (.de)', 'call-tracking-metrics'),
+    ];
+
+    /**
+     * Filter the available CTM API endpoints.
+     *
+     * @since 2.0.0
+     * @param array<string,string> $endpoints
+     */
+    return apply_filters('ctm_available_api_endpoints', $endpoints);
+}
+}
+
 /**
  * Main CallTrackingMetrics Plugin Class
  * 
@@ -294,15 +318,23 @@ class CallTrackingMetrics
                 true
             );
             
-            // Enqueue API tab JS
-            wp_enqueue_script(
-                'ctm-api-tab-js',
-                plugins_url('assets/js/api-tab.js', __FILE__),
-                ['jquery'],
-                '2.0.0',
-                true
-            );
+            $assetsDir = plugin_dir_path(__FILE__) . 'assets/js/';
+            $enqueueScript = function(string $handle, string $file, array $deps = []) use ($assetsDir) {
+                $fullPath = $assetsDir . $file;
+                if (!file_exists($fullPath)) {
+                    return false;
+                }
+                wp_enqueue_script(
+                    $handle,
+                    plugins_url('assets/js/' . $file, __FILE__),
+                    $deps,
+                    '2.0.0',
+                    true
+                );
+                return true;
+            };
             
+            $enqueueScript('ctm-api-tab-js', 'api-tab.js', ['jquery']);
             // Enqueue Documentation tab JS
             wp_enqueue_script(
                 'ctm-documentation-tab-js',
@@ -333,23 +365,8 @@ class CallTrackingMetrics
                 'nonce' => wp_create_nonce('ctm_dismiss_notice'),
             ]);
             
-            // Enqueue General tab JS
-            wp_enqueue_script(
-                'ctm-general-tab-js',
-                plugins_url('assets/js/general-tab.js', __FILE__),
-                [],
-                '2.0.0',
-                true
-            );
-            
-            // Enqueue Form Logs JS
-            wp_enqueue_script(
-                'ctm-form-logs-js',
-                plugins_url('assets/js/form-logs.js', __FILE__),
-                ['jquery'],
-                '2.0.0',
-                true
-            );
+            $generalScriptLoaded = $enqueueScript('ctm-general-tab-js', 'general-tab.js');
+            $formLogsScriptLoaded = $enqueueScript('ctm-form-logs-js', 'form-logs.js', ['jquery']);
             
             // Enqueue unified preview JS
             wp_enqueue_script(
@@ -381,18 +398,23 @@ class CallTrackingMetrics
             ]);
             
             // Localize general tab data
-            wp_localize_script('ctm-general-tab-js', 'ctmGeneralData', [
-                'ajaxurl' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('ctm_dismiss_notice'),
-                'testNonce' => wp_create_nonce('ctm_test_api_connection'),
-            ]);
+            if ($generalScriptLoaded) {
+                wp_localize_script('ctm-general-tab-js', 'ctmGeneralData', [
+                    'ajaxurl' => admin_url('admin-ajax.php'),
+                    'dismissNonce' => wp_create_nonce('ctm_dismiss_notice'),
+                    'generalNonce' => wp_create_nonce('ctm_general_nonce'),
+                    'testNonce' => wp_create_nonce('ctm_test_api_connection'),
+                ]);
+            }
             
             // Localize form logs data
-            wp_localize_script('ctm-form-logs-js', 'ctmFormLogsData', [
-                'ajaxurl' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('ctm_form_logs'),
-                'debug_enabled' => get_option('ctm_debug_enabled', false),
-            ]);
+            if ($formLogsScriptLoaded) {
+                wp_localize_script('ctm-form-logs-js', 'ctmFormLogsData', [
+                    'ajaxurl' => admin_url('admin-ajax.php'),
+                    'nonce' => wp_create_nonce('ctm_form_logs'),
+                    'debug_enabled' => get_option('ctm_debug_enabled', false),
+                ]);
+            }
             
             // Add modal styles and wpfooter positioning fix
             wp_add_inline_style('ctm-tailwind', '

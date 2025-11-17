@@ -102,13 +102,22 @@ class ApiAjax {
         check_ajax_referer('ctm_test_api_connection', 'nonce');
         $api_key = sanitize_text_field($_POST['api_key'] ?? '');
         $api_secret = sanitize_text_field($_POST['api_secret'] ?? '');
+        $api_base_url_raw = $_POST['api_base_url'] ?? '';
+        if (is_array($api_base_url_raw)) {
+            $api_base_url_raw = reset($api_base_url_raw);
+        }
+        $requested_api_base = is_string($api_base_url_raw) || is_numeric($api_base_url_raw)
+            ? $this->sanitizeApiBaseUrl(wp_unslash((string) $api_base_url_raw))
+            : null;
+        $effective_api_base = $requested_api_base ?: \ctm_get_api_url();
         $response_data = [
             'timestamp' => current_time('mysql'),
             'request_id' => wp_generate_uuid4(),
             'wordpress_version' => get_bloginfo('version'),
             'php_version' => PHP_VERSION,
             'plugin_version' => '2.0',
-            'api_endpoint' => \ctm_get_api_url(),
+            'api_endpoint' => $effective_api_base,
+            'requested_api_endpoint' => $requested_api_base,
             'request_method' => 'GET',
             'auth_method' => 'Basic Authentication'
         ];
@@ -139,7 +148,7 @@ class ApiAjax {
             return;
         }
         try {
-            $apiService = $this->apiService;
+            $apiService = $requested_api_base ? new ApiService($effective_api_base) : $this->apiService;
             $api_start_time = microtime(true);
             $accountInfo = $apiService->getAccountInfo($api_key, $api_secret);
             $api_response_time = round((microtime(true) - $api_start_time) * 1000, 2);
@@ -181,6 +190,9 @@ class ApiAjax {
             update_option('ctm_api_key', $api_key);
             update_option('ctm_api_secret', $api_secret);
             update_option('ctm_api_auth_account', $account['id'] ?? '');
+            if ($requested_api_base) {
+                update_option('ctm_api_base_url', $effective_api_base);
+            }
             $total_execution_time = round((microtime(true) - $start_time) * 1000, 2);
             wp_send_json_success([
                 'message' => 'API Connection successful',
@@ -358,18 +370,37 @@ class ApiAjax {
         if (!current_user_can('manage_options')) {
             wp_send_json_error(['message' => 'Permission denied.']);
         }
-        $apiKey = sanitize_text_field($_POST['api_key'] ?? '');
-        $apiSecret = sanitize_text_field($_POST['api_secret'] ?? '');
+        $providedApiKey = sanitize_text_field($_POST['api_key'] ?? '');
+        $providedApiSecret = sanitize_text_field($_POST['api_secret'] ?? '');
+        $apiBaseUrlRaw = $_POST['api_base_url'] ?? '';
+        if (is_array($apiBaseUrlRaw)) {
+            $apiBaseUrlRaw = reset($apiBaseUrlRaw);
+        }
+        $apiBaseUrl = null;
+        if (is_string($apiBaseUrlRaw) || is_numeric($apiBaseUrlRaw)) {
+            $apiBaseUrl = $this->sanitizeApiBaseUrl(wp_unslash((string) $apiBaseUrlRaw));
+        }
+        $existingApiKey = get_option('ctm_api_key');
+        $existingApiSecret = get_option('ctm_api_secret');
+        $apiKey = $providedApiKey !== '' ? $providedApiKey : $existingApiKey;
+        $apiSecret = $providedApiSecret !== '' ? $providedApiSecret : $existingApiSecret;
         if (!$apiKey || !$apiSecret) {
             wp_send_json_error(['message' => 'API Key and Secret are required.']);
         }
-        update_option('ctm_api_key', $apiKey);
-        update_option('ctm_api_secret', $apiSecret);
+        if ($providedApiKey !== '') {
+            update_option('ctm_api_key', $apiKey);
+        }
+        if ($providedApiSecret !== '') {
+            update_option('ctm_api_secret', $apiSecret);
+        }
+        if ($apiBaseUrl) {
+            update_option('ctm_api_base_url', $apiBaseUrl);
+        }
         
         // Clear connection status cache so new credentials are tested immediately
         delete_transient('ctm_last_connection_status');
         // Fetch account info and tracking script
-        $apiService = new \CTM\Service\ApiService(\ctm_get_api_url());
+        $apiService = new \CTM\Service\ApiService($apiBaseUrl ?: \ctm_get_api_url());
         $accountInfo = $apiService->getAccountInfo($apiKey, $apiSecret);
         $accountId = null;
         if ($accountInfo && isset($accountInfo['account']['id'])) {
@@ -479,5 +510,30 @@ class ApiAjax {
         } catch (\Exception $e) {
             wp_send_json_error(['message' => 'API error: ' . $e->getMessage()]);
         }
+    }
+
+    /**
+     * Normalize and sanitize an API base URL value.
+     *
+     * @param string|null $url Raw URL submitted from the client.
+     * @return string|null Sanitized URL or null if empty/invalid.
+     */
+    private function sanitizeApiBaseUrl(?string $url): ?string
+    {
+        if ($url === null) {
+            return null;
+        }
+
+        $url = trim($url);
+
+        if ($url === '') {
+            return null;
+        }
+
+        if (!preg_match('/^https?:\/\//i', $url)) {
+            $url = 'https://' . $url;
+        }
+
+        return rtrim($url, '/');
     }
 } 

@@ -65,6 +65,8 @@ class SettingsRenderer
      */
     public function renderView(string $view, array $vars = []): void
     {
+        $this->ensureAdminNoticesAbove();
+
         if ($this->viewLoader && is_callable($this->viewLoader)) {
             $phpCode = call_user_func($this->viewLoader, $view);
             if ($phpCode === null) {
@@ -100,6 +102,19 @@ class SettingsRenderer
     }
 
     /**
+     * Ensure WordPress admin notices render above custom UI.
+     *
+     * @since 2.0.0
+     * @return void
+     */
+    private function ensureAdminNoticesAbove(): void
+    {
+        if (!did_action('admin_notices')) {
+            do_action('admin_notices');
+        }
+    }
+
+    /**
      * Get general tab content
      * 
      * Generates the content for the general settings tab including
@@ -122,6 +137,8 @@ class SettingsRenderer
         if (!$trackingScript) {
             $trackingScript = get_option('ctm_api_tracking_script');
         }
+        $apiBaseUrl = \ctm_get_api_url();
+        $availableApiEndpoints = \ctm_get_available_api_endpoints();
         // Check plugin availability
         $cf7_installed = class_exists('WPCF7_ContactForm');
         $gf_installed = class_exists('GFAPI');
@@ -158,9 +175,20 @@ class SettingsRenderer
         
         // Render the general tab view
         $this->renderView('general-tab', compact(
-            'apiKey', 'apiSecret', 'accountId', 'trackingEnabled',
-            'cf7Enabled', 'gfEnabled', 'dashboardEnabled', 'trackingScript',
-            'cf7_installed', 'gf_installed', 'apiStatus', 'debugEnabled'
+            'apiKey',
+            'apiSecret',
+            'accountId',
+            'trackingEnabled',
+            'cf7Enabled',
+            'gfEnabled',
+            'dashboardEnabled',
+            'trackingScript',
+            'cf7_installed',
+            'gf_installed',
+            'apiStatus',
+            'debugEnabled',
+            'apiBaseUrl',
+            'availableApiEndpoints'
         ));
         
         return ob_get_clean();
@@ -183,6 +211,8 @@ class SettingsRenderer
         $apiSecret = get_option('ctm_api_secret');
         $accountInfo = null;
         $apiStatus = 'not_tested';
+        $apiBaseUrl = \ctm_get_api_url();
+        $availableApiEndpoints = \ctm_get_available_api_endpoints();
         if ($apiKey && $apiSecret && $this->apiService) {
             $accountInfo = $this->apiService->getAccountInfo($apiKey, $apiSecret);
             $apiStatus = ($accountInfo && isset($accountInfo['account'])) ? 'connected' : 'not_connected';
@@ -191,7 +221,12 @@ class SettingsRenderer
         ob_start();
         
         $this->renderView('api-tab', compact(
-            'apiKey', 'apiSecret', 'accountInfo', 'apiStatus'
+            'apiKey',
+            'apiSecret',
+            'accountInfo',
+            'apiStatus',
+            'apiBaseUrl',
+            'availableApiEndpoints'
         ));
         
         return ob_get_clean();

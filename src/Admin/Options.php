@@ -855,7 +855,7 @@ class Options
         // Only update API key/secret if present in POST, otherwise keep existing
         $apiKey = isset($_POST['ctm_api_key']) ? sanitize_text_field($_POST['ctm_api_key']) : get_option('ctm_api_key');
         $apiSecret = isset($_POST['ctm_api_secret']) ? sanitize_text_field($_POST['ctm_api_secret']) : get_option('ctm_api_secret');
-        $apiBaseUrl = isset($_POST['ctm_api_base_url']) ? sanitize_text_field($_POST['ctm_api_base_url']) : get_option('ctm_api_base_url');
+        $apiBaseUrl = isset($_POST['ctm_api_base_url']) ? $this->sanitizeApiUrl(wp_unslash($_POST['ctm_api_base_url'])) : get_option('ctm_api_base_url');
         $trackingEnabled = isset($_POST['ctm_api_tracking_enabled']) ? 1 : 0;
         $cf7Enabled = isset($_POST['ctm_api_cf7_enabled']) ? 1 : 0;
         $gfEnabled = isset($_POST['ctm_api_gf_enabled']) ? 1 : 0;
